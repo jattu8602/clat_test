@@ -26,87 +26,34 @@ export default function DashboardLayout({ children }) {
   }
 
   const navigation = [
-    { name: 'Home', href: '/dashboard', icon: '🏠' },
-    { name: 'Free Tests', href: '/dashboard/free-test', icon: '📝' },
-    { name: 'Paid Tests', href: '/dashboard/paid-test', icon: '💎' },
-    { name: 'Payment History', href: '/dashboard/payment-history', icon: '💰' },
-    { name: 'Notifications', href: '/dashboard/notifications', icon: '🔔' },
-    { name: 'Profile', href: '/dashboard/profile', icon: '👤' },
+    { name: 'home', href: '/dashboard', icon: '🏠' },
+    { name: 'free test', href: '/dashboard/free-test', icon: '📝' },
+    { name: 'paid test', href: '/dashboard/paid-test', icon: '💎' },
+    { name: 'payment', href: '/dashboard/payment-history', icon: '💰' },
+    { name: 'attempted', href: '/dashboard/attempted', icon: '✅' },
+    { name: 'leaderboard', href: '/dashboard/leaderboard', icon: '🏆' },
   ]
 
   const isActive = (href) => pathname === href
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 sm:w-72 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-center h-16 px-4 bg-indigo-600">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                <span className="text-indigo-600 font-bold text-sm">CL</span>
-              </div>
-              <span className="text-white font-semibold text-lg">
-                CLAT Prep
-              </span>
+          {/* Logo/Profile Circle */}
+          <div className="flex items-center justify-center h-20 px-4 bg-indigo-600">
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+              <span className="text-indigo-600 font-bold text-lg">CL</span>
             </div>
           </div>
 
-          {/* User Info */}
-          <div className="px-4 py-4 sm:py-6 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                {session.user?.image ? (
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name}
-                    className="w-10 h-10 rounded-full"
-                  />
-                ) : (
-                  <span className="text-indigo-600 font-semibold">
-                    {session.user?.name?.charAt(0) || 'U'}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {session.user?.name || 'User'}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                  {session.user?.email}
-                </p>
-                <div className="flex items-center mt-1">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                      session.user?.role === 'ADMIN'
-                        ? 'bg-red-100 text-red-800'
-                        : session.user?.role === 'PAID'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {session.user?.role || 'FREE'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 sm:py-6 space-y-1 sm:space-y-2">
+          {/* Navigation Links */}
+          <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -119,35 +66,46 @@ export default function DashboardLayout({ children }) {
                 onClick={() => setSidebarOpen(false)}
               >
                 <span className="text-lg">{item.icon}</span>
-                <span>{item.name}</span>
+                <span className="capitalize">{item.name}</span>
               </Link>
             ))}
           </nav>
 
-          {/* Bottom Actions */}
-          <div className="px-4 py-4 sm:py-6 border-t border-gray-200 space-y-2">
+          {/* Bottom Buttons */}
+          <div className="px-4 py-6 space-y-2">
+            <button className="w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors border border-gray-300">
+              website
+            </button>
             <button
               onClick={() => signOut({ callbackUrl: '/' })}
-              className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              className="w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors border border-gray-300"
             >
-              <span className="text-lg">🚪</span>
-              <span>Logout</span>
+              logout
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="lg:pl-64">
-        {/* Top Bar */}
-        <div className="sticky top-0 z-30 bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between px-4 py-3 sm:py-4">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Mobile Hamburger */}
             <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
               <svg
-                className="w-5 h-5 sm:w-6 sm:h-6"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -161,36 +119,26 @@ export default function DashboardLayout({ children }) {
               </svg>
             </button>
 
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* Notifications */}
-              <button className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-5 5v-5zM4 19h6a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-              </button>
+            {/* Header Content */}
+            <div className="flex items-center space-x-4">
+              {/* Notification */}
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">d</span>
+                </div>
+                <span className="text-sm text-gray-600">notification</span>
+              </div>
 
               {/* Profile */}
-              <div className="flex items-center space-x-2">
-                <span className="text-xs sm:text-sm text-gray-700">
-                  Welcome back, {session.user?.name?.split(' ')[0] || 'User'}!
-                </span>
+              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                <span className="text-gray-600 font-bold text-sm">p</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Page Content */}
-        <main className="p-4 sm:p-6">{children}</main>
+        <main className="flex-1 p-4">{children}</main>
       </div>
     </div>
   )
