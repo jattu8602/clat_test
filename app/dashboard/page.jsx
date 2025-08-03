@@ -11,6 +11,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import TestCard from '@/components/test-card'
+import {
+  BookOpen,
+  CheckCircle,
+  BarChart3,
+  Trophy,
+  ArrowRight,
+  TrendingUp,
+  Users,
+  Target,
+} from 'lucide-react'
 
 export default function DashboardHome() {
   const { data: session } = useSession()
@@ -35,14 +46,23 @@ export default function DashboardHome() {
     {
       id: 1,
       title: 'CLAT Mock Test 1',
-      description: 'Basic legal reasoning and English',
+      description: 'Basic legal reasoning and English comprehension',
       duration: '90 min',
+      questions: 150,
     },
     {
       id: 2,
       title: 'English Language Test',
-      description: 'Vocabulary and comprehension',
+      description: 'Vocabulary, grammar and reading comprehension',
       duration: '60 min',
+      questions: 100,
+    },
+    {
+      id: 3,
+      title: 'Legal Reasoning Basics',
+      description: 'Fundamental concepts and case studies',
+      duration: '75 min',
+      questions: 125,
     },
   ]
 
@@ -50,15 +70,17 @@ export default function DashboardHome() {
     {
       id: 1,
       title: 'Advanced Legal Reasoning',
-      description: 'Complex case studies and analysis',
+      description: 'Complex case studies and constitutional law',
       duration: '120 min',
+      questions: 200,
       price: '₹299',
     },
     {
       id: 2,
       title: 'Full CLAT Mock Test',
-      description: 'Complete exam simulation',
+      description: 'Complete exam simulation with detailed analysis',
       duration: '150 min',
+      questions: 250,
       price: '₹499',
     },
   ]
@@ -78,182 +100,238 @@ export default function DashboardHome() {
       date: '2024-01-10',
       status: 'completed',
     },
+    {
+      id: 3,
+      title: 'Legal Reasoning Basics',
+      score: 68,
+      date: '2024-01-08',
+      status: 'completed',
+    },
   ]
 
+  const handleTestAction = (test, action) => {
+    console.log(`${action} test:`, test)
+    // Handle test actions here
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Welcome Section */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {session?.user?.name || 'Student'}!
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Welcome back, {session?.user?.name || 'Student'}! 👋
         </h1>
-        <p className="text-gray-600 mt-2">
-          Ready to ace your CLAT preparation? Let's get started.
+        <p className="text-muted-foreground text-lg">
+          Ready to ace your CLAT preparation? Let's continue your journey to
+          success.
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="border-muted hover:shadow-md transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Tests</CardTitle>
-            <span className="text-2xl">📝</span>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Tests
+            </CardTitle>
+            <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+              <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalTests}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-1">
               Available for practice
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-muted hover:shadow-md transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <span className="text-2xl">✅</span>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Completed
+            </CardTitle>
+            <div className="h-8 w-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.completedTests}</div>
-            <p className="text-xs text-muted-foreground">Tests finished</p>
+            <p className="text-xs text-muted-foreground mt-1">Tests finished</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-muted hover:shadow-md transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-            <span className="text-2xl">📊</span>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Average Score
+            </CardTitle>
+            <div className="h-8 w-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+              <BarChart3 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.averageScore}%</div>
-            <p className="text-xs text-muted-foreground">Your performance</p>
+            <div className="flex items-center space-x-1 mt-1">
+              <TrendingUp className="h-3 w-3 text-green-500" />
+              <p className="text-xs text-muted-foreground">
+                +5% from last week
+              </p>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-muted hover:shadow-md transition-all duration-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rank</CardTitle>
-            <span className="text-2xl">🏆</span>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Rank
+            </CardTitle>
+            <div className="h-8 w-8 bg-amber-100 dark:bg-amber-900 rounded-lg flex items-center justify-center">
+              <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">#{stats.rank}</div>
-            <p className="text-xs text-muted-foreground">Among students</p>
+            <div className="flex items-center space-x-1 mt-1">
+              <Users className="h-3 w-3 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">
+                Among 2,450 students
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Free Tests Section */}
-      <Card>
+      <Card className="border-muted">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">📝</span>
-            Free Tests
-          </CardTitle>
-          <CardDescription>
-            Start with these free practice tests to improve your skills
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-3">
+                <div className="h-8 w-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                  <Target className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+                Free Practice Tests
+              </CardTitle>
+              <CardDescription>
+                Start with these free practice tests to build your foundation
+              </CardDescription>
+            </div>
+            <Link href="/dashboard/free-test">
+              <Button variant="outline" size="sm">
+                View All
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {freeTests.map((test) => (
-              <div
+              <TestCard
                 key={test.id}
-                className="border border-gray-200 rounded-lg p-4 relative hover:shadow-md transition-shadow"
-              >
-                <div className="mb-3">
-                  <h4 className="font-medium text-gray-900">{test.title}</h4>
-                  <p className="text-sm text-gray-600">{test.description}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Duration: {test.duration}
-                  </p>
-                </div>
-                <Button className="absolute bottom-3 right-3" size="sm">
-                  Start Test
-                </Button>
-              </div>
+                test={test}
+                type="free"
+                onAction={(test) => handleTestAction(test, 'start')}
+              />
             ))}
           </div>
         </CardContent>
       </Card>
 
       {/* Paid Tests Section */}
-      <Card>
+      <Card className="border-muted">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">💎</span>
-            Premium Tests
-          </CardTitle>
-          <CardDescription>
-            Advanced tests with detailed analytics and explanations
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-3">
+                <div className="h-8 w-8 bg-amber-100 dark:bg-amber-900 rounded-lg flex items-center justify-center">
+                  <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                Premium Tests
+              </CardTitle>
+              <CardDescription>
+                Advanced tests with detailed analytics and expert explanations
+              </CardDescription>
+            </div>
+            <Link href="/dashboard/paid-test">
+              <Button variant="outline" size="sm">
+                View All
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {paidTests.map((test) => (
-              <div
+              <TestCard
                 key={test.id}
-                className="border border-gray-200 rounded-lg p-4 relative hover:shadow-md transition-shadow"
-              >
-                <div className="mb-3">
-                  <h4 className="font-medium text-gray-900">{test.title}</h4>
-                  <p className="text-sm text-gray-600">{test.description}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Duration: {test.duration}
-                  </p>
-                  <p className="text-sm font-medium text-purple-600 mt-1">
-                    {test.price}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="absolute bottom-3 right-3"
-                  size="sm"
-                >
-                  Buy Now
-                </Button>
-              </div>
+                test={test}
+                type="paid"
+                onAction={(test) => handleTestAction(test, 'buy')}
+              />
             ))}
           </div>
         </CardContent>
       </Card>
 
       {/* Recent Attempts */}
-      <Card>
+      <Card className="border-muted">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">✅</span>
-            Recent Attempts
-          </CardTitle>
-          <CardDescription>Your latest test performances</CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-3">
+                <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                Recent Test Results
+              </CardTitle>
+              <CardDescription>
+                Your latest test performances and progress
+              </CardDescription>
+            </div>
+            <Link href="/dashboard/progress">
+              <Button variant="outline" size="sm">
+                View All Results
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {attemptedTests.map((test) => (
-              <div
+              <TestCard
                 key={test.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div>
-                  <h4 className="font-medium text-gray-900">{test.title}</h4>
-                  <p className="text-sm text-gray-600">
-                    Completed on {test.date}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-green-600">{test.score}%</p>
-                  <p className="text-xs text-gray-500 capitalize">
-                    {test.status}
-                  </p>
-                </div>
-              </div>
+                test={test}
+                type="attempted"
+                onAction={(test) => handleTestAction(test, 'view')}
+              />
             ))}
           </div>
         </CardContent>
       </Card>
 
       {/* Quick Actions */}
-      <div className="flex justify-end">
+      <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
         <Link href="/dashboard/free-test">
-          <Button variant="outline">View All Tests</Button>
+          <Button size="lg" className="w-full sm:w-auto">
+            <Target className="h-5 w-5 mr-2" />
+            Start Free Test
+          </Button>
+        </Link>
+        <Link href="/dashboard/paid-test">
+          <Button variant="outline" size="lg" className="w-full sm:w-auto">
+            <Trophy className="h-5 w-5 mr-2" />
+            Explore Premium
+          </Button>
+        </Link>
+        <Link href="/dashboard/progress">
+          <Button variant="outline" size="lg" className="w-full sm:w-auto">
+            <BarChart3 className="h-5 w-5 mr-2" />
+            View Progress
+          </Button>
         </Link>
       </div>
     </div>
