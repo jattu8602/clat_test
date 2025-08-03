@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import ImageUpload from '@/components/ui/image-upload'
 import {
   Select,
   SelectContent,
@@ -69,6 +70,15 @@ export default function CreateTestPage() {
       setFormData((prev) => ({
         ...prev,
         highlightPoints: newPoints,
+      }))
+    }
+  }
+
+  const handleThumbnailUpload = (imageUrl) => {
+    if (imageUrl) {
+      setFormData((prev) => ({
+        ...prev,
+        thumbnailUrl: imageUrl,
       }))
     }
   }
@@ -179,17 +189,27 @@ export default function CreateTestPage() {
               </Select>
             </div>
 
-            {/* Thumbnail URL */}
+            {/* Thumbnail Upload */}
             <div className="space-y-2">
-              <Label htmlFor="thumbnailUrl">Thumbnail URL</Label>
-              <Input
-                id="thumbnailUrl"
-                value={formData.thumbnailUrl}
-                onChange={(e) =>
-                  handleInputChange('thumbnailUrl', e.target.value)
-                }
-                placeholder="Enter thumbnail image URL"
+              <Label>Test Thumbnail</Label>
+              <ImageUpload
+                onUpload={handleThumbnailUpload}
+                multiple={false}
+                folder="test-thumbnails"
+                placeholder="Upload test thumbnail image"
               />
+              {formData.thumbnailUrl && (
+                <div className="mt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Current thumbnail:
+                  </p>
+                  <img
+                    src={formData.thumbnailUrl}
+                    alt="Test thumbnail"
+                    className="w-32 h-20 object-cover rounded-lg border border-border mt-1"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Duration */}

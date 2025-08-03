@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   Card,
@@ -9,17 +10,108 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { User, Mail, Calendar, Edit } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import ImageUpload from '@/components/ui/image-upload'
+import { User, Mail, Calendar, Edit, Camera } from 'lucide-react'
 
 export default function ProfilePage() {
   const { data: session } = useSession()
+  const [uploading, setUploading] = useState(false)
+  const [profileImage, setProfileImage] = useState(session?.user?.image || '')
+  const fileInputRef = useRef(null)
+
+  const handleProfileImageUpload = async (imageUrl) => {
+    if (!imageUrl) return
+
+    setUploading(true)
+    try {
+      const response = await fetch('/api/user/profile-image', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageUrl }),
+      })
+
+      if (response.ok) {
+        setProfileImage(imageUrl)
+        // You might want to refresh the session here
+        window.location.reload()
+      } else {
+        const error = await response.json()
+        alert(error.message || 'Failed to update profile image')
+      }
+    } catch (error) {
+      console.error('Error updating profile image:', error)
+      alert('Failed to update profile image')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleCameraClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileSelect = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload only JPEG, PNG, or WebP images')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      alert('Please upload an image smaller than 5MB')
+      return
+    }
+
+    setUploading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('files', file)
+      formData.append('folder', 'profiles')
+      formData.append('type', 'single')
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Upload failed')
+      }
+
+      if (result.success) {
+        await handleProfileImageUpload(result.url)
+      } else {
+        throw new Error(result.error || 'Upload failed')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert(`Upload failed: ${error.message}`)
+    } finally {
+      setUploading(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
 
   return (
     <div className="space-y-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-foreground">Profile</h1>
+        <p className="text-muted-foreground mt-2">
           Manage your account settings and preferences
         </p>
       </div>
@@ -28,22 +120,44 @@ export default function ProfilePage() {
         {/* Profile Card */}
         <Card className="lg:col-span-1">
           <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
+            <div className="flex justify-center mb-4 relative">
               <Avatar className="h-24 w-24">
-                <AvatarFallback className="bg-indigo-100 text-indigo-600 text-2xl">
+                <AvatarImage src={profileImage} alt={session?.user?.name} />
+                <AvatarFallback className="bg-primary/10 text-primary text-2xl">
                   {session?.user?.name?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
+              <div className="absolute bottom-0 right-0">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="rounded-full w-8 h-8 p-0"
+                  onClick={handleCameraClick}
+                  disabled={uploading}
+                >
+                  <Camera className="h-4 w-4" />
+                </Button>
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
             </div>
-            <CardTitle>{session?.user?.name || 'User Name'}</CardTitle>
+            <CardTitle className="text-foreground">
+              {session?.user?.name || 'User Name'}
+            </CardTitle>
             <CardDescription>
               {session?.user?.email || 'user@example.com'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
-            <Button className="w-full">
+          <CardContent className="text-center space-y-4">
+            <Button className="w-full" disabled={uploading}>
               <Edit className="h-4 w-4 mr-2" />
-              Edit Profile
+              {uploading ? 'Updating...' : 'Edit Profile'}
             </Button>
           </CardContent>
         </Card>
@@ -59,47 +173,53 @@ export default function ProfilePage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-foreground">
                   Full Name
                 </label>
-                <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg">
-                  <User className="h-4 w-4 text-gray-400" />
-                  <span>{session?.user?.name || 'User Name'}</span>
+                <div className="flex items-center space-x-2 p-3 border border-border rounded-lg bg-muted/50">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-foreground">
+                    {session?.user?.name || 'User Name'}
+                  </span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-foreground">
                   Email
                 </label>
-                <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg">
-                  <Mail className="h-4 w-4 text-gray-400" />
-                  <span>{session?.user?.email || 'user@example.com'}</span>
+                <div className="flex items-center space-x-2 p-3 border border-border rounded-lg bg-muted/50">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-foreground">
+                    {session?.user?.email || 'user@example.com'}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-foreground">
                   Role
                 </label>
-                <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg">
-                  <span className="text-sm font-medium">
+                <div className="flex items-center space-x-2 p-3 border border-border rounded-lg bg-muted/50">
+                  <span className="text-sm font-medium text-foreground">
                     {session?.user?.role === 'ADMIN'
                       ? 'Administrator'
+                      : session?.user?.role === 'PAID'
+                      ? 'Premium Member'
                       : 'Student'}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-foreground">
                   Member Since
                 </label>
-                <div className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <span>January 2024</span>
+                <div className="flex items-center space-x-2 p-3 border border-border rounded-lg bg-muted/50">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-foreground">January 2024</span>
                 </div>
               </div>
             </div>
