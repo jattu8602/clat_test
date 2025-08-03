@@ -26,12 +26,28 @@ export default function Admin() {
 
   const adminSections = [
     {
+      title: 'Users Management',
+      description: 'View and manage all users, roles, and permissions',
+      href: '/admin/users',
+      icon: Users,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50 dark:bg-blue-950',
+    },
+    {
+      title: 'Create Test',
+      description: 'Create new tests with questions and settings',
+      href: '/admin/create-test',
+      icon: FileText,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50 dark:bg-green-950',
+    },
+    {
       title: 'Free Tests',
       description: 'Manage free test content and questions',
       href: '/admin/free-test',
       icon: FileText,
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      bgColor: 'bg-blue-50 dark:bg-blue-950',
     },
     {
       title: 'Paid Tests',
@@ -39,7 +55,7 @@ export default function Admin() {
       href: '/admin/paid-test',
       icon: Crown,
       color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50',
+      bgColor: 'bg-yellow-50 dark:bg-yellow-950',
     },
     {
       title: 'Notifications',
@@ -47,7 +63,7 @@ export default function Admin() {
       href: '/admin/notificatioins',
       icon: Bell,
       color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      bgColor: 'bg-purple-50 dark:bg-purple-950',
     },
     {
       title: 'Payment History',
@@ -55,7 +71,7 @@ export default function Admin() {
       href: '/admin/payment-history',
       icon: CreditCard,
       color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      bgColor: 'bg-green-50 dark:bg-green-950',
     },
     {
       title: 'Profile',
@@ -63,7 +79,7 @@ export default function Admin() {
       href: '/admin/profile',
       icon: User,
       color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
+      bgColor: 'bg-indigo-50 dark:bg-indigo-950',
     },
   ]
 
@@ -74,7 +90,7 @@ export default function Admin() {
       change: '+12%',
       icon: Users,
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      bgColor: 'bg-blue-50 dark:bg-blue-950',
     },
     {
       title: 'Active Tests',
@@ -82,7 +98,7 @@ export default function Admin() {
       change: '+3',
       icon: FileText,
       color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      bgColor: 'bg-green-50 dark:bg-green-950',
     },
     {
       title: 'Total Revenue',
@@ -90,7 +106,7 @@ export default function Admin() {
       change: '+8%',
       icon: TrendingUp,
       color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      bgColor: 'bg-purple-50 dark:bg-purple-950',
     },
     {
       title: 'Active Sessions',
@@ -98,15 +114,15 @@ export default function Admin() {
       change: '+5%',
       icon: Activity,
       color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      bgColor: 'bg-orange-50 dark:bg-orange-950',
     },
   ]
 
   return (
     <div className="space-y-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+        <p className="text-muted-foreground mt-2">
           Welcome back, {session?.user?.name || 'Admin'}. Manage your CLAT
           preparation platform.
         </p>
@@ -129,8 +145,10 @@ export default function Admin() {
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
                 <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">{stat.change}</span> from
-                  last month
+                  <span className="text-green-600 dark:text-green-400">
+                    {stat.change}
+                  </span>{' '}
+                  from last month
                 </p>
               </CardContent>
             </Card>
@@ -152,16 +170,16 @@ export default function Admin() {
               const Icon = section.icon
               return (
                 <Link key={section.href} href={section.href} className="block">
-                  <div className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 hover:border-gray-300">
+                  <div className="p-4 border border-border rounded-lg hover:shadow-md transition-all duration-200 hover:border-primary/50">
                     <div className="flex items-center space-x-3">
                       <div className={`p-2 rounded-lg ${section.bgColor}`}>
                         <Icon className={`h-5 w-5 ${section.color}`} />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">
+                        <h3 className="font-semibold text-foreground">
                           {section.title}
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           {section.description}
                         </p>
                       </div>
@@ -184,32 +202,32 @@ export default function Admin() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <div className="flex-1">
                 <p className="text-sm font-medium">New user registered</p>
-                <p className="text-xs text-gray-600">2 minutes ago</p>
+                <p className="text-xs text-muted-foreground">2 minutes ago</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               <div className="flex-1">
                 <p className="text-sm font-medium">Test completed</p>
-                <p className="text-xs text-gray-600">15 minutes ago</p>
+                <p className="text-xs text-muted-foreground">15 minutes ago</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
               <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
               <div className="flex-1">
                 <p className="text-sm font-medium">Payment received</p>
-                <p className="text-xs text-gray-600">1 hour ago</p>
+                <p className="text-xs text-muted-foreground">1 hour ago</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
               <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
               <div className="flex-1">
                 <p className="text-sm font-medium">New test added</p>
-                <p className="text-xs text-gray-600">2 hours ago</p>
+                <p className="text-xs text-muted-foreground">2 hours ago</p>
               </div>
             </div>
           </div>
@@ -218,11 +236,18 @@ export default function Admin() {
 
       {/* Quick Actions */}
       <div className="flex space-x-4">
-        <Button className="flex items-center space-x-2">
+        <Button
+          className="flex items-center space-x-2"
+          onClick={() => (window.location.href = '/admin/users')}
+        >
           <Users className="h-4 w-4" />
           <span>View All Users</span>
         </Button>
-        <Button variant="outline" className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          className="flex items-center space-x-2"
+          onClick={() => (window.location.href = '/admin/create-test')}
+        >
           <FileText className="h-4 w-4" />
           <span>Create New Test</span>
         </Button>

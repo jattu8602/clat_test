@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,35 +22,38 @@ export default function Header({ isAdmin = false }) {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
         {/* Left side - Search and breadcrumb */}
         <div className="flex items-center space-x-4">
           {/* Search */}
           <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search..."
-              className="h-9 w-64 rounded-md border border-gray-200 bg-gray-50 px-3 pl-9 text-sm focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="h-9 w-64 rounded-md border border-input bg-background px-3 pl-9 text-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
         </div>
 
-        {/* Right side - Notifications and Profile */}
+        {/* Right side - Theme Toggle, Notifications and Profile */}
         <div className="flex items-center space-x-4">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* Admin Badge */}
           {session?.user?.role === 'ADMIN' && (
-            <div className="flex items-center space-x-2 bg-purple-100 px-3 py-1.5 rounded-full">
-              <Crown className="h-4 w-4 text-purple-600" />
-              <span className="text-purple-600 text-sm font-medium">Admin</span>
+            <div className="flex items-center space-x-2 bg-primary/10 px-3 py-1.5 rounded-full">
+              <Crown className="h-4 w-4 text-primary" />
+              <span className="text-primary text-sm font-medium">Admin</span>
             </div>
           )}
 
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive text-xs text-destructive-foreground flex items-center justify-center">
               3
             </span>
           </Button>
@@ -59,7 +63,7 @@ export default function Header({ isAdmin = false }) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-indigo-100 text-indigo-600 text-xs">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
                     {session?.user?.name?.charAt(0) || 'U'}
                   </AvatarFallback>
                 </Avatar>

@@ -26,10 +26,10 @@ export default function MainLayout({ children, isAdmin = false }) {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
     )
@@ -40,7 +40,7 @@ export default function MainLayout({ children, isAdmin = false }) {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       {/* Sidebar - Fixed and full height */}
       <Sidebar isAdmin={isAdmin} />
 
@@ -50,7 +50,9 @@ export default function MainLayout({ children, isAdmin = false }) {
         <Header isAdmin={isAdmin} />
 
         {/* Page Content - Scrollable */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-background">
+          {children}
+        </main>
       </div>
     </div>
   )

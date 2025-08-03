@@ -28,6 +28,8 @@ import {
   User,
   LogOut,
   Settings,
+  Users,
+  Plus,
 } from 'lucide-react'
 
 export default function Sidebar({ isAdmin = false }) {
@@ -39,6 +41,8 @@ export default function Sidebar({ isAdmin = false }) {
   const navigation = isAdmin
     ? [
         { name: 'Dashboard', href: '/admin', icon: Home },
+        { name: 'Users Management', href: '/admin/users', icon: Users },
+        { name: 'Create Test', href: '/admin/create-test', icon: Plus },
         { name: 'Free Tests', href: '/admin/free-test', icon: FileText },
         { name: 'Paid Tests', href: '/admin/paid-test', icon: Crown },
         { name: 'Payments', href: '/admin/payment-history', icon: CreditCard },
@@ -80,22 +84,24 @@ export default function Sidebar({ isAdmin = false }) {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-card shadow-xl transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-border">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">CL</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">
+                  CL
+                </span>
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">
+                <h1 className="text-lg font-semibold text-foreground">
                   {isAdmin ? 'Admin Panel' : 'CLAT Prep'}
                 </h1>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {isAdmin ? 'Management Dashboard' : 'Study Platform'}
                 </p>
               </div>
@@ -120,14 +126,16 @@ export default function Sidebar({ isAdmin = false }) {
                   href={item.href}
                   className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActive(item.href)
-                      ? 'bg-indigo-50 text-indigo-700 border-r-2 border-indigo-600'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-primary/10 text-primary border-r-2 border-primary'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
                   <Icon
                     className={`h-4 w-4 ${
-                      isActive(item.href) ? 'text-indigo-600' : 'text-gray-500'
+                      isActive(item.href)
+                        ? 'text-primary'
+                        : 'text-muted-foreground'
                     }`}
                   />
                   <span>{item.name}</span>
@@ -137,19 +145,19 @@ export default function Sidebar({ isAdmin = false }) {
           </nav>
 
           {/* Bottom Section */}
-          <div className="px-4 py-6 border-t border-gray-200 space-y-3">
+          <div className="px-4 py-6 border-t border-border space-y-3">
             {/* User Profile */}
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-indigo-100 text-indigo-600 text-xs">
+                <AvatarFallback className="bg-primary/10 text-primary text-xs">
                   {session?.user?.name?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {session?.user?.name || 'User'}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {session?.user?.email || 'user@example.com'}
                 </p>
               </div>
