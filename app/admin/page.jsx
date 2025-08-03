@@ -2,6 +2,24 @@
 
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import {
+  Users,
+  FileText,
+  Crown,
+  Bell,
+  CreditCard,
+  User,
+  TrendingUp,
+  Activity,
+} from 'lucide-react'
 
 export default function Admin() {
   const { data: session } = useSession()
@@ -11,86 +29,207 @@ export default function Admin() {
       title: 'Free Tests',
       description: 'Manage free test content and questions',
       href: '/admin/free-test',
-      icon: '📝',
+      icon: FileText,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
     },
     {
       title: 'Paid Tests',
       description: 'Manage paid test content and questions',
       href: '/admin/paid-test',
-      icon: '💰',
+      icon: Crown,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50',
     },
     {
       title: 'Notifications',
       description: 'Send notifications to users',
       href: '/admin/notificatioins',
-      icon: '🔔',
+      icon: Bell,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
     },
     {
       title: 'Payment History',
       description: 'View payment transactions and history',
       href: '/admin/payment-history',
-      icon: '💳',
+      icon: CreditCard,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
     },
     {
       title: 'Profile',
       description: 'Manage admin profile settings',
       href: '/admin/profile',
-      icon: '👤',
+      icon: User,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+    },
+  ]
+
+  const stats = [
+    {
+      title: 'Total Users',
+      value: '1,234',
+      change: '+12%',
+      icon: Users,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
+    {
+      title: 'Active Tests',
+      value: '24',
+      change: '+3',
+      icon: FileText,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+    },
+    {
+      title: 'Total Revenue',
+      value: '₹45,678',
+      change: '+8%',
+      icon: TrendingUp,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+    },
+    {
+      title: 'Active Sessions',
+      value: '89',
+      change: '+5%',
+      icon: Activity,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
     },
   ]
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Welcome to Admin Dashboard
-        </h2>
-        <p className="text-gray-600">
-          Manage your CLAT preparation platform from here. Select a section
-          below to get started.
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+        <p className="text-gray-600 mt-2">
+          Welcome back, {session?.user?.name || 'Admin'}. Manage your CLAT
+          preparation platform.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {adminSections.map((section) => (
-          <Link
-            key={section.href}
-            href={section.href}
-            className="bg-white rounded-lg shadow hover:shadow-md transition-shadow duration-200 p-6 block"
-          >
-            <div className="flex items-center space-x-4">
-              <div className="text-3xl">{section.icon}</div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {section.title}
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {section.description}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon
+          return (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <Icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-green-600">{stat.change}</span> from
+                  last month
                 </p>
-              </div>
-            </div>
-          </Link>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Quick Stats
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-blue-600">0</div>
-            <div className="text-sm text-blue-600">Total Users</div>
+      {/* Admin Sections */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>
+            Manage different aspects of your platform
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {adminSections.map((section) => {
+              const Icon = section.icon
+              return (
+                <Link key={section.href} href={section.href} className="block">
+                  <div className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 hover:border-gray-300">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg ${section.bgColor}`}>
+                        <Icon className={`h-5 w-5 ${section.color}`} />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">
+                          {section.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {section.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
-          <div className="bg-green-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-green-600">0</div>
-            <div className="text-sm text-green-600">Active Tests</div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>
+            Latest platform activities and updates
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">New user registered</p>
+                <p className="text-xs text-gray-600">2 minutes ago</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">Test completed</p>
+                <p className="text-xs text-gray-600">15 minutes ago</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">Payment received</p>
+                <p className="text-xs text-gray-600">1 hour ago</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">New test added</p>
+                <p className="text-xs text-gray-600">2 hours ago</p>
+              </div>
+            </div>
           </div>
-          <div className="bg-purple-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-purple-600">0</div>
-            <div className="text-sm text-purple-600">Total Revenue</div>
-          </div>
-        </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <div className="flex space-x-4">
+        <Button className="flex items-center space-x-2">
+          <Users className="h-4 w-4" />
+          <span>View All Users</span>
+        </Button>
+        <Button variant="outline" className="flex items-center space-x-2">
+          <FileText className="h-4 w-4" />
+          <span>Create New Test</span>
+        </Button>
+        <Button variant="outline" className="flex items-center space-x-2">
+          <Bell className="h-4 w-4" />
+          <span>Send Notification</span>
+        </Button>
       </div>
     </div>
   )
