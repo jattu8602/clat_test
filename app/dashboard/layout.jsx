@@ -73,6 +73,15 @@ export default function DashboardLayout({ children }) {
 
           {/* Bottom Buttons */}
           <div className="px-4 py-6 space-y-2">
+            {session?.user?.role === 'ADMIN' && (
+              <Link
+                href="/admin"
+                className="w-full px-3 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors border border-indigo-600 flex items-center justify-center space-x-2"
+              >
+                <span>👑</span>
+                <span>Admin Dashboard</span>
+              </Link>
+            )}
             <button className="w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors border border-gray-300">
               website
             </button>
@@ -121,6 +130,16 @@ export default function DashboardLayout({ children }) {
 
             {/* Header Content */}
             <div className="flex items-center space-x-4">
+              {/* Admin Badge */}
+              {session?.user?.role === 'ADMIN' && (
+                <div className="flex items-center space-x-2 bg-purple-100 px-3 py-1 rounded-full">
+                  <span className="text-purple-600 text-sm">👑</span>
+                  <span className="text-purple-600 text-sm font-medium">
+                    Admin
+                  </span>
+                </div>
+              )}
+
               {/* Notification */}
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">

@@ -19,6 +19,19 @@ export const authOptions = {
       if (account && user) {
         token.userId = user.id
       }
+
+      // If we have a userId, fetch the user's role
+      if (token.userId) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.userId },
+          select: { role: true },
+        })
+
+        if (dbUser) {
+          token.role = dbUser.role || 'FREE'
+        }
+      }
+
       return token
     },
     async session({ session, token }) {
