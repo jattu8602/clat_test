@@ -42,6 +42,7 @@ module.exports = {
           DEFAULT: 'var(--card)',
           foreground: 'var(--card-foreground)',
         },
+        darkBg: '#0A1022',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],

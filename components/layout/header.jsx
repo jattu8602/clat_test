@@ -1,6 +1,7 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
@@ -12,90 +13,191 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Bell, Crown, Search, User, LogOut, Settings } from 'lucide-react'
+import {
+  Bell,
+  Crown,
+  Search,
+  User,
+  LogOut,
+  Settings,
+  MessageCircle,
+  Shield,
+  Sparkles,
+  Menu,
+} from 'lucide-react'
 
-export default function Header({ isAdmin = false }) {
+export default function Header({
+  isAdmin = false,
+  sidebarOpen,
+  setSidebarOpen,
+}) {
   const { data: session } = useSession()
-
-  const handleSignOut = () => {
-    // This will be handled by the sidebar component
-  }
+  const [searchFocus, setSearchFocus] = useState(false)
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center justify-between px-4 lg:px-6">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 transition-all duration-300">
+      <div className="flex h-16 items-center justify-between px-4 lg:px-8">
         {/* Left side - Search and breadcrumb */}
-        <div className="flex items-center space-x-4">
-          {/* Search */}
+        <div className="flex items-center space-x-6">
+          {/* Sidebar Toggle - Mobile Only */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
+          {/* Search - Desktop Only */}
           <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="h-9 w-64 rounded-md border border-input bg-background px-3 pl-9 text-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
-            />
+            <div
+              className={`relative transition-all duration-300 ${
+                searchFocus ? 'scale-105' : ''
+              }`}
+            >
+              <Search
+                className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${
+                  searchFocus
+                    ? 'text-primary'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              />
+              <input
+                type="text"
+                placeholder="Search tests, topics, or students..."
+                className="h-10 w-80 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 pl-10 text-sm placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/30 transition-all duration-200"
+                onFocus={() => setSearchFocus(true)}
+                onBlur={() => setSearchFocus(false)}
+              />
+            </div>
           </div>
         </div>
 
         {/* Right side - Theme Toggle, Notifications and Profile */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           {/* Theme Toggle */}
-          <ThemeToggle />
+          <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+            <ThemeToggle />
+          </div>
 
-          {/* Admin Badge */}
+          {/* Admin Badge - Desktop Only */}
           {session?.user?.role === 'ADMIN' && (
-            <div className="flex items-center space-x-2 bg-primary/10 px-3 py-1.5 rounded-full">
-              <Crown className="h-4 w-4 text-primary" />
-              <span className="text-primary text-sm font-medium">Admin</span>
+            <div className="hidden lg:flex items-center space-x-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-400/20 dark:to-orange-400/20 px-4 py-2 rounded-xl border border-amber-200 dark:border-amber-800 shadow-sm">
+              <div className="relative">
+                <Crown className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <Sparkles className="h-2 w-2 text-amber-500 absolute -top-1 -right-1 animate-pulse" />
+              </div>
+              <span className="text-amber-700 dark:text-amber-300 text-sm font-semibold">
+                Admin
+              </span>
             </div>
           )}
 
-          {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive text-xs text-destructive-foreground flex items-center justify-center">
-              3
-            </span>
-          </Button>
+          {/* Quick Actions - Desktop Only */}
+          <div className="hidden lg:flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <MessageCircle className="h-5 w-5" />
+            </Button>
 
-          {/* Profile Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                    {session?.user?.name?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    {session?.user?.name || 'User'}
-                  </p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {session?.user?.email || 'user@example.com'}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <Shield className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Notifications */}
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+            >
+              <Bell className="h-5 w-5" />
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-xs text-white flex items-center justify-center font-medium shadow-lg animate-pulse">
+                3
+              </span>
+            </Button>
+          </div>
+
+          {/* Profile Dropdown - Desktop Only */}
+          <div className="hidden lg:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-10 w-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+                >
+                  <Avatar className="h-9 w-9 border-2 border-slate-200 dark:border-slate-700">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-white text-sm font-semibold">
+                      {session?.user?.name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
+                align="end"
+                forceMount
+              >
+                <DropdownMenuLabel className="font-normal p-4">
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10 border-2 border-slate-200 dark:border-slate-700">
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-white text-sm font-semibold">
+                          {session?.user?.name?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-semibold leading-none text-slate-900 dark:text-slate-100">
+                          {session?.user?.name || 'User'}
+                        </p>
+                        <p className="text-xs leading-none text-slate-500 dark:text-slate-400 mt-1">
+                          {session?.user?.role === 'ADMIN'
+                            ? 'Administrator'
+                            : 'Student'}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-md">
+                      {session?.user?.email || 'user@example.com'}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                <DropdownMenuItem className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2">
+                  <User className="mr-3 h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Profile Settings
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2">
+                  <Settings className="mr-3 h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Preferences
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2">
+                  <Bell className="mr-3 h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <span className="text-slate-700 dark:text-slate-300">
+                    Notifications
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                <DropdownMenuItem className="p-3 focus:bg-red-50 dark:focus:bg-red-900/20 rounded-lg mx-2 text-red-600 dark:text-red-400">
+                  <LogOut className="mr-3 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </header>
