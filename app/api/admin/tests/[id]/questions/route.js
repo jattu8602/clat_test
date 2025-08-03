@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../../../auth/[...nextauth]/route'
+import { authOptions } from '../../../../auth/[...nextauth]/route'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
@@ -17,9 +17,16 @@ export async function POST(request, { params }) {
     const questionData = await request.json()
 
     // Validate required fields
-    if (!questionData.questionText) {
+    if (!questionData.questionText?.trim()) {
       return NextResponse.json(
         { error: 'Question text is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!questionData.section) {
+      return NextResponse.json(
+        { error: 'Section is required' },
         { status: 400 }
       )
     }
@@ -33,35 +40,106 @@ export async function POST(request, { params }) {
 
     const nextQuestionNumber = (lastQuestion?.questionNumber || 0) + 1
 
-    // Create the question
+    // Validate and clean up data based on question type
+    if (questionData.questionType === 'OPTIONS') {
+      const validOptions = questionData.options.filter((opt) => opt?.trim())
+      if (validOptions.length < 2) {
+        return NextResponse.json(
+          { error: 'At least 2 valid options are required' },
+          { status: 400 }
+        )
+      }
+
+      if (!questionData.correctAnswers?.length) {
+        return NextResponse.json(
+          { error: 'At least one correct answer is required' },
+          { status: 400 }
+        )
+      }
+
+      // Validate that correct answers exist in options
+      const invalidAnswers = questionData.correctAnswers.filter(
+        (answer) => !validOptions.includes(answer)
+      )
+      if (invalidAnswers.length > 0) {
+        return NextResponse.json(
+          { error: 'Some correct answers are not in the options list' },
+          { status: 400 }
+        )
+      }
+
+      questionData.options = validOptions
+    } else if (questionData.questionType === 'INPUT') {
+      if (!questionData.inputAnswer?.trim()) {
+        return NextResponse.json(
+          { error: 'Correct answer is required for input type questions' },
+          { status: 400 }
+        )
+      }
+      questionData.correctAnswers = [questionData.inputAnswer.trim()]
+      questionData.options = [] // Clear options for input type
+    }
+
+    // Clean up table data if present
+    if (questionData.isTable && questionData.tableData) {
+      const cleanedData = questionData.tableData.data
+        .map((row) => row.map((cell) => cell?.trim() || ''))
+        .filter((row) => row.some((cell) => cell !== ''))
+
+      if (cleanedData.length === 0) {
+        return NextResponse.json(
+          { error: 'Table data is required when table is enabled' },
+          { status: 400 }
+        )
+      }
+
+      questionData.tableData = {
+        rows: cleanedData.length,
+        columns: cleanedData[0].length,
+        data: cleanedData,
+      }
+    } else {
+      questionData.tableData = null
+    }
+
+    // Clean up comprehension text if present
+    if (questionData.isComprehension && !questionData.comprehension?.trim()) {
+      return NextResponse.json(
+        {
+          error: 'Comprehension text is required when comprehension is enabled',
+        },
+        { status: 400 }
+      )
+    }
+
+    // Create the question with cleaned data
     const question = await prisma.question.create({
       data: {
         testId,
         questionNumber: nextQuestionNumber,
-        questionText: questionData.questionText,
-        imageUrls: questionData.imageUrls || [],
+        questionText: questionData.questionText.trim(),
+        imageUrls: questionData.imageUrls?.filter((url) => url?.trim()) || [],
         isComprehension: questionData.isComprehension || false,
-        comprehension: questionData.comprehension || null,
+        comprehension: questionData.isComprehension
+          ? questionData.comprehension?.trim()
+          : null,
         isTable: questionData.isTable || false,
-        tableData: questionData.tableData || null,
+        tableData: questionData.tableData,
         questionType: questionData.questionType,
         optionType:
           questionData.questionType === 'OPTIONS'
             ? questionData.optionType
             : null,
-        options:
-          questionData.questionType === 'OPTIONS'
-            ? questionData.options.filter((opt) => opt.trim() !== '')
-            : [],
+        options: questionData.options || [],
         inputAnswer:
           questionData.questionType === 'INPUT'
-            ? questionData.inputAnswer
+            ? questionData.inputAnswer?.trim()
             : null,
         correctAnswers: questionData.correctAnswers || [],
-        positiveMarks: questionData.positiveMarks || 1.0,
-        negativeMarks: questionData.negativeMarks || -0.25,
+        positiveMarks: Number(questionData.positiveMarks) || 1.0,
+        negativeMarks: Number(questionData.negativeMarks) || -0.25,
         section: questionData.section,
-        explanation: questionData.explanation || null,
+        explanation: questionData.explanation?.trim() || null,
       },
     })
 
