@@ -35,7 +35,7 @@ export default function Header({
   const [searchFocus, setSearchFocus] = useState(false)
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 transition-all duration-300">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 transition-all duration-300 dark:text-white">
       <div className="flex h-16 items-center justify-between px-4 lg:px-8">
         {/* Left side - Search and breadcrumb */}
         <div className="flex items-center space-x-6">
@@ -77,7 +77,7 @@ export default function Header({
         {/* Right side - Theme Toggle, Notifications and Profile */}
         <div className="flex items-center space-x-3">
           {/* Theme Toggle */}
-          <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+          <div className="rounded-xl bg-slate-100 dark:hover:bg-slate-500 dark:bg-slate-800 p-1">
             <ThemeToggle />
           </div>
 
@@ -94,31 +94,12 @@ export default function Header({
             </div>
           )}
 
-          {/* Quick Actions - Desktop Only */}
-          <div className="hidden lg:flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              <MessageCircle className="h-5 w-5" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              <Shield className="h-5 w-5" />
-            </Button>
-          </div>
-
           {/* Notifications */}
           <div className="relative">
             <Button
               variant="ghost"
               size="icon"
-              className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+              className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-500 dark:bg-slate-800 transition-all duration-200 dark:text-white  "
             >
               <Bell className="h-5 w-5" />
               <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-xs text-white flex items-center justify-center font-medium shadow-lg animate-pulse">
@@ -128,15 +109,15 @@ export default function Header({
           </div>
 
           {/* Profile Dropdown - Desktop Only */}
-          <div className="hidden lg:block">
+          <div className="">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative h-10 w-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+                  className="relative h-10 w-10 rounded-xl transition-all duration-200"
                 >
                   <Avatar className="h-9 w-9 border-2 border-slate-200 dark:border-slate-700">
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-white text-sm font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-black dark:text-white text-sm font-semibold">
                       {session?.user?.name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>

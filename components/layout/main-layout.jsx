@@ -3,8 +3,8 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import Sidebar from './sidebar'
-import Header from './header'
+import Sidebar from '@/components/layout/sidebar'
+import Header from '@/components/layout/header'
 
 export default function MainLayout({ children, isAdmin = false }) {
   const { data: session, status } = useSession()
@@ -27,14 +27,19 @@ export default function MainLayout({ children, isAdmin = false }) {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
-        <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 dark:border-slate-700 mx-auto"></div>
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent mx-auto absolute top-0"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 px-4">
+        <div className="text-center space-y-6">
+          {/* Spinner Container */}
+          <div className="relative w-20 h-20 mx-auto">
+            {/* Outer muted spinner */}
+            <div className="animate-spin rounded-full h-full w-full border-4 border-slate-200 dark:border-slate-700"></div>
+            {/* Inner colored spinner */}
+            <div className="absolute top-0 left-0 animate-spin rounded-full h-full w-full border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent"></div>
           </div>
-          <div className="mt-6 space-y-2">
-            <p className="text-lg font-medium text-slate-900 dark:text-slate-100">
+
+          {/* Text Section */}
+          <div className="space-y-1">
+            <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">
               Loading...
             </p>
             <p className="text-sm text-slate-600 dark:text-slate-400">
