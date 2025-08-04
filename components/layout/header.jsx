@@ -81,15 +81,41 @@ export default function Header({
             <ThemeToggle />
           </div>
 
-          {/* Admin Badge - Desktop Only */}
+          {/* Admin Badge */}
           {session?.user?.role === 'ADMIN' && (
-            <div className="hidden lg:flex items-center space-x-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-400/20 dark:to-orange-400/20 px-4 py-2 rounded-xl border border-amber-200 dark:border-amber-800 shadow-sm">
+            <div className="flex items-center space-x-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-400/20 dark:to-orange-400/20 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg lg:rounded-xl border border-amber-200 dark:border-amber-800 shadow-sm text-sm lg:text-base">
               <div className="relative">
-                <Crown className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                <Sparkles className="h-2 w-2 text-amber-500 absolute -top-1 -right-1 animate-pulse" />
+                <Crown className="h-4 w-4 lg:h-5 lg:w-5 text-amber-600 dark:text-amber-400" />
+                <Sparkles className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-amber-500 absolute -top-1 -right-1 animate-pulse" />
               </div>
-              <span className="text-amber-700 dark:text-amber-300 text-sm font-semibold">
+              <span className="text-amber-700 dark:text-amber-300 font-semibold">
                 Admin
+              </span>
+            </div>
+          )}
+
+          {/* PRO Badge */}
+          {session?.user?.role === 'PAID' && (
+            <div className="flex items-center space-x-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-400/20 dark:to-orange-400/20 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg lg:rounded-xl border border-amber-200 dark:border-amber-800 shadow-sm text-sm lg:text-base">
+              <div className="relative">
+                <Crown className="h-4 w-4 lg:h-5 lg:w-5 text-amber-600 dark:text-amber-400" />
+                <Sparkles className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-amber-500 absolute -top-1 -right-1 animate-pulse" />
+              </div>
+              <span className="text-amber-700 dark:text-amber-300 font-semibold">
+                PRO
+              </span>
+            </div>
+          )}
+
+          {/* FREE Badge */}
+          {session?.user?.role === 'FREE' && (
+            <div className="flex items-center space-x-2 bg-gradient-to-r from-green-500/10 to-green-500/10 dark:from-green-400/20 dark:to-green-400/20 px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg lg:rounded-xl border border-green-200 dark:border-green-800 shadow-sm text-sm lg:text-base">
+              <div className="relative">
+                <User className="h-4 w-4 lg:h-5 lg:w-5 text-green-600 dark:text-green-400" />
+                <Sparkles className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-green-500 absolute -top-1 -right-1 animate-pulse" />
+              </div>
+              <span className="text-green-700 dark:text-green-300 font-semibold">
+                FREE
               </span>
             </div>
           )}
