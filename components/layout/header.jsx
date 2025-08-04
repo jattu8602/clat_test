@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import {
   DropdownMenu,
@@ -143,6 +143,11 @@ export default function Header({
                   className="relative h-10 w-10 rounded-xl transition-all duration-200"
                 >
                   <Avatar className="h-9 w-9 border-2 border-slate-200 dark:border-slate-700">
+                    <AvatarImage
+                      src={session?.user?.image || '/default-avatar.png'}
+                      alt={session?.user?.name || 'User'}
+                      className="object-cover"
+                    />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-black dark:text-white text-sm font-semibold">
                       {session?.user?.name?.charAt(0) || 'U'}
                     </AvatarFallback>
@@ -158,10 +163,16 @@ export default function Header({
                   <div className="flex flex-col space-y-2">
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-10 w-10 border-2 border-slate-200 dark:border-slate-700">
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-white text-sm font-semibold">
+                        <AvatarImage
+                          src={session?.user?.image || '/default-avatar.png'}
+                          alt={session?.user?.name || 'User'}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-black dark:text-white text-sm font-semibold">
                           {session?.user?.name?.charAt(0) || 'U'}
                         </AvatarFallback>
                       </Avatar>
+
                       <div>
                         <p className="text-sm font-semibold leading-none text-slate-900 dark:text-slate-100">
                           {session?.user?.name || 'User'}

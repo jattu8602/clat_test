@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, update } from 'next-auth/react'
 import {
   Card,
   CardContent,
@@ -13,39 +13,24 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import ImageUpload from '@/components/ui/image-upload'
 import { User, Mail, Calendar, Edit, Camera } from 'lucide-react'
+import { useProfileImage } from '@/lib/hooks/useProfileImage'
 
 export default function ProfilePage() {
   const { data: session } = useSession()
-  const [uploading, setUploading] = useState(false)
-  const [profileImage, setProfileImage] = useState(session?.user?.image || '')
+  const { profileImage, updateProfileImage, isUpdating } = useProfileImage()
   const fileInputRef = useRef(null)
 
   const handleProfileImageUpload = async (imageUrl) => {
     if (!imageUrl) return
 
-    setUploading(true)
     try {
-      const response = await fetch('/api/user/profile-image', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ imageUrl }),
-      })
-
-      if (response.ok) {
-        setProfileImage(imageUrl)
-        // You might want to refresh the session here
-        window.location.reload()
-      } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to update profile image')
+      const result = await updateProfileImage(imageUrl)
+      if (!result.success) {
+        alert(result.error || 'Failed to update profile image')
       }
     } catch (error) {
       console.error('Error updating profile image:', error)
       alert('Failed to update profile image')
-    } finally {
-      setUploading(false)
     }
   }
 
@@ -70,8 +55,6 @@ export default function ProfilePage() {
       alert('Please upload an image smaller than 5MB')
       return
     }
-
-    setUploading(true)
 
     try {
       const formData = new FormData()
@@ -99,7 +82,6 @@ export default function ProfilePage() {
       console.error('Upload error:', error)
       alert(`Upload failed: ${error.message}`)
     } finally {
-      setUploading(false)
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
@@ -133,7 +115,7 @@ export default function ProfilePage() {
                   variant="secondary"
                   className="rounded-full w-8 h-8 p-0"
                   onClick={handleCameraClick}
-                  disabled={uploading}
+                  disabled={isUpdating}
                 >
                   <Camera className="h-4 w-4" />
                 </Button>
@@ -155,9 +137,9 @@ export default function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <Button className="w-full" disabled={uploading}>
+            <Button className="w-full" disabled={isUpdating}>
               <Edit className="h-4 w-4 mr-2" />
-              {uploading ? 'Updating...' : 'Edit Profile'}
+              {isUpdating ? 'Updating...' : 'Edit Profile'}
             </Button>
           </CardContent>
         </Card>

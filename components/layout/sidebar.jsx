@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -141,7 +141,7 @@ export default function Sidebar({
           <div className="flex items-center justify-between h-16 px-6 border-b bg-muted/30 dark:bg-darkBg">
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center shadow-lg dark:bg-slate-900">
+                <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center shadow-lg dark:bg-orange-800">
                   <span className="text-primary-foreground font-bold text-lg dark:text-white">
                     CL
                   </span>
@@ -201,17 +201,19 @@ export default function Sidebar({
                   <div className="flex items-center space-x-2">
                     {item.badge && (
                       <span
-                        className={`px-2 py-1 text-xs font-semibold rounded-lg transition-colors duration-200 ${
-                          item.badge === 'New'
-                            ? 'bg-green-500 text-white'
-                            : active
-                            ? 'bg-white/20 text-white'
-                            : 'bg-muted text-muted-foreground dark:bg-white/10 dark:text-white'
-                        }`}
+                        className={`px-2 py-0.5 text-xs font-semibold rounded-md transition-colors duration-200
+      ${
+        item.badge === 'New'
+          ? 'bg-green-600 text-white dark:bg-green-500'
+          : active
+          ? 'bg-zinc-700 text-white dark:bg-zinc-300 dark:text-black'
+          : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200'
+      }`}
                       >
                         {item.badge}
                       </span>
                     )}
+
                     <ChevronRight
                       className={`h-4 w-4 transition-all duration-200 ${
                         active
@@ -231,6 +233,11 @@ export default function Sidebar({
             <div className="flex items-center space-x-3 p-4 bg-muted dark:bg-zinc-800 rounded-xl">
               <div className="relative">
                 <Avatar className="h-10 w-10 border-2 border-background dark:border-darkBg shadow-sm">
+                  <AvatarImage
+                    src={session?.user?.image || '/default-avatar.png'}
+                    alt={session?.user?.name || 'User'}
+                    className="object-cover"
+                  />
                   <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
                     {session?.user?.name?.charAt(0) || 'U'}
                   </AvatarFallback>
