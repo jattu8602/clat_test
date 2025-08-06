@@ -32,6 +32,8 @@ export default function TestCard({
   positiveMarks = 1,
   negativeMarks = 0.25,
   attemptCount = 0,
+  lastScore, // Add lastScore prop
+  isNew = false, // Add isNew prop
   onAction,
 }) {
   const defaultHighlights = [
@@ -58,16 +60,44 @@ export default function TestCard({
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-        <Badge
-          variant={isPaid ? 'default' : 'secondary'}
-          className={`absolute top-3 right-3 ${
-            isPaid
-              ? 'bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700'
-              : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-          }`}
-        >
-          {isPaid ? 'Premium' : 'Free'}
-        </Badge>
+        {/* Badges Container */}
+        <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+          {/* Left side badges */}
+          <div className="flex flex-col gap-2">
+            {/* NEW badge */}
+            {isNew && (
+              <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 text-xs font-semibold px-2 py-1">
+                NEW
+              </Badge>
+            )}
+            {/* Score badge */}
+            {lastScore && (
+              <Badge
+                className={`text-xs font-semibold px-2 py-1 ${
+                  lastScore >= 80
+                    ? 'bg-green-500 text-white'
+                    : lastScore >= 60
+                    ? 'bg-yellow-500 text-white'
+                    : 'bg-red-500 text-white'
+                }`}
+              >
+                {lastScore}%
+              </Badge>
+            )}
+          </div>
+
+          {/* Right side badge */}
+          <Badge
+            variant={isPaid ? 'default' : 'secondary'}
+            className={`${
+              isPaid
+                ? 'bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700'
+                : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+            }`}
+          >
+            {isPaid ? 'Premium' : 'Free'}
+          </Badge>
+        </div>
       </div>
 
       <CardContent className="p-6 flex flex-col flex-grow">
