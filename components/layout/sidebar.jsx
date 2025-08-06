@@ -87,7 +87,13 @@ export default function Sidebar({
           href: '/dashboard/paid-test',
           icon: Crown,
           badge: 'New',
-        },
+      },
+      {
+        name: 'Attempted Tests',
+        href: '/dashboard/attempted',
+        icon: FileText,
+        badge: '10',
+      },
         {
           name: 'Leaderboard',
           href: '/dashboard/leaderboard',
