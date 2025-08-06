@@ -187,7 +187,15 @@ export default function DashboardHome() {
   ]
 
   const handleTestAction = (test, action) => {
-    console.log(`${action} test:`, test)
+    if (action === 'reattempt') {
+      console.log('Re-attempting test:', test)
+      // Add your re-attempt logic here
+      // For example: navigate to test page with re-attempt flag
+    } else if (action === 'attempt') {
+      console.log('Taking test:', test)
+      // Add your attempt logic here
+      // For example: navigate to test page
+    }
   }
 
   const statCards = [
@@ -340,7 +348,7 @@ export default function DashboardHome() {
                 </div>
               </div>
               <Link href="/dashboard/paid-test">
-                 <Button
+                <Button
                   variant="ghost"
                   size="sm"
                   className="gap-1 text-gray-600 dark:text-gray-300 flex-shrink-0 px-2 sm:px-3"
@@ -406,6 +414,7 @@ export default function DashboardHome() {
                 <div key={test.id} className="flex-shrink-0 w-80 sm:w-80">
                   <TestCard
                     {...test}
+                    isAttempted={true}
                     onAction={(action) => handleTestAction(test, action)}
                   />
                 </div>

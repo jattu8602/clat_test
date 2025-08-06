@@ -250,7 +250,15 @@ export default function FreeTestsPage() {
   ]
 
   const handleTestAction = (test, action) => {
-    console.log(`${action} test:`, test)
+    if (action === 'reattempt') {
+      console.log('Re-attempting test:', test)
+      // Add your re-attempt logic here
+      // For example: navigate to test page with re-attempt flag
+    } else if (action === 'attempt') {
+      console.log('Taking test:', test)
+      // Add your attempt logic here
+      // For example: navigate to test page
+    }
   }
 
   const statCards = [
@@ -490,6 +498,7 @@ export default function FreeTestsPage() {
                   <div key={test.id} className="flex-shrink-0 w-80">
                     <TestCard
                       {...test}
+                      isAttempted={true}
                       onAction={(action) => handleTestAction(test, action)}
                     />
                   </div>
@@ -502,6 +511,7 @@ export default function FreeTestsPage() {
                 <TestCard
                   key={test.id}
                   {...test}
+                  isAttempted={true}
                   onAction={(action) => handleTestAction(test, action)}
                 />
               ))}
