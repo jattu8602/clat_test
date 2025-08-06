@@ -421,7 +421,10 @@ export default function FreeTestsPage() {
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="outline" className="text-xs">
+              <Badge
+                variant="outline"
+                className="text-xs text-gray-600 dark:text-gray-300"
+              >
                 {allFreeTests.length} Tests
               </Badge>
             </div>
@@ -471,7 +474,10 @@ export default function FreeTestsPage() {
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="outline" className="text-xs">
+              <Badge
+                variant="outline"
+                className="text-xs text-gray-600 dark:text-gray-300"
+              >
                 {attemptedTests.length} Attempted
               </Badge>
             </div>

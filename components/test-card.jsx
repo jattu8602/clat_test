@@ -34,6 +34,7 @@ export default function TestCard({
   attemptCount = 0,
   lastScore, // Add lastScore prop
   isNew = false, // Add isNew prop
+  isAttempted = false, // Add isAttempted prop to show re-attempt button
   onAction,
 }) {
   const defaultHighlights = [
@@ -152,15 +153,19 @@ export default function TestCard({
         {/* Action Button - Always at bottom */}
         <div className="space-y-2 pt-4">
           <Button
-            onClick={() => onAction?.('attempt')}
-            className="w-full bg-green-500 hover:bg-green-600 text-white"
-            variant={attemptCount > 0 ? 'outline' : 'default'}
+            onClick={() => onAction?.(isAttempted ? 'reattempt' : 'attempt')}
+            className={`w-full ${
+              isAttempted
+                ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                : 'bg-green-500 hover:bg-green-600 text-white'
+            }`}
+            variant={isAttempted ? 'default' : 'default'}
             size="default"
           >
-            {attemptCount > 0 ? (
+            {isAttempted ? (
               <>
                 <RefreshCcw className="w-4 h-4 mr-2" />
-                Reattempt Test
+                Re-attempt Test
               </>
             ) : (
               <>
