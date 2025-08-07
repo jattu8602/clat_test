@@ -22,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import TestCard from '@/components/test-card'
+import ConfirmModal from '@/components/ui/confirm-modal'
 import {
   Plus,
   X,
@@ -34,6 +36,17 @@ import {
   Users,
   Trash2,
   Settings,
+  Target,
+  Trophy,
+  BarChart3,
+  ChevronRight,
+  GraduationCap,
+  Play,
+  RefreshCcw,
+  ToggleLeft,
+  ToggleRight,
+  CheckCircle,
+  AlertCircle,
 } from 'lucide-react'
 
 export default function CreateTestPage() {
@@ -43,6 +56,8 @@ export default function CreateTestPage() {
   const [existingTests, setExistingTests] = useState([])
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTest, setEditingTest] = useState(null)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [confirmAction, setConfirmAction] = useState(null)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -219,24 +234,57 @@ export default function CreateTestPage() {
     }
   }
 
-  const getQuestionCount = (test) => {
-    return test.questions?.length || 0
+  const handleToggleStatus = (test) => {
+    setConfirmAction({
+      test,
+      action: test.isActive ? 'deactivate' : 'activate',
+    })
+    setShowConfirmModal(true)
   }
 
-  const getStatusBadge = (test) => {
-    if (test.isActive) {
-      return (
-        <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-          Active
-        </span>
+  const confirmToggleStatus = async () => {
+    if (!confirmAction) return
+
+    try {
+      const response = await fetch(
+        `/api/admin/tests/${confirmAction.test.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ action: 'toggleStatus' }),
+        }
       )
-    } else {
-      return (
-        <span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-          Draft
-        </span>
-      )
+
+      if (response.ok) {
+        const result = await response.json()
+        setExistingTests((prev) =>
+          prev.map((test) =>
+            test.id === confirmAction.test.id ? result.test : test
+          )
+        )
+        alert(result.message)
+      } else {
+        const error = await response.json()
+        alert(error.message || 'Error updating test status')
+      }
+    } catch (error) {
+      console.error('Error updating test status:', error)
+      alert('Error updating test status')
+    } finally {
+      setShowConfirmModal(false)
+      setConfirmAction(null)
     }
+  }
+
+  const cancelToggleStatus = () => {
+    setShowConfirmModal(false)
+    setConfirmAction(null)
+  }
+
+  const getQuestionCount = (test) => {
+    return test.questions?.length || 0
   }
 
   const resetForm = () => {
@@ -253,6 +301,60 @@ export default function CreateTestPage() {
     setEditingTest(null)
     setShowCreateForm(false)
   }
+
+  // Filter tests by type and status
+  const freeDraftTests = existingTests.filter(
+    (test) => test.type === 'FREE' && !test.isActive
+  )
+  const paidDraftTests = existingTests.filter(
+    (test) => test.type === 'PAID' && !test.isActive
+  )
+  const activeFreeTests = existingTests.filter(
+    (test) => test.type === 'FREE' && test.isActive
+  )
+  const activePaidTests = existingTests.filter(
+    (test) => test.type === 'PAID' && test.isActive
+  )
+
+  // Stats calculations
+  const totalTests = existingTests.length
+  const activeTests = existingTests.filter((test) => test.isActive).length
+  const draftTests = existingTests.filter((test) => !test.isActive).length
+  const totalQuestions = existingTests.reduce(
+    (total, test) => total + getQuestionCount(test),
+    0
+  )
+
+  const statCards = [
+    {
+      title: 'Total Tests',
+      value: totalTests,
+      icon: FileText,
+      description: 'All tests',
+      gradient: 'from-blue-500 to-blue-600',
+    },
+    {
+      title: 'Active Tests',
+      value: activeTests,
+      icon: Eye,
+      description: 'Available to users',
+      gradient: 'from-green-500 to-green-600',
+    },
+    {
+      title: 'Draft Tests',
+      value: draftTests,
+      icon: Edit,
+      description: 'In development',
+      gradient: 'from-yellow-500 to-yellow-600',
+    },
+    {
+      title: 'Total Questions',
+      value: totalQuestions,
+      icon: Users,
+      description: 'Across all tests',
+      gradient: 'from-purple-500 to-purple-600',
+    },
+  ]
 
   if (showCreateForm) {
     return (
@@ -475,211 +577,380 @@ export default function CreateTestPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Test Management
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Create new tests or continue working on existing ones
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowCreateForm(true)}
-          className="flex items-center space-x-2"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Create New Test</span>
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Tests</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{existingTests.length}</div>
-            <p className="text-xs text-muted-foreground">All tests created</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Tests</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {existingTests.filter((test) => test.isActive).length}
+    <div className="min-h-screen lg:min-h-0 bg-gray-50 dark:bg-gray-900 lg:bg-transparent lg:dark:bg-transparent">
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={cancelToggleStatus}
+        onConfirm={confirmToggleStatus}
+        title={`Are you sure you want to ${confirmAction?.action} this test?`}
+        description="This will change the visibility of the test for all users."
+        confirmText={
+          confirmAction?.action === 'activate' ? 'Activate' : 'Deactivate'
+        }
+        variant={
+          confirmAction?.action === 'activate' ? 'default' : 'destructive'
+        }
+      />
+      <div className="space-y-4 sm:space-y-6 lg:space-y-8 p-3 sm:p-4 lg:p-0">
+        {/* Welcome Section */}
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex items-start sm:items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+              <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
             </div>
-            <p className="text-xs text-muted-foreground">Currently available</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Draft Tests</CardTitle>
-            <Edit className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {existingTests.filter((test) => !test.isActive).length}
-            </div>
-            <p className="text-xs text-muted-foreground">In development</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Questions
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {existingTests.reduce(
-                (total, test) => total + getQuestionCount(test),
-                0
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">Across all tests</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tests List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Tests</CardTitle>
-          <CardDescription>
-            Manage your test content and questions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {existingTests.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-muted-foreground text-6xl mb-4">📝</div>
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                No tests yet
-              </h3>
-              <p className="text-muted-foreground">
-                Create your first test to get started.
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl lg:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                Test Management Dashboard
+              </h1>
+              <p className="text-xs sm:text-sm lg:text-lg text-gray-600 dark:text-gray-300 mt-1">
+                Create and manage your CLAT test content
               </p>
-              <Button onClick={() => setShowCreateForm(true)} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Create First Test
-              </Button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {existingTests.map((test) => (
-                <div
-                  key={test.id}
-                  className="flex items-start space-x-4 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  {/* Test Thumbnail */}
-                  <div className="flex-shrink-0">
-                    {test.thumbnailUrl ? (
-                      <img
-                        src={test.thumbnailUrl}
-                        alt={test.title}
-                        className="w-20 h-16 object-cover rounded-lg border border-border"
-                      />
-                    ) : (
-                      <div className="w-20 h-16 bg-muted rounded-lg border border-border flex items-center justify-center">
-                        <FileText className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              className="flex items-center space-x-2 flex-shrink-0"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Create New Test</span>
+              <span className="sm:hidden">New</span>
+            </Button>
+          </div>
+        </div>
 
-                  {/* Test Details */}
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h4 className="font-medium text-foreground">
-                        {test.title}
-                      </h4>
-                      {getStatusBadge(test)}
-                      <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                        {test.type}
-                      </span>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+          {statCards.map((stat, index) => {
+            const IconComponent = stat.icon
+            return (
+              <Card
+                key={index}
+                className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-300"
+              >
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5 sm:space-y-1 flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                        {stat.title}
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
+                        {stat.value}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {stat.description}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {test.description}
-                    </p>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <div className="flex items-center space-x-1">
-                        <Clock className="h-4 w-4" />
-                        <span>{test.durationInMinutes} min</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <FileText className="h-4 w-4" />
-                        <span>{getQuestionCount(test)} questions</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Users className="h-4 w-4" />
-                        <span>{test.testAttempts?.length || 0} attempts</span>
-                      </div>
+                    <div
+                      className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center flex-shrink-0 ml-2`}
+                    >
+                      <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
                     </div>
-                    {/* Highlight Points */}
-                    {test.highlightPoints &&
-                      test.highlightPoints.length > 0 && (
-                        <div className="mt-2">
-                          <div className="flex flex-wrap gap-1">
-                            {test.highlightPoints.map((point, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
-                              >
-                                {point}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                   </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => viewTest(test.id)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => editTest(test)}
-                    >
-                      <Settings className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button size="sm" onClick={() => continueTest(test.id)}>
-                      <Edit className="h-4 w-4 mr-1" />
-                      Continue
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteTest(test.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
+        {/* Free Draft Tests Section */}
+        <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-yellow-100 to-yellow-200 dark:from-yellow-900 dark:to-yellow-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Edit className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 dark:text-yellow-400" />
                 </div>
-              ))}
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white truncate">
+                    Free Draft Tests
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
+                    Free tests in development - not visible to users yet
+                  </CardDescription>
+                </div>
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
+            {freeDraftTests.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground text-4xl mb-2">📝</div>
+                <p className="text-sm text-muted-foreground">
+                  No free draft tests
+                </p>
+              </div>
+            ) : (
+              <div className="flex gap-4 sm:gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                {freeDraftTests.map((test) => (
+                  <div key={test.id} className="flex-shrink-0 w-80 sm:w-80">
+                    <TestCard
+                      {...test}
+                      isPaid={false}
+                      numberOfQuestions={getQuestionCount(test)}
+                      durationMinutes={test.durationInMinutes}
+                      highlights={test.highlightPoints || []}
+                      onAction={(action) => {
+                        if (action === 'attempt') {
+                          continueTest(test.id)
+                        }
+                      }}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => continueTest(test.id)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Continue
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => editTest(test)}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleToggleStatus(test)}
+                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                      >
+                        <ToggleRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Paid Draft Tests Section */}
+        <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900 dark:to-amber-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white truncate">
+                    Paid Draft Tests
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
+                    Premium tests in development - not visible to users yet
+                  </CardDescription>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
+            {paidDraftTests.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground text-4xl mb-2">💎</div>
+                <p className="text-sm text-muted-foreground">
+                  No paid draft tests
+                </p>
+              </div>
+            ) : (
+              <div className="flex gap-4 sm:gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                {paidDraftTests.map((test) => (
+                  <div key={test.id} className="flex-shrink-0 w-80 sm:w-80">
+                    <TestCard
+                      {...test}
+                      isPaid={true}
+                      numberOfQuestions={getQuestionCount(test)}
+                      durationMinutes={test.durationInMinutes}
+                      highlights={test.highlightPoints || []}
+                      onAction={(action) => {
+                        if (action === 'attempt') {
+                          continueTest(test.id)
+                        }
+                      }}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => continueTest(test.id)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Continue
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => editTest(test)}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleToggleStatus(test)}
+                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                      >
+                        <ToggleRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Active Free Tests Section */}
+        <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Target className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white truncate">
+                    Active Free Tests
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
+                    Free tests available to users
+                  </CardDescription>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
+            {activeFreeTests.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground text-4xl mb-2">🎯</div>
+                <p className="text-sm text-muted-foreground">
+                  No active free tests
+                </p>
+              </div>
+            ) : (
+              <div className="flex gap-4 sm:gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                {activeFreeTests.map((test) => (
+                  <div key={test.id} className="flex-shrink-0 w-80 sm:w-80">
+                    <TestCard
+                      {...test}
+                      isPaid={false}
+                      numberOfQuestions={getQuestionCount(test)}
+                      durationMinutes={test.durationInMinutes}
+                      highlights={test.highlightPoints || []}
+                      onAction={(action) => {
+                        if (action === 'attempt') {
+                          viewTest(test.id)
+                        }
+                      }}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => viewTest(test.id)}
+                        className="flex-1"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => editTest(test)}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleToggleStatus(test)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <ToggleLeft className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Active Paid Tests Section */}
+        <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                  <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white truncate">
+                    Active Paid Tests
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
+                    Premium tests available to users
+                  </CardDescription>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
+            {activePaidTests.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground text-4xl mb-2">💎</div>
+                <p className="text-sm text-muted-foreground">
+                  No active paid tests
+                </p>
+              </div>
+            ) : (
+              <div className="flex gap-4 sm:gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                {activePaidTests.map((test) => (
+                  <div key={test.id} className="flex-shrink-0 w-80 sm:w-80">
+                    <TestCard
+                      {...test}
+                      isPaid={true}
+                      numberOfQuestions={getQuestionCount(test)}
+                      durationMinutes={test.durationInMinutes}
+                      highlights={test.highlightPoints || []}
+                      onAction={(action) => {
+                        if (action === 'attempt') {
+                          viewTest(test.id)
+                        }
+                      }}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => viewTest(test.id)}
+                        className="flex-1"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => editTest(test)}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleToggleStatus(test)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <ToggleLeft className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

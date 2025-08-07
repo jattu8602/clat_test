@@ -43,6 +43,7 @@ export async function POST(request) {
         durationInMinutes,
         positiveMarks: positiveMarks || 1.0,
         negativeMarks: negativeMarks || -0.25,
+        isActive: false, // New tests are created as drafts
       },
     })
 

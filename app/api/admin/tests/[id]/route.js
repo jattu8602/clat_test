@@ -60,6 +60,33 @@ export async function PUT(request, { params }) {
     const { id: testId } = params
     const updateData = await request.json()
 
+    // Check if this is a status toggle request
+    if (updateData.action === 'toggleStatus') {
+      const test = await prisma.test.findUnique({
+        where: { id: testId },
+      })
+
+      if (!test) {
+        return NextResponse.json({ error: 'Test not found' }, { status: 404 })
+      }
+
+      const updatedTest = await prisma.test.update({
+        where: { id: testId },
+        data: {
+          isActive: !test.isActive,
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        test: updatedTest,
+        message: `Test ${
+          updatedTest.isActive ? 'activated' : 'deactivated'
+        } successfully`,
+      })
+    }
+
+    // Regular update
     // Validate required fields
     if (!updateData.title) {
       return NextResponse.json(
