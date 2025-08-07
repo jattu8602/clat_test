@@ -122,114 +122,153 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground">Users Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage all users, their roles, and account status
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 lg:bg-transparent lg:dark:bg-transparent">
+      <div className="space-y-4 sm:space-y-6 lg:space-y-8 p-3 sm:p-4 lg:p-0">
+        {/* Header Section */}
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex items-start sm:items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl lg:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                Users Management
+              </h1>
+              <p className="text-xs sm:text-sm lg:text-lg text-gray-600 dark:text-gray-300 mt-1">
+                Manage all users, their roles, and account status
+              </p>
+            </div>
+          </div>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Users ({users.length})</CardTitle>
-          <CardDescription>
-            View and manage user accounts, roles, and permissions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {users.map((user) => (
-              <div
-                key={user.id}
-                className="flex items-center justify-between p-4 border border-border rounded-lg hover:shadow-sm transition-all"
-              >
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.image} alt={user.name} />
-                    <AvatarFallback>
-                      {user.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-semibold text-foreground">
-                        {user.name || 'Anonymous'}
-                      </h3>
-                      {getRoleIcon(user.role)}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {user.email}
-                    </p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      {getRoleBadge(user.role)}
-                      {user.paidUntil && (
-                        <Badge variant="outline" className="text-xs">
-                          Paid until{' '}
-                          {new Date(user.paidUntil).toLocaleDateString()}
-                        </Badge>
-                      )}
-                      {user.isBlocked && (
-                        <Badge variant="destructive" className="text-xs">
-                          Blocked
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+        <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                 </div>
-
-                <div className="flex items-center space-x-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => updateUserRole(user.id, 'FREE')}
-                        disabled={user.role === 'FREE'}
-                      >
-                        <User className="h-4 w-4 mr-2" />
-                        Set as Free
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => updateUserRole(user.id, 'PAID')}
-                        disabled={user.role === 'PAID'}
-                      >
-                        <Shield className="h-4 w-4 mr-2" />
-                        Set as Paid
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => updateUserRole(user.id, 'ADMIN')}
-                        disabled={user.role === 'ADMIN'}
-                      >
-                        <Crown className="h-4 w-4 mr-2" />
-                        Set as Admin
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => toggleUserBlock(user.id, user.isBlocked)}
-                      >
-                        {user.isBlocked ? (
-                          <>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Unblock User
-                          </>
-                        ) : (
-                          <>
-                            <Ban className="h-4 w-4 mr-2" />
-                            Block User
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white truncate">
+                    All Users ({users.length})
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
+                    View and manage user accounts, roles, and permissions
+                  </CardDescription>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
+            <div className="space-y-4">
+              {users.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-sm transition-all bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750"
+                >
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={user.image} alt={user.name} />
+                      <AvatarFallback className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {user.name || 'Anonymous'}
+                        </h3>
+                        {getRoleIcon(user.role)}
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {user.email}
+                      </p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        {getRoleBadge(user.role)}
+                        {user.paidUntil && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
+                          >
+                            Paid until{' '}
+                            {new Date(user.paidUntil).toLocaleDateString()}
+                          </Badge>
+                        )}
+                        {user.isBlocked && (
+                          <Badge className="text-xs text-red-800 bg-red-100 dark:text-white dark:bg-red-500">
+                            Blocked
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                      >
+                        <DropdownMenuItem
+                          onClick={() => updateUserRole(user.id, 'FREE')}
+                          disabled={user.role === 'FREE'}
+                          className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <User className="h-4 w-4 mr-2" />
+                          Set as Free
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => updateUserRole(user.id, 'PAID')}
+                          disabled={user.role === 'PAID'}
+                          className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <Shield className="h-4 w-4 mr-2" />
+                          Set as Paid
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => updateUserRole(user.id, 'ADMIN')}
+                          disabled={user.role === 'ADMIN'}
+                          className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <Crown className="h-4 w-4 mr-2" />
+                          Set as Admin
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            toggleUserBlock(user.id, user.isBlocked)
+                          }
+                          className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          {user.isBlocked ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Unblock User
+                            </>
+                          ) : (
+                            <>
+                              <Ban className="h-4 w-4 mr-2" />
+                              Block User
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

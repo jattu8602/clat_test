@@ -52,19 +52,6 @@ export default function Sidebar({
           badge: '24',
         },
         { name: 'Create Test', href: '/admin/create-test', icon: Plus },
-        {
-          name: 'Free Tests',
-          href: '/admin/free-test',
-          icon: FileText,
-          badge: '12',
-        },
-        {
-          name: 'Paid Tests',
-          href: '/admin/paid-test',
-          icon: Crown,
-          badge: '8',
-        },
-        { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
         { name: 'Payments', href: '/admin/payment-history', icon: CreditCard },
         {
           name: 'Notifications',
