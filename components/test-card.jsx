@@ -35,8 +35,35 @@ export default function TestCard({
   lastScore, // Add lastScore prop
   isNew = false, // Add isNew prop
   isAttempted = false, // Add isAttempted prop to show re-attempt button
+  attemptedAt, // Add attemptedAt prop for time display
   onAction,
 }) {
+  // Helper function to format time ago
+  const getTimeAgo = (date) => {
+    if (!date) return null
+    const now = new Date()
+    const diffInMs = now - new Date(date)
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+    const diffInWeeks = Math.floor(diffInDays / 7)
+    const diffInMonths = Math.floor(diffInDays / 30)
+    const diffInYears = Math.floor(diffInDays / 365)
+
+    if (diffInYears > 0)
+      return `${diffInYears} year${diffInYears > 1 ? 's' : ''} ago`
+    if (diffInMonths > 0)
+      return `${diffInMonths} month${diffInMonths > 1 ? 's' : ''} ago`
+    if (diffInWeeks > 0)
+      return `${diffInWeeks} week${diffInWeeks > 1 ? 's' : ''} ago`
+    if (diffInDays > 0)
+      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`
+    if (diffInHours > 0)
+      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`
+    if (diffInMinutes > 0) return `${diffInMinutes} min ago`
+    return 'Just now'
+  }
+
   const defaultHighlights = [
     `${numberOfQuestions} comprehensive questions`,
     'Best for CLAT students',
@@ -46,6 +73,8 @@ export default function TestCard({
 
   const displayHighlights =
     highlights.length > 0 ? highlights : defaultHighlights
+
+  const timeAgo = attemptedAt ? getTimeAgo(attemptedAt) : null
 
   return (
     <Card className="w-full min-w-[280px] max-w-sm overflow-hidden rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-300 hover:border-gray-300 dark:hover:border-gray-600 flex flex-col h-full">
@@ -83,6 +112,12 @@ export default function TestCard({
                 }`}
               >
                 {lastScore}%
+              </Badge>
+            )}
+            {/* Time badge */}
+            {timeAgo && (
+              <Badge className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-xs font-medium px-2 py-1">
+                {timeAgo}
               </Badge>
             )}
           </div>
