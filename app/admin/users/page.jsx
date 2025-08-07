@@ -31,6 +31,7 @@ export default function UsersPage() {
   const { data: session } = useSession()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [updatingUser, setUpdatingUser] = useState(null)
 
   useEffect(() => {
     fetchUsers()
@@ -49,6 +50,9 @@ export default function UsersPage() {
   }
 
   const updateUserRole = async (userId, newRole) => {
+    if (updatingUser === userId) return // Prevent double clicks
+
+    setUpdatingUser(userId)
     try {
       const response = await fetch(`/api/admin/users/${userId}/role`, {
         method: 'PATCH',
@@ -59,14 +63,28 @@ export default function UsersPage() {
       })
 
       if (response.ok) {
+        // Show success feedback
+        const user = users.find((u) => u.id === userId)
+        alert(
+          `Successfully updated ${user?.name || 'User'}'s role to ${newRole}`
+        )
         fetchUsers() // Refresh the list
+      } else {
+        const errorData = await response.json()
+        alert(`Error updating role: ${errorData.message || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error updating user role:', error)
+      alert('Error updating user role. Please try again.')
+    } finally {
+      setUpdatingUser(null)
     }
   }
 
   const toggleUserBlock = async (userId, isBlocked) => {
+    if (updatingUser === userId) return // Prevent double clicks
+
+    setUpdatingUser(userId)
     try {
       const response = await fetch(`/api/admin/users/${userId}/block`, {
         method: 'PATCH',
@@ -77,10 +95,22 @@ export default function UsersPage() {
       })
 
       if (response.ok) {
+        // Show success feedback
+        const user = users.find((u) => u.id === userId)
+        const action = isBlocked ? 'unblocked' : 'blocked'
+        alert(`Successfully ${action} ${user?.name || 'User'}`)
         fetchUsers() // Refresh the list
+      } else {
+        const errorData = await response.json()
+        alert(
+          `Error updating user status: ${errorData.message || 'Unknown error'}`
+        )
       }
     } catch (error) {
       console.error('Error toggling user block:', error)
+      alert('Error updating user status. Please try again.')
+    } finally {
+      setUpdatingUser(null)
     }
   }
 
@@ -220,35 +250,53 @@ export default function UsersPage() {
                       >
                         <DropdownMenuItem
                           onClick={() => updateUserRole(user.id, 'FREE')}
-                          disabled={user.role === 'FREE'}
+                          disabled={
+                            user.role === 'FREE' || updatingUser === user.id
+                          }
                           className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <User className="h-4 w-4 mr-2" />
-                          Set as Free
+                          {updatingUser === user.id
+                            ? 'Updating...'
+                            : 'Set as Free'}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => updateUserRole(user.id, 'PAID')}
-                          disabled={user.role === 'PAID'}
+                          disabled={
+                            user.role === 'PAID' || updatingUser === user.id
+                          }
                           className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Shield className="h-4 w-4 mr-2" />
-                          Set as Paid
+                          {updatingUser === user.id
+                            ? 'Updating...'
+                            : 'Set as Paid'}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => updateUserRole(user.id, 'ADMIN')}
-                          disabled={user.role === 'ADMIN'}
+                          disabled={
+                            user.role === 'ADMIN' || updatingUser === user.id
+                          }
                           className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <Crown className="h-4 w-4 mr-2" />
-                          Set as Admin
+                          {updatingUser === user.id
+                            ? 'Updating...'
+                            : 'Set as Admin'}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
                             toggleUserBlock(user.id, user.isBlocked)
                           }
+                          disabled={updatingUser === user.id}
                           className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
-                          {user.isBlocked ? (
+                          {updatingUser === user.id ? (
+                            <>
+                              <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                              Updating...
+                            </>
+                          ) : user.isBlocked ? (
                             <>
                               <CheckCircle className="h-4 w-4 mr-2" />
                               Unblock User

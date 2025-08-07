@@ -1,7 +1,8 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
@@ -32,7 +33,12 @@ export default function Header({
   setSidebarOpen,
 }) {
   const { data: session } = useSession()
+  const router = useRouter()
   const [searchFocus, setSearchFocus] = useState(false)
+
+  const handleSignOut = () => {
+    signOut({ callbackUrl: '/' })
+  }
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 transition-all duration-300 dark:text-white">
@@ -126,6 +132,10 @@ export default function Header({
               variant="ghost"
               size="icon"
               className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-500 dark:bg-slate-800 transition-all duration-200 dark:text-white  "
+              onClick={() => {
+                router.push('/dashboard/notifications')
+                setSidebarOpen(false)
+              }}
             >
               <Bell className="h-5 w-5" />
               <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-xs text-white flex items-center justify-center font-medium shadow-lg animate-pulse">
@@ -190,26 +200,47 @@ export default function Header({
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
-                <DropdownMenuItem className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2">
+                <DropdownMenuItem
+                  className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2 cursor-pointer"
+                  onClick={() => {
+                    router.push('/dashboard/profile')
+                    setSidebarOpen(false)
+                  }}
+                >
                   <User className="mr-3 h-4 w-4 text-slate-600 dark:text-slate-400" />
                   <span className="text-slate-700 dark:text-slate-300">
                     Profile Settings
                   </span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2">
+                <DropdownMenuItem
+                  className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2 cursor-pointer"
+                  onClick={() => {
+                    router.push('/dashboard/payment-history')
+                    setSidebarOpen(false)
+                  }}
+                >
                   <Settings className="mr-3 h-4 w-4 text-slate-600 dark:text-slate-400" />
                   <span className="text-slate-700 dark:text-slate-300">
-                    Preferences
+                    Payment History
                   </span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2">
+                <DropdownMenuItem
+                  className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2 cursor-pointer"
+                  onClick={() => {
+                    router.push('/dashboard/notifications')
+                    setSidebarOpen(false)
+                  }}
+                >
                   <Bell className="mr-3 h-4 w-4 text-slate-600 dark:text-slate-400" />
                   <span className="text-slate-700 dark:text-slate-300">
                     Notifications
                   </span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
-                <DropdownMenuItem className="p-3 focus:bg-red-50 dark:focus:bg-red-900/20 rounded-lg mx-2 text-red-600 dark:text-red-400">
+                <DropdownMenuItem
+                  className="p-3 focus:bg-red-50 dark:focus:bg-red-900/20 rounded-lg mx-2 text-red-600 dark:text-red-400 cursor-pointer"
+                  onClick={handleSignOut}
+                >
                   <LogOut className="mr-3 h-4 w-4" />
                   <span>Sign Out</span>
                 </DropdownMenuItem>

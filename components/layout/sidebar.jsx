@@ -252,7 +252,7 @@ export default function Sidebar({
               {!isAdmin && session?.user?.role === 'ADMIN' && (
                 <Button
                   variant="outline"
-                  className="w-full justify-start rounded-xl border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-yellow-900 text-amber-700 dark:text-amber-100 hover:bg-amber-100 dark:hover:bg-yellow-800 transition-colors duration-200"
+                  className="w-full justify-start rounded-xl border border-yellow-300 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100 hover:bg-yellow-100 dark:hover:bg-yellow-800/80 transition-all duration-200 shadow-sm hover:shadow-md"
                   onClick={() => {
                     router.push('/admin')
                     setSidebarOpen(false)
@@ -267,32 +267,49 @@ export default function Sidebar({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start rounded-xl dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors duration-200"
+                    className="w-full justify-start rounded-xl bg-white dark:bg-transparent text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     <Settings className="h-4 w-4 mr-2" />
                     Settings & More
                   </Button>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent
-                  className="w-64 rounded-xl bg-white dark:bg-darkBg text-black dark:text-white border border-border dark:border-zinc-700 shadow-xl"
+                  className="w-64 rounded-xl bg-white dark:bg-darkBg text-gray-900 dark:text-white border border-gray-200 dark:border-zinc-700 shadow-2xl"
                   align="end"
                 >
-                  <DropdownMenuLabel className="font-semibold">
+                  <DropdownMenuLabel className="font-semibold text-gray-700 dark:text-white">
                     Account Settings
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="rounded-lg m-1 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors duration-200">
+
+                  <DropdownMenuItem
+                    className="rounded-lg m-1 px-2 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200 cursor-pointer"
+                    onClick={() => {
+                      router.push('/dashboard/profile')
+                      setSidebarOpen(false)
+                    }}
+                  >
                     <User className="h-4 w-4 mr-2 text-muted-foreground dark:text-white" />
                     <span>Profile Settings</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="rounded-lg m-1 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors duration-200">
+
+                  <DropdownMenuItem
+                    className="rounded-lg m-1 px-2 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-200 cursor-pointer"
+                    onClick={() => {
+                      router.push('/dashboard/notifications')
+                      setSidebarOpen(false)
+                    }}
+                  >
                     <Bell className="h-4 w-4 mr-2 text-muted-foreground dark:text-white" />
                     <span>Notifications</span>
                   </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem
                     onClick={handleSignOut}
-                    className="rounded-lg m-1 text-destructive focus:text-destructive dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
+                    className="rounded-lg m-1 px-2 py-2 text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 cursor-pointer"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
