@@ -19,6 +19,10 @@ import {
   Users,
   TrendingUp,
   BookOpen,
+  Edit,
+  Settings,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react'
 
 export default function TestCard({
@@ -37,6 +41,7 @@ export default function TestCard({
   isAttempted = false, // Add isAttempted prop to show re-attempt button
   attemptedAt, // Add attemptedAt prop for time display
   onAction,
+  admin = false, // Add admin prop to control admin buttons visibility
 }) {
   // Helper function to format time ago
   const getTimeAgo = (date) => {
@@ -185,8 +190,9 @@ export default function TestCard({
           </div>
         </div>
 
-        {/* Action Button - Always at bottom */}
+        {/* Action Buttons - Always at bottom */}
         <div className="space-y-2 pt-4">
+          {/* Main action button */}
           <Button
             onClick={() => onAction?.(isAttempted ? 'reattempt' : 'attempt')}
             className={`w-full ${
@@ -209,6 +215,44 @@ export default function TestCard({
               </>
             )}
           </Button>
+
+          {/* Admin Actions */}
+          {admin && (
+            <div className="flex gap-2 mt-2">
+              <Button
+                size="sm"
+                onClick={() => onAction('continue')}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                Continue
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => onAction('settings')}
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                <Settings className="h-4 w-4 " />
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => onAction('toggle')}
+                className={
+                  isAttempted
+                    ? 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
+                    : 'text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300'
+                }
+              >
+                {isAttempted ? (
+                  <ToggleRight className="h-4 w-4" />
+                ) : (
+                  <ToggleLeft className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

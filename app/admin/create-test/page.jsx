@@ -31,6 +31,8 @@ import {
   ArrowLeft,
   Edit,
   Eye,
+  Minus,
+  Star,
   FileText,
   Clock,
   Users,
@@ -358,21 +360,22 @@ export default function CreateTestPage() {
 
   if (showCreateForm) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-4 mb-6">
+      <div className="min-h-screen lg:min-h-0 bg-gray-50 dark:bg-gray-900 lg:bg-transparent lg:dark:bg-transparent space-y-6 p-3 sm:p-4 lg:p-0">
+        {/* Header Section */}
+        <div className="flex items-start sm:items-center gap-2 sm:gap-3 mb-6">
           <Button
             variant="ghost"
             onClick={resetForm}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Tests</span>
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl lg:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
               {editingTest ? 'Edit Test' : 'Create New Test'}
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-xs sm:text-sm lg:text-base text-gray-600 dark:text-gray-300 mt-1">
               {editingTest
                 ? 'Update test information and settings'
                 : 'Create a new test with basic information and settings'}
@@ -381,29 +384,49 @@ export default function CreateTestPage() {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Test Information</CardTitle>
-              <CardDescription>
-                Fill in the basic details for your test
-              </CardDescription>
+          <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300">
+            <CardHeader className="border-b border-gray-100 dark:border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-gray-900 dark:text-white">
+                    Test Information
+                  </CardTitle>
+                  <CardDescription className="text-gray-600 dark:text-gray-300">
+                    Fill in the basic details for your test
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 p-6">
               {/* Test Title */}
               <div className="space-y-2">
-                <Label htmlFor="title">Test Title *</Label>
+                <Label
+                  htmlFor="title"
+                  className="text-gray-700 dark:text-gray-300"
+                >
+                  Test Title *
+                </Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   placeholder="Enter test title"
                   required
+                  className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
                 />
               </div>
 
               {/* Test Description */}
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label
+                  htmlFor="description"
+                  className="text-gray-700 dark:text-gray-300"
+                >
+                  Description
+                </Label>
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -412,123 +435,180 @@ export default function CreateTestPage() {
                   }
                   placeholder="Enter test description"
                   rows={3}
+                  className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 resize-none"
                 />
               </div>
 
               {/* Test Type */}
               <div className="space-y-2">
-                <Label htmlFor="type">Test Type *</Label>
+                <Label
+                  htmlFor="type"
+                  className="text-gray-700 dark:text-gray-300"
+                >
+                  Test Type *
+                </Label>
                 <Select
                   value={formData.type}
                   onValueChange={(value) => handleInputChange('type', value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
                     <SelectValue placeholder="Select test type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="FREE">Free Test</SelectItem>
-                    <SelectItem value="PAID">Paid Test</SelectItem>
+                    <SelectItem value="FREE">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        Free Test
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="PAID">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                        Paid Test
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Thumbnail Upload */}
               <div className="space-y-2">
-                <Label>Test Thumbnail</Label>
-                <ImageUpload
-                  onUpload={handleThumbnailUpload}
-                  multiple={false}
-                  folder="test-thumbnails"
-                  placeholder="Upload test thumbnail image"
-                />
-                {formData.thumbnailUrl && (
-                  <div className="mt-2">
-                    <p className="text-sm text-muted-foreground">
-                      Current thumbnail:
-                    </p>
-                    <img
-                      src={formData.thumbnailUrl}
-                      alt="Test thumbnail"
-                      className="w-32 h-20 object-cover rounded-lg border border-border mt-1"
+                <Label className="text-gray-700 dark:text-gray-300">
+                  Test Thumbnail
+                </Label>
+                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600">
+                  <ImageUpload
+                    onUpload={handleThumbnailUpload}
+                    multiple={false}
+                    folder="test-thumbnails"
+                    placeholder="Upload test thumbnail image"
+                  />
+                  {formData.thumbnailUrl && (
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        Current thumbnail:
+                      </p>
+                      <img
+                        src={formData.thumbnailUrl}
+                        alt="Test thumbnail"
+                        className="w-32 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Test Configuration */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Duration */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="durationInMinutes"
+                    className="text-gray-700 dark:text-gray-300"
+                  >
+                    Duration (minutes) *
+                  </Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="durationInMinutes"
+                      type="number"
+                      value={formData.durationInMinutes}
+                      onChange={(e) =>
+                        handleInputChange(
+                          'durationInMinutes',
+                          parseInt(e.target.value)
+                        )
+                      }
+                      placeholder="180"
+                      min="1"
+                      required
+                      className="pl-10 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
                     />
                   </div>
-                )}
-              </div>
-
-              {/* Duration */}
-              <div className="space-y-2">
-                <Label htmlFor="durationInMinutes">Duration (minutes) *</Label>
-                <Input
-                  id="durationInMinutes"
-                  type="number"
-                  value={formData.durationInMinutes}
-                  onChange={(e) =>
-                    handleInputChange(
-                      'durationInMinutes',
-                      parseInt(e.target.value)
-                    )
-                  }
-                  placeholder="180"
-                  min="1"
-                  required
-                />
-              </div>
-
-              {/* Marks Configuration */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="positiveMarks">Positive Marks</Label>
-                  <Input
-                    id="positiveMarks"
-                    type="number"
-                    step="0.01"
-                    value={formData.positiveMarks}
-                    onChange={(e) =>
-                      handleInputChange(
-                        'positiveMarks',
-                        parseFloat(e.target.value)
-                      )
-                    }
-                    placeholder="1.0"
-                  />
                 </div>
+
+                {/* Positive Marks */}
                 <div className="space-y-2">
-                  <Label htmlFor="negativeMarks">Negative Marks</Label>
-                  <Input
-                    id="negativeMarks"
-                    type="number"
-                    step="0.01"
-                    value={formData.negativeMarks}
-                    onChange={(e) =>
-                      handleInputChange(
-                        'negativeMarks',
-                        parseFloat(e.target.value)
-                      )
-                    }
-                    placeholder="-0.25"
-                  />
+                  <Label
+                    htmlFor="positiveMarks"
+                    className="text-gray-700 dark:text-gray-300"
+                  >
+                    Positive Marks
+                  </Label>
+                  <div className="relative">
+                    <Plus className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
+                    <Input
+                      id="positiveMarks"
+                      type="number"
+                      step="0.01"
+                      value={formData.positiveMarks}
+                      onChange={(e) =>
+                        handleInputChange(
+                          'positiveMarks',
+                          parseFloat(e.target.value)
+                        )
+                      }
+                      placeholder="1.0"
+                      className="pl-10 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Negative Marks */}
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="negativeMarks"
+                    className="text-gray-700 dark:text-gray-300"
+                  >
+                    Negative Marks
+                  </Label>
+                  <div className="relative">
+                    <Minus className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
+                    <Input
+                      id="negativeMarks"
+                      type="number"
+                      step="0.01"
+                      value={formData.negativeMarks}
+                      onChange={(e) =>
+                        handleInputChange(
+                          'negativeMarks',
+                          parseFloat(e.target.value)
+                        )
+                      }
+                      placeholder="-0.25"
+                      className="pl-10 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Highlight Points */}
-              <div className="space-y-2">
-                <Label>Highlight Points (Max 4)</Label>
-                <div className="space-y-2">
+              <div className="space-y-3">
+                <Label className="text-gray-700 dark:text-gray-300">
+                  Highlight Points (Max 4)
+                </Label>
+                <div className="space-y-3 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                   {formData.highlightPoints.map((point, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <Input
-                        value={point}
-                        onChange={(e) =>
-                          handleHighlightPointChange(index, e.target.value)
-                        }
-                        placeholder={`Highlight point ${index + 1}`}
-                      />
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="flex-1 relative">
+                        <Star className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-amber-500" />
+                        <Input
+                          value={point}
+                          onChange={(e) =>
+                            handleHighlightPointChange(index, e.target.value)
+                          }
+                          placeholder={`Highlight point ${index + 1}`}
+                          className="pl-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600"
+                        />
+                      </div>
                       {formData.highlightPoints.length > 1 && (
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => removeHighlightPoint(index)}
+                          className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -541,7 +621,7 @@ export default function CreateTestPage() {
                       variant="outline"
                       size="sm"
                       onClick={addHighlightPoint}
-                      className="flex items-center space-x-2"
+                      className="flex items-center gap-2 w-full justify-center bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-blue-600 dark:text-blue-400"
                     >
                       <Plus className="h-4 w-4" />
                       <span>Add Highlight Point</span>
@@ -552,23 +632,42 @@ export default function CreateTestPage() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end space-x-4 mt-6">
-            <Button type="button" variant="outline" onClick={resetForm}>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetForm}
+              className="border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
+            >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading || !formData.title}
-              className="flex items-center space-x-2"
-            >
-              <Save className="h-4 w-4" />
-              <span>
-                {loading
-                  ? 'Saving...'
+              className={`flex items-center gap-2 ${
+                loading
+                  ? 'bg-gray-400 dark:bg-gray-600'
                   : editingTest
-                  ? 'Update Test'
-                  : 'Create Test'}
-              </span>
+                  ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
+                  : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
+              } text-white`}
+            >
+              {loading ? (
+                <>
+                  <RefreshCcw className="h-4 w-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : editingTest ? (
+                <>
+                  <Save className="h-4 w-4" />
+                  <span>Update Test</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  <span>Create Test</span>
+                </>
+              )}
             </Button>
           </div>
         </form>
@@ -608,11 +707,13 @@ export default function CreateTestPage() {
             </div>
             <Button
               onClick={() => setShowCreateForm(true)}
-              className="flex items-center space-x-2 flex-shrink-0"
+              className="flex items-center space-x-2 flex-shrink-0 dark:text-white text-black border border-gray-300 rounded-md px-2 py-1"
             >
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Create New Test</span>
-              <span className="sm:hidden">New</span>
+              <span className="hidden sm:inline dark:text-white text-black">
+                Create New Test
+              </span>
+              <span className="sm:hidden dark:text-white text-black">New</span>
             </Button>
           </div>
         </div>
@@ -689,36 +790,20 @@ export default function CreateTestPage() {
                       durationMinutes={test.durationInMinutes}
                       highlights={test.highlightPoints || []}
                       onAction={(action) => {
-                        if (action === 'attempt') {
-                          continueTest(test.id)
+                        switch (action) {
+                          case 'continue':
+                            continueTest(test.id)
+                            break
+                          case 'settings':
+                            editTest(test)
+                            break
+                          case 'toggle':
+                            handleToggleStatus(test)
+                            break
                         }
                       }}
+                      admin={true}
                     />
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        onClick={() => continueTest(test.id)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Continue
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => editTest(test)}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => handleToggleStatus(test)}
-                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                      >
-                        <ToggleRight className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -764,36 +849,20 @@ export default function CreateTestPage() {
                       durationMinutes={test.durationInMinutes}
                       highlights={test.highlightPoints || []}
                       onAction={(action) => {
-                        if (action === 'attempt') {
-                          continueTest(test.id)
+                        switch (action) {
+                          case 'continue':
+                            continueTest(test.id)
+                            break
+                          case 'settings':
+                            editTest(test)
+                            break
+                          case 'toggle':
+                            handleToggleStatus(test)
+                            break
                         }
                       }}
+                      admin={true}
                     />
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        onClick={() => continueTest(test.id)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Continue
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => editTest(test)}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => handleToggleStatus(test)}
-                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                      >
-                        <ToggleRight className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -838,37 +907,23 @@ export default function CreateTestPage() {
                       numberOfQuestions={getQuestionCount(test)}
                       durationMinutes={test.durationInMinutes}
                       highlights={test.highlightPoints || []}
+                      isAttempted={true}
                       onAction={(action) => {
-                        if (action === 'attempt') {
-                          viewTest(test.id)
+                        switch (action) {
+                          case 'attempt':
+                          case 'continue':
+                            viewTest(test.id)
+                            break
+                          case 'settings':
+                            editTest(test)
+                            break
+                          case 'toggle':
+                            handleToggleStatus(test)
+                            break
                         }
                       }}
+                      admin={true}
                     />
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        onClick={() => viewTest(test.id)}
-                        className="flex-1"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => editTest(test)}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => handleToggleStatus(test)}
-                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        <ToggleLeft className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -913,37 +968,23 @@ export default function CreateTestPage() {
                       numberOfQuestions={getQuestionCount(test)}
                       durationMinutes={test.durationInMinutes}
                       highlights={test.highlightPoints || []}
+                      isAttempted={true}
                       onAction={(action) => {
-                        if (action === 'attempt') {
-                          viewTest(test.id)
+                        switch (action) {
+                          case 'attempt':
+                          case 'continue':
+                            viewTest(test.id)
+                            break
+                          case 'settings':
+                            editTest(test)
+                            break
+                          case 'toggle':
+                            handleToggleStatus(test)
+                            break
                         }
                       }}
+                      admin={true}
                     />
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        onClick={() => viewTest(test.id)}
-                        className="flex-1"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => editTest(test)}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => handleToggleStatus(test)}
-                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        <ToggleLeft className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </div>
                 ))}
               </div>
