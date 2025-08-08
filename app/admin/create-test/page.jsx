@@ -366,11 +366,12 @@ export default function CreateTestPage() {
           <Button
             variant="ghost"
             onClick={resetForm}
-            className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Tests</span>
           </Button>
+
           <div className="flex-1 min-w-0">
             <h1 className="text-lg sm:text-xl lg:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
               {editingTest ? 'Edit Test' : 'Create New Test'}
@@ -402,12 +403,13 @@ export default function CreateTestPage() {
             </CardHeader>
             <CardContent className="space-y-6 p-6">
               {/* Test Title */}
-              <div className="space-y-2">
+              <div className="space-y-2 dark:placeholder-gray-300 dark:text-gray-300">
                 <Label
                   htmlFor="title"
                   className="text-gray-700 dark:text-gray-300"
                 >
-                  Test Title *
+                  Test Title
+                  <span className="text-red-500 pl-1">*</span>
                 </Label>
                 <Input
                   id="title"
@@ -415,12 +417,12 @@ export default function CreateTestPage() {
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   placeholder="Enter test title"
                   required
-                  className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
+                  className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 dark:placeholder-gray-300"
                 />
               </div>
 
               {/* Test Description */}
-              <div className="space-y-2">
+              <div className="space-y-2 dark:placeholder-gray-300 dark:text-gray-300">
                 <Label
                   htmlFor="description"
                   className="text-gray-700 dark:text-gray-300"
@@ -435,7 +437,7 @@ export default function CreateTestPage() {
                   }
                   placeholder="Enter test description"
                   rows={3}
-                  className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 resize-none"
+                  className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 resize-none dark:placeholder-gray-300"
                 />
               </div>
 
@@ -443,28 +445,42 @@ export default function CreateTestPage() {
               <div className="space-y-2">
                 <Label
                   htmlFor="type"
-                  className="text-gray-700 dark:text-gray-300"
+                  className="text-gray-700 dark:text-gray-300 font-medium"
                 >
-                  Test Type *
+                  Test Type
+                  <span className="text-red-500 pl-1">*</span>
                 </Label>
+
                 <Select
                   value={formData.type}
                   onValueChange={(value) => handleInputChange('type', value)}
                 >
-                  <SelectTrigger className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
+                  <SelectTrigger className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-all duration-150 rounded-md px-3 py-2 text-sm placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-200">
                     <SelectValue placeholder="Select test type" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="FREE">
+
+                  <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md">
+                    <SelectItem
+                      value="FREE"
+                      className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer px-3 py-2 rounded-md"
+                    >
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        Free Test
+                        <span className="text-gray-700 dark:text-gray-200">
+                          Free Test
+                        </span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="PAID">
+
+                    <SelectItem
+                      value="PAID"
+                      className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer px-3 py-2 rounded-md"
+                    >
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                        Paid Test
+                        <span className="text-gray-700 dark:text-gray-200">
+                          Paid Test
+                        </span>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -476,7 +492,7 @@ export default function CreateTestPage() {
                 <Label className="text-gray-700 dark:text-gray-300">
                   Test Thumbnail
                 </Label>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600">
+                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600 dark:placeholder-gray-300 dark:text-gray-300">
                   <ImageUpload
                     onUpload={handleThumbnailUpload}
                     multiple={false}
@@ -491,7 +507,7 @@ export default function CreateTestPage() {
                       <img
                         src={formData.thumbnailUrl}
                         alt="Test thumbnail"
-                        className="w-32 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
+                        className="w-32 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600 "
                       />
                     </div>
                   )}
@@ -501,12 +517,13 @@ export default function CreateTestPage() {
               {/* Test Configuration */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Duration */}
-                <div className="space-y-2">
+                <div className="space-y-2 dark:placeholder-gray-300 dark:text-gray-300">
                   <Label
                     htmlFor="durationInMinutes"
-                    className="text-gray-700 dark:text-gray-300"
+                    className="text-gray-700 dark:text-gray-300 dark:placeholder-gray-300 dark:text-gray-300"
                   >
-                    Duration (minutes) *
+                    Duration (minutes)
+                    <span className="text-red-500 pl-1">*</span>
                   </Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -529,7 +546,7 @@ export default function CreateTestPage() {
                 </div>
 
                 {/* Positive Marks */}
-                <div className="space-y-2">
+                <div className="space-y-2 dark:placeholder-gray-300 dark:text-gray-300">
                   <Label
                     htmlFor="positiveMarks"
                     className="text-gray-700 dark:text-gray-300"
@@ -556,7 +573,7 @@ export default function CreateTestPage() {
                 </div>
 
                 {/* Negative Marks */}
-                <div className="space-y-2">
+                <div className="space-y-2 dark:placeholder-gray-300 dark:text-gray-300">
                   <Label
                     htmlFor="negativeMarks"
                     className="text-gray-700 dark:text-gray-300"
@@ -584,7 +601,7 @@ export default function CreateTestPage() {
               </div>
 
               {/* Highlight Points */}
-              <div className="space-y-3">
+              <div className="space-y-3 dark:placeholder-gray-300 dark:text-gray-300">
                 <Label className="text-gray-700 dark:text-gray-300">
                   Highlight Points (Max 4)
                 </Label>
