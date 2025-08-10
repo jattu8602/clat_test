@@ -1,3 +1,4 @@
+// app/api/tests/[id]/results/route.js
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
@@ -13,7 +14,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: testId } = await params
+    const { id: testId } = params
     const { searchParams } = new URL(request.url)
     const testAttemptId = searchParams.get('attemptId')
 
@@ -24,7 +25,7 @@ export async function GET(request, { params }) {
       )
     }
 
-    // Fetch test attempt with user answers
+    // Fetch test attempt with user answers (same include as before)
     const testAttempt = await prisma.testAttempt.findFirst({
       where: {
         id: testAttemptId,
@@ -81,17 +82,49 @@ export async function GET(request, { params }) {
       )
     }
 
-    // Calculate percentage score based on correct answers vs total questions
+    // === NEW: marks-based score calculation ===
+    // total possible marks = sum of positive marks of questions in the attempt
+    const totalPossibleMarks = testAttempt.answers.reduce((sum, ans) => {
+      const qPositive =
+        ans.question?.positiveMarks ?? testAttempt.test?.positiveMarks ?? 1
+      return sum + (qPositive || 0)
+    }, 0)
+
+    // total marks obtained = sum of marksObtained (if stored) otherwise infer from correctness/negative marks
+    const totalMarksObtained = testAttempt.answers.reduce((sum, ans) => {
+      if (typeof ans.marksObtained === 'number') {
+        return sum + ans.marksObtained
+      }
+
+      // fallback if marksObtained not saved
+      if (ans.isCorrect) {
+        return (
+          sum +
+          (ans.question?.positiveMarks ?? testAttempt.test?.positiveMarks ?? 1)
+        )
+      } else if (ans.userAnswer) {
+        // wrong answer -> negative marks if configured
+        const neg =
+          ans.question?.negativeMarks ?? testAttempt.test?.negativeMarks ?? 0
+        return sum - (neg || 0)
+      } else {
+        // unattempted -> 0
+        return sum
+      }
+    }, 0)
+
     const percentageScore =
-      testAttempt.totalQuestions > 0
-        ? (testAttempt.correctAnswers / testAttempt.totalQuestions) * 100
+      totalPossibleMarks > 0
+        ? (totalMarksObtained / totalPossibleMarks) * 100
         : 0
 
-    // Transform data for frontend
+    const roundedScore = Math.round(percentageScore * 100) / 100
+
+    // Transform data for frontend, include marks info
     const results = {
       testAttempt: {
         id: testAttempt.id,
-        score: Math.round(percentageScore * 100) / 100, // Ensure percentage is calculated correctly
+        score: roundedScore,
         totalQuestions: testAttempt.totalQuestions,
         correctAnswers: testAttempt.correctAnswers,
         wrongAnswers: testAttempt.wrongAnswers,
@@ -99,6 +132,8 @@ export async function GET(request, { params }) {
         totalTimeSec: testAttempt.totalTimeSec,
         startedAt: testAttempt.startedAt,
         completedAt: testAttempt.completedAt,
+        totalMarksObtained,
+        totalPossibleMarks,
       },
       test: testAttempt.test,
       questions: testAttempt.answers.map((answer) => ({

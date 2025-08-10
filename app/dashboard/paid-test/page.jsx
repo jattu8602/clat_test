@@ -89,6 +89,7 @@ export default function PaidTestsPage() {
     }
   }, [session, userType])
 
+  // inside PaidTestsPage (client component) - ensure "use client" at top of file
   const fetchPremiumTests = async () => {
     try {
       setLoading(true)
@@ -101,56 +102,75 @@ export default function PaidTestsPage() {
       const allResponse = await fetch('/api/tests/premium?type=all')
       const allData = await allResponse.json()
 
-      if (recentResponse.ok && allResponse.ok) {
-        const premiumTestsData = recentData.tests || []
-
-        // Separate attempted and non-attempted tests
-        const attempted = allData.tests.filter((test) => test.isAttempted)
-        const nonAttempted = allData.tests.filter((test) => !test.isAttempted)
-
-        // Filter out attempted tests from premium tests this month
-        const availablePremiumTests = premiumTestsData.filter(
-          (test) => !test.isAttempted
-        )
-
-        // Calculate stats
-        const totalTests = allData.tests.length
-        const attemptedCount = attempted.length
-
-        // Calculate average score using the correct percentage formula
-        // Score = (Correct Answers / Total Questions) × 100
-        const averageScore =
-          attempted.length > 0
-            ? Math.round(
-                attempted.reduce(
-                  (sum, test) => sum + (test.lastScore || 0),
-                  0
-                ) / attempted.length
-              )
-            : 0
-
-        const statsData = {
-          totalPaidTests: totalTests,
-          purchasedTests: attemptedCount,
-          averageScore: averageScore,
-          totalSpent: 2495, // You can calculate this from payment history later
-        }
-
-        // Update state
-        setPremiumTests(availablePremiumTests)
-        setAttemptedTests(attempted)
-        setAllPaidTests(nonAttempted)
-        setStats(statsData)
-
-        // Cache the data
-        dataCache.premiumTests = availablePremiumTests
-        dataCache.allPaidTests = nonAttempted
-        dataCache.attemptedTests = attempted
-        dataCache.stats = statsData
-        dataCache.lastFetchTime = Date.now()
-      } else {
+      if (!recentResponse.ok || !allResponse.ok) {
         toast.error('Failed to fetch premium tests')
+        return
       }
+
+      const premiumTestsData = recentData.tests || []
+      const attempted = allData.tests.filter((test) => test.isAttempted)
+      const nonAttempted = allData.tests.filter((test) => !test.isAttempted)
+
+      // For each attempted test, fetch detailed evaluation route to get marks-based score
+      const attemptedWithScores = await Promise.all(
+        attempted.map(async (test) => {
+          // if test has a stored testAttemptId, call the route
+          if (!test.testAttemptId) return test
+
+          try {
+            const res = await fetch(
+              `/api/tests/${test.id}/results?attemptId=${test.testAttemptId}`
+            )
+            if (!res.ok) return test
+            const data = await res.json()
+            // Attach score returned by route (marks-based)
+            return {
+              ...test,
+              lastScore: data.testAttempt?.score ?? test.lastScore ?? 0,
+              lastMarksObtained: data.testAttempt?.totalMarksObtained,
+              lastPossibleMarks: data.testAttempt?.totalPossibleMarks,
+              attemptedAt: data.testAttempt?.completedAt ?? test.attemptedAt,
+            }
+          } catch (err) {
+            console.error(
+              'Failed to fetch attempt result for test',
+              test.id,
+              err
+            )
+            return test
+          }
+        })
+      )
+
+      // Calculate average score from lastScore (marks-based)
+      const averageScore =
+        attemptedWithScores.length > 0
+          ? Math.round(
+              attemptedWithScores.reduce(
+                (sum, t) => sum + (t.lastScore || 0),
+                0
+              ) / attemptedWithScores.length
+            )
+          : 0
+
+      const statsData = {
+        totalPaidTests: allData.tests.length,
+        purchasedTests: attemptedWithScores.length,
+        averageScore,
+        totalSpent: 2495,
+      }
+
+      // Update state & cache
+      setPremiumTests(premiumTestsData.filter((t) => !t.isAttempted))
+      setAttemptedTests(attemptedWithScores)
+      setAllPaidTests(nonAttempted)
+      setStats(statsData)
+
+      dataCache.premiumTests = premiumTestsData.filter((t) => !t.isAttempted)
+      dataCache.allPaidTests = nonAttempted
+      dataCache.attemptedTests = attemptedWithScores
+      dataCache.stats = statsData
+      dataCache.lastFetchTime = Date.now()
     } catch (error) {
       console.error('Error fetching premium tests:', error)
       toast.error('Error loading premium tests')
