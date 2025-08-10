@@ -40,7 +40,13 @@ export const authOptions = {
         // Fetch user data from database
         const dbUser = await prisma.user.findUnique({
           where: { id: token.userId },
-          select: { id: true, role: true, paidUntil: true, image: true },
+          select: {
+            id: true,
+            role: true,
+            paidUntil: true,
+            image: true,
+            createdAt: true,
+          },
         })
 
         if (dbUser) {
@@ -48,6 +54,7 @@ export const authOptions = {
           session.user.role = dbUser.role || 'FREE'
           session.user.paidUntil = dbUser.paidUntil
           session.user.image = dbUser.image
+          session.user.createdAt = dbUser.createdAt
         }
       }
 
