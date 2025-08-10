@@ -233,13 +233,13 @@ export default function TestEvaluationPage() {
               <Button
                 variant="ghost"
                 onClick={() => router.back()}
-                className="gap-2"
+                className="gap-2 border-2 border-gray-200 dark:border-gray-700 dark:text-white"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white ">
                   Test Evaluation
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300">{test.title}</p>
@@ -248,7 +248,7 @@ export default function TestEvaluationPage() {
             <Button
               variant="outline"
               onClick={() => setShowExplanations(!showExplanations)}
-              className="gap-2"
+              className="gap-2 border-2 border-gray-200 dark:border-gray-700 dark:text-white"
             >
               {showExplanations ? (
                 <EyeOff className="w-4 h-4" />
@@ -264,8 +264,13 @@ export default function TestEvaluationPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-yellow-500" />
-                Test Results Summary
+                <span className="text-gray-900 dark:text-white">
+                  Test Results Summary
+                </span>
               </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Score = (Correct Answers ÷ Total Questions) × 100
+              </p>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -274,6 +279,10 @@ export default function TestEvaluationPage() {
                     {testAttempt.score}%
                   </div>
                   <div className="text-sm text-gray-500">Score</div>
+                  <div className="text-xs text-gray-400">
+                    {testAttempt.correctAnswers}/{testAttempt.totalQuestions}{' '}
+                    correct
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">

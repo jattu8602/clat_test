@@ -104,7 +104,7 @@ export async function POST(request, { params }) {
       data: {
         userId: session.user.id,
         testId,
-        score: totalScore,
+        score: 0, // We'll calculate percentage after creation
         totalQuestions: test.questions.length,
         correctAnswers,
         wrongAnswers: incorrectAnswers,
@@ -136,18 +136,22 @@ export async function POST(request, { params }) {
       )
     )
 
-    // Calculate percentage score
-    const totalPossibleScore = test.questions.reduce(
-      (sum, q) => sum + q.positiveMarks,
-      0
-    )
+    // Calculate percentage score based on correct answers vs total questions
     const percentageScore =
-      totalPossibleScore > 0 ? (totalScore / totalPossibleScore) * 100 : 0
+      test.questions.length > 0
+        ? (correctAnswers / test.questions.length) * 100
+        : 0
+
+    // Update the test attempt with the calculated percentage score
+    await prisma.testAttempt.update({
+      where: { id: testAttempt.id },
+      data: { score: Math.round(percentageScore * 100) / 100 },
+    })
 
     return NextResponse.json({
       success: true,
       testAttemptId: testAttempt.id,
-      score: totalScore,
+      score: Math.round(percentageScore * 100) / 100, // Return percentage score
       percentageScore: Math.round(percentageScore * 100) / 100,
       totalPositiveMarks,
       totalNegativeMarks,

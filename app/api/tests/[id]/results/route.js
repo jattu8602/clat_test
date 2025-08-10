@@ -81,11 +81,17 @@ export async function GET(request, { params }) {
       )
     }
 
+    // Calculate percentage score based on correct answers vs total questions
+    const percentageScore =
+      testAttempt.totalQuestions > 0
+        ? (testAttempt.correctAnswers / testAttempt.totalQuestions) * 100
+        : 0
+
     // Transform data for frontend
     const results = {
       testAttempt: {
         id: testAttempt.id,
-        score: testAttempt.score,
+        score: Math.round(percentageScore * 100) / 100, // Ensure percentage is calculated correctly
         totalQuestions: testAttempt.totalQuestions,
         correctAnswers: testAttempt.correctAnswers,
         wrongAnswers: testAttempt.wrongAnswers,

@@ -115,6 +115,7 @@ export default function TestCard({
                     ? 'bg-yellow-500 text-white'
                     : 'bg-red-500 text-white'
                 }`}
+                title={`Score: ${lastScore}% (Correct Answers ÷ Total Questions × 100)`}
               >
                 {lastScore}%
               </Badge>

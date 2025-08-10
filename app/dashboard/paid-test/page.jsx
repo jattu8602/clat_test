@@ -108,9 +108,17 @@ export default function PaidTestsPage() {
         const attempted = allData.tests.filter((test) => test.isAttempted)
         const nonAttempted = allData.tests.filter((test) => !test.isAttempted)
 
+        // Filter out attempted tests from premium tests this month
+        const availablePremiumTests = premiumTestsData.filter(
+          (test) => !test.isAttempted
+        )
+
         // Calculate stats
         const totalTests = allData.tests.length
         const attemptedCount = attempted.length
+
+        // Calculate average score using the correct percentage formula
+        // Score = (Correct Answers / Total Questions) × 100
         const averageScore =
           attempted.length > 0
             ? Math.round(
@@ -129,13 +137,13 @@ export default function PaidTestsPage() {
         }
 
         // Update state
-        setPremiumTests(premiumTestsData)
+        setPremiumTests(availablePremiumTests)
         setAttemptedTests(attempted)
         setAllPaidTests(nonAttempted)
         setStats(statsData)
 
         // Cache the data
-        dataCache.premiumTests = premiumTestsData
+        dataCache.premiumTests = availablePremiumTests
         dataCache.allPaidTests = nonAttempted
         dataCache.attemptedTests = attempted
         dataCache.stats = statsData
@@ -203,7 +211,7 @@ export default function PaidTestsPage() {
       title: 'Avg Score',
       value: `${stats.averageScore}%`,
       icon: TrendingUp,
-      description: 'Average',
+      description: 'Percentage',
       gradient: 'from-purple-500 to-purple-600',
     },
     {
@@ -297,6 +305,9 @@ export default function PaidTestsPage() {
                 <p className="text-xs sm:text-sm lg:text-lg text-gray-600 dark:text-gray-300 mt-1">
                   Advanced tests with detailed analytics and expert support
                 </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Score = (Correct Answers ÷ Total Questions) × 100
+                </p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -304,7 +315,7 @@ export default function PaidTestsPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-1 flex-shrink-0"
+                className="gap-1 flex-shrink-0 border-2 border-gray-200 dark:border-gray-700"
                 onClick={refreshData}
                 disabled={loading}
                 title="Refresh data"
