@@ -241,19 +241,13 @@ export default function TestTakingPage() {
 
   const handleEvaluate = async () => {
     try {
-      const response = await fetch(
-        `/api/tests/${testId}/results?attemptId=${testResults.testAttemptId}`
+      // Navigate to the evaluate page with the test attempt ID
+      router.push(
+        `/dashboard/test/${testId}/evaluate?attemptId=${testResults.testAttemptId}`
       )
-      if (response.ok) {
-        const detailedResults = await response.json()
-        setTestResults(detailedResults)
-        setShowResults(true)
-      } else {
-        toast.error('Failed to fetch detailed results')
-      }
     } catch (error) {
-      console.error('Error fetching results:', error)
-      toast.error('Error loading detailed results')
+      console.error('Error navigating to evaluate page:', error)
+      toast.error('Error navigating to evaluate page')
     }
   }
 
@@ -813,7 +807,7 @@ export default function TestTakingPage() {
                 </div>
                 <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
                   <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {testResults.correctAnswers || testResults.correctAnswers}
+                    {testResults.correctAnswers || 0}
                   </div>
                   <div className="text-sm text-green-600 dark:text-green-400">
                     Correct
@@ -821,7 +815,9 @@ export default function TestTakingPage() {
                 </div>
                 <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg text-center">
                   <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {testResults.wrongAnswers || testResults.incorrectAnswers}
+                    {testResults.wrongAnswers ||
+                      testResults.incorrectAnswers ||
+                      0}
                   </div>
                   <div className="text-sm text-red-600 dark:text-red-400">
                     Wrong
@@ -829,7 +825,12 @@ export default function TestTakingPage() {
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg text-center">
                   <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-                    {testResults.unattempted || 0}
+                    {testResults.unattempted ||
+                      questions.length -
+                        (testResults.correctAnswers || 0) -
+                        (testResults.wrongAnswers ||
+                          testResults.incorrectAnswers ||
+                          0)}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     Unattempted
@@ -844,227 +845,25 @@ export default function TestTakingPage() {
                   className="bg-purple-600 hover:bg-purple-700"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  Evaluate Answers
+                  View Detailed Results
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => router.push('/dashboard/attempted')}
+                  className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
                 </Button>
               </div>
 
-              {/* Detailed Results (shown after evaluate) */}
-              {testResults.questions && (
-                <div className="space-y-6">
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    Question-by-Question Analysis
-                  </h3>
-                  {testResults.questions.map((question, index) => (
-                    <Card
-                      key={question.id}
-                      className="border-gray-200 dark:border-gray-700"
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <Badge
-                              variant={
-                                question.isCorrect ? 'default' : 'destructive'
-                              }
-                            >
-                              {question.isCorrect ? 'Correct' : 'Incorrect'}
-                            </Badge>
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              Q{question.questionNumber}
-                            </span>
-                            <Badge variant="outline">
-                              {question.section.replace('_', ' ')}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {question.marksObtained > 0 ? '+' : ''}
-                            {question.marksObtained} marks
-                          </div>
-                        </div>
-
-                        <div className="mb-3">
-                          <p className="text-gray-900 dark:text-white">
-                            {question.questionText}
-                          </p>
-                        </div>
-
-                        {question.questionType === 'OPTIONS' &&
-                          Array.isArray(question.options) && (
-                            <div className="space-y-2">
-                              {question.options.map((option, optIndex) => (
-                                <div
-                                  key={optIndex}
-                                  className={`p-2 rounded border ${
-                                    question.correctAnswers.includes(option)
-                                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                                      : question.userAnswer.includes(option)
-                                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                                      : 'border-gray-200 dark:border-gray-700'
-                                  }`}
-                                >
-                                  <span className="text-gray-700 dark:text-gray-300">
-                                    {option}
-                                  </span>
-                                  {Array.isArray(question.correctAnswers) &&
-                                    question.correctAnswers.includes(
-                                      option
-                                    ) && (
-                                      <CheckCircle className="w-4 h-4 text-green-600 inline ml-2" />
-                                    )}
-                                  {Array.isArray(question.userAnswer) &&
-                                    question.userAnswer.includes(option) &&
-                                    Array.isArray(question.correctAnswers) &&
-                                    !question.correctAnswers.includes(
-                                      option
-                                    ) && (
-                                      <AlertCircle className="w-4 h-4 text-red-600 inline ml-2" />
-                                    )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                        {question.questionType === 'INPUT' && (
-                          <div className="space-y-2">
-                            <div className="p-2 rounded border border-gray-200 dark:border-gray-700">
-                              <span className="text-sm text-gray-500 dark:text-gray-400">
-                                Your Answer:
-                              </span>
-                              <span className="ml-2 text-gray-700 dark:text-gray-300">
-                                {Array.isArray(question.userAnswer)
-                                  ? question.userAnswer.join(', ')
-                                  : question.userAnswer || 'No answer'}
-                              </span>
-                            </div>
-                            <div className="p-2 rounded border border-green-500 bg-green-50 dark:bg-green-900/20">
-                              <span className="text-sm text-gray-500 dark:text-gray-400">
-                                Correct Answer:
-                              </span>
-                              <span className="ml-2 text-gray-700 dark:text-gray-300">
-                                {Array.isArray(question.correctAnswers)
-                                  ? question.correctAnswers.join(', ')
-                                  : question.correctAnswers}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Display table data in results if it exists */}
-                        {question.isTable &&
-                          isValidTableData(question.tableData) && (
-                            <div className="mt-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                  <h4 className="font-medium text-gray-900 dark:text-white">
-                                    Table Data
-                                  </h4>
-                                </div>
-                                {(() => {
-                                  const dimensions = getTableDimensions(
-                                    question.tableData
-                                  )
-                                  return (
-                                    <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-medium rounded-full">
-                                      {dimensions.rows} × {dimensions.cols}
-                                    </span>
-                                  )
-                                })()}
-                              </div>
-                              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-                                <table className="w-full min-w-full">
-                                  <thead>
-                                    <tr className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
-                                      {(() => {
-                                        const formattedData = formatTableData(
-                                          question.tableData
-                                        )
-                                        if (
-                                          formattedData &&
-                                          formattedData.length > 0
-                                        ) {
-                                          return formattedData[0].map(
-                                            (header, headerIndex) => (
-                                              <th
-                                                key={headerIndex}
-                                                className="border-b border-gray-200 dark:border-gray-600 p-3 text-left font-semibold text-gray-800 dark:text-gray-200 text-xs whitespace-nowrap"
-                                              >
-                                                {header}
-                                              </th>
-                                            )
-                                          )
-                                        }
-                                        return null
-                                      })()}
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {(() => {
-                                      const formattedData = formatTableData(
-                                        question.tableData
-                                      )
-                                      if (
-                                        formattedData &&
-                                        formattedData.length > 1
-                                      ) {
-                                        return formattedData
-                                          .slice(1)
-                                          .map((row, rowIndex) => (
-                                            <tr
-                                              key={rowIndex}
-                                              className={`transition-colors duration-200 hover:bg-purple-50 dark:hover:bg-purple-900/10 ${
-                                                rowIndex % 2 === 0
-                                                  ? 'bg-white dark:bg-gray-800'
-                                                  : 'bg-gray-50/50 dark:bg-gray-700/50'
-                                              }`}
-                                            >
-                                              {Array.isArray(row) ? (
-                                                row.map((cell, cellIndex) => (
-                                                  <td
-                                                    key={cellIndex}
-                                                    className="border-b border-gray-100 dark:border-gray-700 p-3 text-xs text-gray-700 dark:text-gray-300 font-medium"
-                                                  >
-                                                    {cell}
-                                                  </td>
-                                                ))
-                                              ) : (
-                                                <td className="border-b border-gray-100 dark:border-gray-700 p-3 text-xs text-gray-700 dark:text-gray-300 font-medium">
-                                                  {String(row)}
-                                                </td>
-                                              )}
-                                            </tr>
-                                          ))
-                                      }
-                                      return null
-                                    })()}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          )}
-
-                        {question.explanation && (
-                          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-700">
-                            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                              Explanation:
-                            </h4>
-                            <p className="text-sm text-blue-800 dark:text-blue-200">
-                              {question.explanation}
-                            </p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+              {/* Note about detailed results */}
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <p>
+                  Click "View Detailed Results" to see question-by-question
+                  analysis on a separate page
+                </p>
+              </div>
             </div>
           </div>
         </div>
