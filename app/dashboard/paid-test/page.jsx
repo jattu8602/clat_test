@@ -235,10 +235,10 @@ export default function PaidTestsPage() {
       gradient: 'from-purple-500 to-purple-600',
     },
     {
-      title: 'Total Spent',
-      value: `₹${stats.totalSpent}`,
+      title: 'Time Spent',
+      value: `${stats.timeSpent}`,
       icon: ShoppingCart,
-      description: 'Investment',
+      description: 'Practice Time',
       gradient: 'from-orange-500 to-orange-600',
     },
   ]
@@ -325,9 +325,7 @@ export default function PaidTestsPage() {
                 <p className="text-xs sm:text-sm lg:text-lg text-gray-600 dark:text-gray-300 mt-1">
                   Advanced tests with detailed analytics and expert support
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Score = (Correct Answers ÷ Total Questions) × 100
-                </p>
+
               </div>
             </div>
             <div className="flex gap-2">

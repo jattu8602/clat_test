@@ -418,7 +418,7 @@ export default function TestTakingPage() {
   if (showStartModal) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardContent className="p-6">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto">
@@ -443,11 +443,14 @@ export default function TestTakingPage() {
                 <Button
                   variant="outline"
                   onClick={() => router.push('/dashboard')}
-                  className="flex-1"
+                  className="flex-1 border-2 border-gray-200 dark:border-gray-700 dark:text-white"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleStartTest} className="flex-1">
+                <Button
+                  onClick={handleStartTest}
+                  className="flex-1 border-2 border-gray-200 dark:border-gray-700 dark:text-white"
+                >
                   Start Test
                 </Button>
               </div>
@@ -482,10 +485,18 @@ export default function TestTakingPage() {
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
               {test.title}
             </h1>
-            <Badge variant={test.type === 'PAID' ? 'default' : 'secondary'}>
+            <Badge
+              variant={test.type === 'PAID' ? 'default' : 'secondary'}
+              className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 bg-green-900"
+            >
               {test.type}
             </Badge>
-            <Badge variant="outline">{questions.length} Questions</Badge>
+            <Badge
+              variant="outline"
+              className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 bg-yellow-900"
+            >
+              {questions.length} Questions
+            </Badge>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -498,6 +509,7 @@ export default function TestTakingPage() {
               variant="outline"
               size="sm"
               onClick={() => setShowExitModal(true)}
+              className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
             >
               <X className="w-4 h-4 mr-2" />
               Exit Test
@@ -517,7 +529,10 @@ export default function TestTakingPage() {
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                     Question {currentQuestion.questionNumber}
                   </h2>
-                  <Badge variant="outline">
+                  <Badge
+                    variant="outline"
+                    className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 bg-yellow-900"
+                  >
                     {currentQuestion.section.replace('_', ' ')}
                   </Badge>
                 </div>
@@ -538,7 +553,7 @@ export default function TestTakingPage() {
               )}
 
               {/* Question Content */}
-              <Card className="mb-6">
+              <Card className="mb-6 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <CardContent className="p-6">
                   {/* Question Text */}
                   <div className="mb-6">
@@ -1063,6 +1078,7 @@ export default function TestTakingPage() {
               variant="outline"
               onClick={handlePreviousQuestion}
               disabled={currentQuestionIndex === 0}
+              className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Previous
@@ -1072,8 +1088,8 @@ export default function TestTakingPage() {
               onClick={handleMarkForLater}
               className={
                 markedForLater.has(currentQuestion?.id)
-                  ? 'bg-orange-100 text-orange-700 border-orange-300'
-                  : ''
+                  ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200 hover:text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-700'
+                  : 'border-2 border-gray-200 dark:border-gray-700 dark:text-white'
               }
             >
               <Bookmark className="w-4 h-4 mr-2" />
@@ -1084,7 +1100,7 @@ export default function TestTakingPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-gray-600 dark:text-gray-400  ">
               Time per question:{' '}
               {questionStartTime
                 ? Math.floor((Date.now() - questionStartTime) / 1000)
@@ -1094,12 +1110,15 @@ export default function TestTakingPage() {
             {currentQuestionIndex === questions.length - 1 ? (
               <Button
                 onClick={() => setShowExitModal(true)}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 "
               >
                 Submit Test
               </Button>
             ) : (
-              <Button onClick={handleNextQuestion}>
+              <Button
+                onClick={handleNextQuestion}
+                className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
+              >
                 Next
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
