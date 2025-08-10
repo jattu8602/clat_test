@@ -170,6 +170,17 @@ export default function PaidTestsPage() {
       console.log('Taking test:', test)
       // Navigate to test taking page
       router.push(`/dashboard/test/${test.id}`)
+    } else if (action === 'evaluate') {
+      console.log('Evaluating test:', test)
+      // Navigate to evaluation page - we need the test attempt ID
+      // For now, we'll need to get this from the test data or create a separate API call
+      if (test.testAttemptId) {
+        router.push(
+          `/dashboard/test/${test.id}/evaluate?attemptId=${test.testAttemptId}`
+        )
+      } else {
+        toast.error('Test attempt ID not found. Please try again.')
+      }
     }
   }
 

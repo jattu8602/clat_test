@@ -3,6 +3,8 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { toast } from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -41,6 +43,7 @@ import {
 
 export default function AttemptedTestsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const [stats, setStats] = useState({
     totalAttemptedTests: 0,
     totalPaidAttempted: 0,
@@ -99,9 +102,14 @@ export default function AttemptedTestsPage() {
       // For example: navigate to test page
     } else if (action === 'evaluate') {
       console.log('Evaluating test:', test)
-      // Navigate to test results page or show results modal
-      // For now, we'll navigate to the test page with evaluate mode
-      window.open(`/dashboard/test/${test.id}?mode=evaluate`, '_blank')
+      // Navigate to evaluation page - we need the test attempt ID
+      if (test.testAttemptId) {
+        router.push(
+          `/dashboard/test/${test.id}/evaluate?attemptId=${test.testAttemptId}`
+        )
+      } else {
+        toast.error('Test attempt ID not found. Please try again.')
+      }
     }
   }
 
@@ -116,6 +124,7 @@ export default function AttemptedTestsPage() {
       numberOfQuestions: 200,
       isPaid: true,
       lastScore: 85,
+      testAttemptId: 'mock-attempt-1',
       attemptedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       highlights: [
         '200 advanced questions',
@@ -132,6 +141,7 @@ export default function AttemptedTestsPage() {
       numberOfQuestions: 50,
       isPaid: false,
       lastScore: 72,
+      testAttemptId: 'mock-attempt-2',
       attemptedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
       highlights: [
         '50 latest current affairs questions',
@@ -148,6 +158,7 @@ export default function AttemptedTestsPage() {
       numberOfQuestions: 100,
       isPaid: false,
       lastScore: 68,
+      testAttemptId: 'mock-attempt-3',
       attemptedAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
       highlights: [
         '100 curated questions',
@@ -169,6 +180,7 @@ export default function AttemptedTestsPage() {
       numberOfQuestions: 250,
       isPaid: true,
       lastScore: 79,
+      testAttemptId: 'mock-attempt-4',
       attemptedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
       highlights: [
         '250 comprehensive questions',
@@ -185,6 +197,7 @@ export default function AttemptedTestsPage() {
       numberOfQuestions: 180,
       isPaid: true,
       lastScore: 88,
+      testAttemptId: 'mock-attempt-5',
       attemptedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
       highlights: [
         '180 mastery questions',
@@ -201,6 +214,7 @@ export default function AttemptedTestsPage() {
       numberOfQuestions: 300,
       isPaid: true,
       lastScore: 82,
+      testAttemptId: 'mock-attempt-6',
       attemptedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 2 weeks ago
       highlights: [
         '300 comprehensive questions',
@@ -221,6 +235,7 @@ export default function AttemptedTestsPage() {
       numberOfQuestions: 150,
       isPaid: false,
       lastScore: 75,
+      testAttemptId: 'mock-attempt-7',
       attemptedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
       highlights: [
         '150 comprehensive questions',
@@ -237,6 +252,7 @@ export default function AttemptedTestsPage() {
       numberOfQuestions: 125,
       isPaid: false,
       lastScore: 82,
+      testAttemptId: 'mock-attempt-8',
       attemptedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
       highlights: [
         '125 reasoning questions',
@@ -253,6 +269,7 @@ export default function AttemptedTestsPage() {
       numberOfQuestions: 80,
       isPaid: false,
       lastScore: 65,
+      testAttemptId: 'mock-attempt-9',
       attemptedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 1 month ago
       highlights: [
         '80 logical questions',

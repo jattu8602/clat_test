@@ -84,6 +84,8 @@ export async function GET(request) {
       negativeMarks: test.negativeMarks,
       attempts: test._count.testAttempts, // Total attempts by all users
       isAttempted: test.testAttempts.length > 0,
+      testAttemptId:
+        test.testAttempts.length > 0 ? test.testAttempts[0].id : null,
       lastScore:
         test.testAttempts.length > 0
           ? Math.round(test.testAttempts[0].score)
