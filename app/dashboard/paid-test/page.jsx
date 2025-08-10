@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
+import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -35,268 +36,140 @@ import {
   Zap,
   Gift,
   CheckCircle2,
+  RefreshCw,
 } from 'lucide-react'
+
+// Cache data outside component to persist across navigations
+const dataCache = {
+  premiumTests: null,
+  allPaidTests: null,
+  attemptedTests: null,
+  stats: null,
+  lastFetchTime: null,
+  cacheExpiry: 5 * 60 * 1000, // 5 minutes cache
+}
 
 export default function PaidTestsPage() {
   const { data: session } = useSession()
-  const [stats, setStats] = useState({
-    totalPaidTests: 0,
-    purchasedTests: 0,
-    averageScore: 0,
-    totalSpent: 0, // in rupees
-  })
+  const [stats, setStats] = useState(
+    dataCache.stats || {
+      totalPaidTests: 0,
+      purchasedTests: 0,
+      averageScore: 0,
+      totalSpent: 0, // in rupees
+    }
+  )
+  const [premiumTests, setPremiumTests] = useState(dataCache.premiumTests || [])
+  const [allPaidTests, setAllPaidTests] = useState(dataCache.allPaidTests || [])
+  const [attemptedTests, setAttemptedTests] = useState(
+    dataCache.attemptedTests || []
+  )
+  const [loading, setLoading] = useState(!dataCache.premiumTests) // Only show loading if no cached data
 
   // Get user type from session - FREE, PAID, or ADMIN
   const userType = session?.user?.role || 'FREE'
 
+  // Check if cache is still valid
+  const isCacheValid = () => {
+    if (!dataCache.lastFetchTime) return false
+    return Date.now() - dataCache.lastFetchTime < dataCache.cacheExpiry
+  }
+
   useEffect(() => {
-    // Simulate API call
-    setStats({
-      totalPaidTests: 12,
-      purchasedTests: 5,
-      averageScore: 78,
-      totalSpent: 2495,
-    })
-  }, [])
+    if (session && userType !== 'FREE') {
+      // Only fetch if we don't have cached data or cache is expired
+      if (!dataCache.premiumTests || !isCacheValid()) {
+        fetchPremiumTests()
+      } else {
+        // Use cached data
+        setLoading(false)
+      }
+    }
+  }, [session, userType])
 
-  // Premium tests with pricing
-  const premiumTests = [
-    {
-      id: 1,
-      title: 'Advanced Legal Reasoning',
-      description:
-        'Complex case studies and legal analysis with detailed explanations',
-      durationMinutes: 120,
-      numberOfQuestions: 200,
-      isPaid: true,
-      price: 299,
-      originalPrice: 499,
-      rating: 4.8,
-      attempts: 450,
-      difficulty: 'Hard',
-      highlights: [
-        '200 advanced questions',
-        'Detailed solutions',
-        'Performance analytics',
-        'Expert support',
-      ],
-      isNew: true,
-    },
-    {
-      id: 2,
-      title: 'Full CLAT Mock Test',
-      description:
-        'Complete exam simulation with real-time scoring and analysis',
-      durationMinutes: 150,
-      numberOfQuestions: 250,
-      isPaid: true,
-      price: 499,
-      originalPrice: 799,
-      rating: 4.9,
-      attempts: 320,
-      difficulty: 'Hard',
-      highlights: [
-        '250 comprehensive questions',
-        'Real-time scoring',
-        'Detailed analysis',
-        'Performance tracking',
-      ],
-      isNew: true,
-    },
-    {
-      id: 3,
-      title: 'Legal Aptitude Mastery',
-      description: 'Advanced legal concepts and reasoning patterns',
-      durationMinutes: 90,
-      numberOfQuestions: 180,
-      isPaid: true,
-      price: 199,
-      originalPrice: 399,
-      rating: 4.6,
-      attempts: 280,
-      difficulty: 'Medium',
-      highlights: [
-        '180 mastery questions',
-        'Concept videos',
-        'Practice sets',
-        'Progress tracking',
-      ],
-      isNew: true,
-    },
-  ]
+  const fetchPremiumTests = async () => {
+    try {
+      setLoading(true)
 
-  // All paid tests
-  const allPaidTests = [
-    {
-      id: 4,
-      title: 'CLAT Success Package',
-      description: 'Comprehensive test series with personalized study plan',
-      durationMinutes: 180,
-      numberOfQuestions: 300,
-      isPaid: true,
-      price: 799,
-      originalPrice: 1299,
-      rating: 4.7,
-      attempts: 180,
-      difficulty: 'Hard',
-      highlights: [
-        '300 comprehensive questions',
-        'Personalized plan',
-        'Expert guidance',
-        '24/7 support',
-      ],
-    },
-    {
-      id: 5,
-      title: 'Legal Reasoning Pro',
-      description: 'Advanced legal concepts with expert commentary',
-      durationMinutes: 120,
-      numberOfQuestions: 200,
-      isPaid: true,
-      price: 399,
-      originalPrice: 599,
-      rating: 4.5,
-      attempts: 220,
-      difficulty: 'Hard',
-      highlights: [
-        '200 pro questions',
-        'Expert commentary',
-        'Case law analysis',
-        'Detailed solutions',
-      ],
-    },
-    {
-      id: 6,
-      title: 'English Mastery Test',
-      description: 'Advanced vocabulary and comprehension practice',
-      durationMinutes: 90,
-      numberOfQuestions: 150,
-      isPaid: true,
-      price: 299,
-      originalPrice: 499,
-      rating: 4.4,
-      attempts: 190,
-      difficulty: 'Medium',
-      highlights: [
-        '150 mastery questions',
-        'Advanced vocabulary',
-        'Comprehension focus',
-        'Score improvement',
-      ],
-    },
-    {
-      id: 7,
-      title: 'Quantitative Excellence',
-      description: 'Advanced mathematics and data interpretation',
-      durationMinutes: 100,
-      numberOfQuestions: 180,
-      isPaid: true,
-      price: 349,
-      originalPrice: 549,
-      rating: 4.3,
-      attempts: 160,
-      difficulty: 'Hard',
-      highlights: [
-        '180 quantitative questions',
-        'Advanced concepts',
-        'Data interpretation',
-        'Step solutions',
-      ],
-    },
-    {
-      id: 8,
-      title: 'Logical Reasoning Pro',
-      description: 'Advanced critical thinking and analytical skills',
-      durationMinutes: 75,
-      numberOfQuestions: 120,
-      isPaid: true,
-      price: 249,
-      originalPrice: 399,
-      rating: 4.2,
-      attempts: 140,
-      difficulty: 'Medium',
-      highlights: [
-        '120 logical questions',
-        'Critical thinking',
-        'Analytical skills',
-        'Pattern recognition',
-      ],
-    },
-  ]
+      // Fetch recent premium tests (this month)
+      const recentResponse = await fetch('/api/tests/premium?type=recent')
+      const recentData = await recentResponse.json()
 
-  // Attempted tests - cleaned up with only necessary fields
-  const attemptedTests = [
-    {
-      id: 9,
-      title: 'Advanced Legal Reasoning',
-      description: 'Complex case studies and legal analysis',
-      durationMinutes: 120,
-      numberOfQuestions: 200,
-      isPaid: true,
-      lastScore: 82,
-      highlights: [
-        '200 advanced questions',
-        'Detailed solutions',
-        'Performance analytics',
-        'Expert support',
-      ],
-    },
-    {
-      id: 10,
-      title: 'Full CLAT Mock Test',
-      description: 'Complete exam simulation with real-time scoring',
-      durationMinutes: 150,
-      numberOfQuestions: 250,
-      isPaid: true,
-      lastScore: 75,
-      highlights: [
-        '250 comprehensive questions',
-        'Real-time scoring',
-        'Detailed analysis',
-        'Performance tracking',
-      ],
-    },
-    {
-      id: 11,
-      title: 'Legal Aptitude Mastery',
-      description: 'Advanced legal concepts and reasoning patterns',
-      durationMinutes: 90,
-      numberOfQuestions: 180,
-      isPaid: true,
-      lastScore: 88,
-      highlights: [
-        '180 mastery questions',
-        'Concept videos',
-        'Practice sets',
-        'Progress tracking',
-      ],
-    },
-    {
-      id: 12,
-      title: 'CLAT Success Package',
-      description: 'Comprehensive test series with personalized plan',
-      durationMinutes: 180,
-      numberOfQuestions: 300,
-      isPaid: true,
-      lastScore: 79,
-      highlights: [
-        '300 comprehensive questions',
-        'Personalized plan',
-        'Expert guidance',
-        '24/7 support',
-      ],
-    },
-  ]
+      // Fetch all premium tests
+      const allResponse = await fetch('/api/tests/premium?type=all')
+      const allData = await allResponse.json()
+
+      if (recentResponse.ok && allResponse.ok) {
+        const premiumTestsData = recentData.tests || []
+
+        // Separate attempted and non-attempted tests
+        const attempted = allData.tests.filter((test) => test.isAttempted)
+        const nonAttempted = allData.tests.filter((test) => !test.isAttempted)
+
+        // Calculate stats
+        const totalTests = allData.tests.length
+        const attemptedCount = attempted.length
+        const averageScore =
+          attempted.length > 0
+            ? Math.round(
+                attempted.reduce(
+                  (sum, test) => sum + (test.lastScore || 0),
+                  0
+                ) / attempted.length
+              )
+            : 0
+
+        const statsData = {
+          totalPaidTests: totalTests,
+          purchasedTests: attemptedCount,
+          averageScore: averageScore,
+          totalSpent: 2495, // You can calculate this from payment history later
+        }
+
+        // Update state
+        setPremiumTests(premiumTestsData)
+        setAttemptedTests(attempted)
+        setAllPaidTests(nonAttempted)
+        setStats(statsData)
+
+        // Cache the data
+        dataCache.premiumTests = premiumTestsData
+        dataCache.allPaidTests = nonAttempted
+        dataCache.attemptedTests = attempted
+        dataCache.stats = statsData
+        dataCache.lastFetchTime = Date.now()
+      } else {
+        toast.error('Failed to fetch premium tests')
+      }
+    } catch (error) {
+      console.error('Error fetching premium tests:', error)
+      toast.error('Error loading premium tests')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Function to clear cache and refresh data
+  const refreshData = () => {
+    dataCache.premiumTests = null
+    dataCache.allPaidTests = null
+    dataCache.attemptedTests = null
+    dataCache.stats = null
+    dataCache.lastFetchTime = null
+    fetchPremiumTests()
+  }
 
   const handleTestAction = (test, action) => {
     if (action === 'reattempt') {
       console.log('Re-attempting test:', test)
       // Add your re-attempt logic here
       // For example: navigate to test page with re-attempt flag
+      // After test completion, you might want to call refreshData()
     } else if (action === 'attempt') {
       console.log('Taking test:', test)
       // Add your attempt logic here
       // For example: navigate to test page
+      // After test completion, you might want to call refreshData()
     }
   }
 
@@ -415,12 +288,36 @@ export default function PaidTestsPage() {
                 </p>
               </div>
             </div>
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="gap-1 flex-shrink-0">
-                <ArrowLeft className="w-4 h-4 dark:text-white" />
-                <span className="hidden sm:inline dark:text-white">Back</span>
+            <div className="flex gap-2">
+              {/* Refresh button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 flex-shrink-0"
+                onClick={refreshData}
+                disabled={loading}
+                title="Refresh data"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 dark:text-white ${
+                    loading ? 'animate-spin' : ''
+                  }`}
+                />
+                <span className="hidden sm:inline dark:text-white">
+                  Refresh
+                </span>
               </Button>
-            </Link>
+              <Link href="/dashboard">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 flex-shrink-0"
+                >
+                  <ArrowLeft className="w-4 h-4 dark:text-white" />
+                  <span className="hidden sm:inline dark:text-white">Back</span>
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -489,29 +386,48 @@ export default function PaidTestsPage() {
             </div>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            {/* Mobile Scrollable */}
-            <div className="lg:hidden">
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                {premiumTests.map((test) => (
-                  <div key={test.id} className="flex-shrink-0 w-80">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Loading premium tests...
+                  </p>
+                </div>
+              </div>
+            ) : premiumTests.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No premium tests available this month
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile Scrollable */}
+                <div className="lg:hidden">
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    {premiumTests.map((test) => (
+                      <div key={test.id} className="flex-shrink-0 w-80">
+                        <TestCard
+                          {...test}
+                          onAction={(action) => handleTestAction(test, action)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Desktop Grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-4">
+                  {premiumTests.map((test) => (
                     <TestCard
+                      key={test.id}
                       {...test}
                       onAction={(action) => handleTestAction(test, action)}
                     />
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Desktop Grid */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-4">
-              {premiumTests.map((test) => (
-                <TestCard
-                  key={test.id}
-                  {...test}
-                  onAction={(action) => handleTestAction(test, action)}
-                />
-              ))}
-            </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -542,29 +458,48 @@ export default function PaidTestsPage() {
             </div>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            {/* Mobile Scrollable */}
-            <div className="lg:hidden">
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                {allPaidTests.map((test) => (
-                  <div key={test.id} className="flex-shrink-0 w-80">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Loading premium tests...
+                  </p>
+                </div>
+              </div>
+            ) : allPaidTests.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No premium tests available
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile Scrollable */}
+                <div className="lg:hidden">
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    {allPaidTests.map((test) => (
+                      <div key={test.id} className="flex-shrink-0 w-80">
+                        <TestCard
+                          {...test}
+                          onAction={(action) => handleTestAction(test, action)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Desktop Grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-4">
+                  {allPaidTests.map((test) => (
                     <TestCard
+                      key={test.id}
                       {...test}
                       onAction={(action) => handleTestAction(test, action)}
                     />
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Desktop Grid */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-4">
-              {allPaidTests.map((test) => (
-                <TestCard
-                  key={test.id}
-                  {...test}
-                  onAction={(action) => handleTestAction(test, action)}
-                />
-              ))}
-            </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -595,31 +530,53 @@ export default function PaidTestsPage() {
             </div>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            {/* Mobile Scrollable */}
-            <div className="lg:hidden">
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                {attemptedTests.map((test) => (
-                  <div key={test.id} className="flex-shrink-0 w-80">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-green-200 border-t-green-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Loading attempted tests...
+                  </p>
+                </div>
+              </div>
+            ) : attemptedTests.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No tests attempted yet
+                </p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                  Start with a premium test to see your progress here
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile Scrollable */}
+                <div className="lg:hidden">
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    {attemptedTests.map((test) => (
+                      <div key={test.id} className="flex-shrink-0 w-80">
+                        <TestCard
+                          {...test}
+                          isAttempted={true}
+                          onAction={(action) => handleTestAction(test, action)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Desktop Grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-4">
+                  {attemptedTests.map((test) => (
                     <TestCard
+                      key={test.id}
                       {...test}
                       isAttempted={true}
                       onAction={(action) => handleTestAction(test, action)}
                     />
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Desktop Grid */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-4">
-              {attemptedTests.map((test) => (
-                <TestCard
-                  key={test.id}
-                  {...test}
-                  isAttempted={true}
-                  onAction={(action) => handleTestAction(test, action)}
-                />
-              ))}
-            </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
