@@ -260,7 +260,7 @@ export default function TestEvaluationPage() {
           </div>
 
           {/* Test Summary */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-yellow-500" />
@@ -268,9 +268,6 @@ export default function TestEvaluationPage() {
                   Test Results Summary
                 </span>
               </CardTitle>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Score = (Correct Answers ÷ Total Questions) × 100
-              </p>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -310,9 +307,11 @@ export default function TestEvaluationPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Question Navigation Sidebar */}
           <div className="lg:col-span-1">
-            <Card>
+            <Card className="border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <CardHeader>
-                <CardTitle className="text-lg">Questions</CardTitle>
+                <CardTitle className="text-lg text-gray-900 dark:text-white">
+                  Questions
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -324,25 +323,25 @@ export default function TestEvaluationPage() {
                       <button
                         key={question.id}
                         onClick={() => handleQuestionNavigation(index)}
-                        className={`w-full p-3 text-left rounded-lg border transition-all ${
+                        className={`w-full p-3 text-left rounded-lg border transition-all text-gray-900 dark:text-white ${
                           isActive
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-medium">
+                          <span className="font-medium text-gray-900 dark:text-white">
                             Q{question.questionNumber}
                           </span>
                           <div
-                            className={`p-1 rounded-full ${getQuestionStatusColor(
+                            className={`p-1 rounded-full text-white ${getQuestionStatusColor(
                               status
                             )}`}
                           >
                             {getQuestionStatusIcon(status)}
                           </div>
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-gray-500 mt-1 dark:text-gray-400">
                           {question.section.replace('_', ' ')}
                         </div>
                       </button>
@@ -356,31 +355,23 @@ export default function TestEvaluationPage() {
           {/* Question Display */}
           <div className="lg:col-span-3">
             {currentQuestion && (
-              <Card>
+              <Card className="border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline">
+                      <Badge
+                        variant="outline"
+                        className="text-gray-900 dark:text-white"
+                      >
                         Question {currentQuestion.questionNumber}
                       </Badge>
-                      <Badge variant="secondary">
+                      <Badge
+                        variant="secondary"
+                        className="text-gray-900 dark:text-white bg-yellow-900"
+                      >
                         {currentQuestion.section.replace('_', ' ')}
                       </Badge>
-                      <Badge
-                        className={getQuestionStatusColor(
-                          getQuestionStatus(currentQuestion)
-                        )}
-                      >
-                        {getQuestionStatus(
-                          getQuestionStatus(currentQuestion)
-                        ) === 'correct'
-                          ? 'Correct'
-                          : getQuestionStatus(
-                              getQuestionStatus(currentQuestion)
-                            ) === 'incorrect'
-                          ? 'Incorrect'
-                          : 'Unattempted'}
-                      </Badge>
+
                     </div>
                     <div className="text-sm text-gray-500">
                       {currentQuestionIndex + 1} of {questions.length}
@@ -441,7 +432,7 @@ export default function TestEvaluationPage() {
                               alt={`Question ${
                                 currentQuestion.questionNumber
                               } image ${index + 1}`}
-                              className="max-w-full h-auto rounded-lg border"
+                              className="max-w-full h-auto rounded-lg border dark:border-gray-700"
                             />
                           ))}
                         </div>
@@ -511,33 +502,33 @@ export default function TestEvaluationPage() {
                   </div>
 
                   {/* Answer Analysis */}
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700">
                     <h4 className="font-medium text-gray-900 dark:text-white mb-3">
                       Answer Analysis:
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-500">Your Answer:</span>
-                        <div className="font-medium">
+                        <span className="text-gray-500 dark:text-gray-400">Your Answer:</span>
+                        <div className="font-medium text-gray-900 dark:text-white">
                           {currentQuestion.userAnswer || 'Not attempted'}
                         </div>
                       </div>
                       <div>
-                        <span className="text-gray-500">Correct Answer:</span>
-                        <div className="font-medium text-green-600">
+                        <span className="text-gray-500 dark:text-gray-400">Correct Answer:</span>
+                        <div className="font-medium text-green-600 dark:text-green-400">
                           {currentQuestion.correctAnswers.join(', ')}
                         </div>
                       </div>
                       <div>
-                        <span className="text-gray-500">Marks:</span>
-                        <div className="font-medium">
+                        <span className="text-gray-500 dark:text-gray-400">Marks:</span>
+                        <div className="font-medium text-gray-900 dark:text-white">
                           {currentQuestion.marksObtained} /{' '}
                           {currentQuestion.positiveMarks}
                         </div>
                       </div>
                       <div>
-                        <span className="text-gray-500">Time:</span>
-                        <div className="font-medium">
+                        <span className="text-gray-500 dark:text-gray-400">Time:</span>
+                        <div className="font-medium text-gray-900 dark:text-white">
                           {Math.round(currentQuestion.timeTakenSec / 60)}m{' '}
                           {currentQuestion.timeTakenSec % 60}s
                         </div>
@@ -564,7 +555,7 @@ export default function TestEvaluationPage() {
                       variant="outline"
                       onClick={handlePreviousQuestion}
                       disabled={currentQuestionIndex === 0}
-                      className="gap-2"
+                      className="gap-2 border-2 border-gray-200 dark:border-gray-700 dark:text-white"
                     >
                       <ChevronLeft className="w-4 h-4" />
                       Previous
@@ -574,7 +565,7 @@ export default function TestEvaluationPage() {
                       variant="outline"
                       onClick={handleNextQuestion}
                       disabled={currentQuestionIndex === questions.length - 1}
-                      className="gap-2"
+                      className="gap-2 border-2 border-gray-200 dark:border-gray-700 dark:text-white"
                     >
                       Next
                       <ChevronRight className="w-4 h-4" />
