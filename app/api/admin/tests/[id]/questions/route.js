@@ -13,7 +13,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: testId } = params
+    const { id: testId } = await params
     const questionData = await request.json()
 
     // Validate required fields
@@ -165,7 +165,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: testId } = params
+    const { id: testId } = await params
 
     const questions = await prisma.question.findMany({
       where: { testId },

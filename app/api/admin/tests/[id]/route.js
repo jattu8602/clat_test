@@ -13,7 +13,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: testId } = params
+    const { id: testId } = await params
 
     const test = await prisma.test.findUnique({
       where: { id: testId },
@@ -57,7 +57,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: testId } = params
+    const { id: testId } = await params
     const updateData = await request.json()
 
     // Check if this is a status toggle request
@@ -132,7 +132,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: testId } = params
+    const { id: testId } = await params
 
     // Delete the test and all related data (cascade)
     await prisma.test.delete({

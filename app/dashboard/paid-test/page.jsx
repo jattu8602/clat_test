@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -51,6 +52,7 @@ const dataCache = {
 
 export default function PaidTestsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const [stats, setStats] = useState(
     dataCache.stats || {
       totalPaidTests: 0,
@@ -162,14 +164,12 @@ export default function PaidTestsPage() {
   const handleTestAction = (test, action) => {
     if (action === 'reattempt') {
       console.log('Re-attempting test:', test)
-      // Add your re-attempt logic here
-      // For example: navigate to test page with re-attempt flag
-      // After test completion, you might want to call refreshData()
+      // Navigate to test taking page for re-attempt
+      router.push(`/dashboard/test/${test.id}`)
     } else if (action === 'attempt') {
       console.log('Taking test:', test)
-      // Add your attempt logic here
-      // For example: navigate to test page
-      // After test completion, you might want to call refreshData()
+      // Navigate to test taking page
+      router.push(`/dashboard/test/${test.id}`)
     }
   }
 

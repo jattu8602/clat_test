@@ -97,6 +97,11 @@ export default function AttemptedTestsPage() {
       console.log('Taking test:', test)
       // Add your attempt logic here
       // For example: navigate to test page
+    } else if (action === 'evaluate') {
+      console.log('Evaluating test:', test)
+      // Navigate to test results page or show results modal
+      // For now, we'll navigate to the test page with evaluate mode
+      window.open(`/dashboard/test/${test.id}?mode=evaluate`, '_blank')
     }
   }
 

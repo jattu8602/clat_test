@@ -93,9 +93,9 @@ export async function GET(request) {
       // Add some mock data for missing fields if needed
       isNew: test.createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // New if created in last 7 days
       difficulty:
-        test.numberOfQuestions > 200
+        test._count.questions > 200
           ? 'Hard'
-          : test.numberOfQuestions > 100
+          : test._count.questions > 100
           ? 'Medium'
           : 'Easy',
       rating: 4.5, // You can calculate this from user feedback later

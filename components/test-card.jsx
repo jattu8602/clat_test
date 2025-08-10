@@ -216,6 +216,19 @@ export default function TestCard({
             )}
           </Button>
 
+          {/* Evaluate button for attempted tests */}
+          {isAttempted && (
+            <Button
+              onClick={() => onAction?.('evaluate')}
+              variant="outline"
+              className="w-full border-purple-200 text-purple-600 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20"
+              size="default"
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              Evaluate Answers
+            </Button>
+          )}
+
           {/* Admin Actions */}
           {admin && (
             <div className="flex gap-2 mt-2">

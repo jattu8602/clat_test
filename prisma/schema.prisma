@@ -152,6 +152,11 @@ model TestAttempt {
   test         Test        @relation(fields: [testId], references: [id], onDelete: Cascade)
   answers      Answer[]
   score        Float?
+  percentage   Float?      // Score as percentage (0-100)
+  totalQuestions Int?      // Total questions in the test
+  correctAnswers Int?      // Number of correct answers
+  wrongAnswers  Int?       // Number of wrong answers
+  unattempted   Int?       // Number of unattempted questions
   completed    Boolean     @default(false)
   totalTimeSec Int?        // Total time spent
   totalAttempted Int?      // How many questions attempted
@@ -170,6 +175,7 @@ model Answer {
   isCorrect      Boolean?
   timeTakenSec   Int         // Time spent on this question
   report         String?     // Optional report from user
+  marksObtained  Float?      // Marks obtained for this question (positive or negative)
 }
 
 model PaymentPlan {
