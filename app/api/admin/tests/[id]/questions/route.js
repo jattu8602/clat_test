@@ -143,6 +143,12 @@ export async function POST(request, { params }) {
       },
     })
 
+    // Increment the test's persistent question count
+    await prisma.test.update({
+      where: { id: testId },
+      data: { questionCount: { increment: 1 } },
+    })
+
     return NextResponse.json({
       success: true,
       question,

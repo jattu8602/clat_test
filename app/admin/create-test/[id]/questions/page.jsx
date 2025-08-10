@@ -125,10 +125,28 @@ export default function CreateQuestionsPage() {
   }
 
   const handleInputChange = (field, value) => {
-    setQuestionData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
+    if (field === 'optionType') {
+      // When switching option types, handle correct answers appropriately
+      if (value === 'SINGLE' && questionData.correctAnswers?.length > 1) {
+        // If switching to single and multiple answers are selected, keep only the first one
+        setQuestionData((prev) => ({
+          ...prev,
+          [field]: value,
+          correctAnswers:
+            prev.correctAnswers?.length > 0 ? [prev.correctAnswers[0]] : [],
+        }))
+      } else {
+        setQuestionData((prev) => ({
+          ...prev,
+          [field]: value,
+        }))
+      }
+    } else {
+      setQuestionData((prev) => ({
+        ...prev,
+        [field]: value,
+      }))
+    }
   }
 
   const handleImageUpload = (imageUrls) => {
@@ -159,31 +177,57 @@ export default function CreateQuestionsPage() {
   const removeOption = (index) => {
     if (questionData.options.length > 2) {
       const newOptions = questionData.options.filter((_, i) => i !== index)
+      // Also remove the option from correct answers if it was selected
+      const removedOption = questionData.options[index]
+      const newCorrectAnswers =
+        questionData.correctAnswers?.filter((ans) => ans !== removedOption) ||
+        []
+
       setQuestionData((prev) => ({
         ...prev,
         options: newOptions,
+        correctAnswers: newCorrectAnswers,
       }))
     }
   }
 
+  const clearAllSelections = () => {
+    setQuestionData((prev) => ({
+      ...prev,
+      correctAnswers: [],
+    }))
+  }
+
   const handleCorrectAnswerChange = (value) => {
+    console.log('handleCorrectAnswerChange called with:', value)
+    console.log('Current optionType:', questionData.optionType)
+    console.log('Current correctAnswers:', questionData.correctAnswers)
+
     if (questionData.questionType === 'OPTIONS') {
       if (questionData.optionType === 'MULTI') {
+        // For multi-select, toggle the value in the array
         const currentAnswers = questionData.correctAnswers || []
         const newAnswers = currentAnswers.includes(value)
           ? currentAnswers.filter((ans) => ans !== value)
           : [...currentAnswers, value]
+
+        console.log('Multi-select: new answers will be:', newAnswers)
+
         setQuestionData((prev) => ({
           ...prev,
           correctAnswers: newAnswers,
         }))
       } else {
+        // For single select, replace the array with single value
+        console.log('Single-select: setting answer to:', [value])
+
         setQuestionData((prev) => ({
           ...prev,
           correctAnswers: [value],
         }))
       }
     } else {
+      // For input type, set the single answer
       setQuestionData((prev) => ({
         ...prev,
         correctAnswers: [value],
@@ -300,6 +344,18 @@ export default function CreateQuestionsPage() {
 
         if (questionData.correctAnswers.length === 0) {
           alert('Please select at least one correct answer')
+          setLoading(false)
+          return
+        }
+
+        // Additional validation for multiple correct answers
+        if (
+          questionData.optionType === 'MULTI' &&
+          questionData.correctAnswers.length < 2
+        ) {
+          alert(
+            'For multiple correct questions, please select at least 2 correct answers'
+          )
           setLoading(false)
           return
         }
@@ -531,7 +587,8 @@ export default function CreateQuestionsPage() {
                   {/* Section Selection */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">Section
+                      <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                        Section
                         <span className="text-red-500 pl-1">*</span>
                       </Label>
                       <Select
@@ -543,18 +600,32 @@ export default function CreateQuestionsPage() {
                         <SelectTrigger className="border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-50 cursor-pointer">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="text-slate-900 dark:text-slate-50 bg-white dark:bg-slate-900 cursor-pointer" >
-                          <SelectItem value="ENGLISH" className="cursor-pointer">English</SelectItem>
+                        <SelectContent className="text-slate-900 dark:text-slate-50 bg-white dark:bg-slate-900 cursor-pointer">
+                          <SelectItem
+                            value="ENGLISH"
+                            className="cursor-pointer"
+                          >
+                            English
+                          </SelectItem>
                           <SelectItem value="GK_CA" className="cursor-pointer">
                             General Knowledge & Current Affairs
                           </SelectItem>
-                          <SelectItem value="LEGAL_REASONING" className="cursor-pointer">
+                          <SelectItem
+                            value="LEGAL_REASONING"
+                            className="cursor-pointer"
+                          >
                             Legal Reasoning
                           </SelectItem>
-                          <SelectItem value="LOGICAL_REASONING" className="cursor-pointer">
+                          <SelectItem
+                            value="LOGICAL_REASONING"
+                            className="cursor-pointer"
+                          >
                             Logical Reasoning
                           </SelectItem>
-                          <SelectItem value="QUANTITATIVE_TECHNIQUES" className="cursor-pointer">
+                          <SelectItem
+                            value="QUANTITATIVE_TECHNIQUES"
+                            className="cursor-pointer"
+                          >
                             Quantitative Techniques
                           </SelectItem>
                         </SelectContent>
@@ -575,10 +646,15 @@ export default function CreateQuestionsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="text-slate-900 dark:text-slate-50 bg-white dark:bg-slate-900 cursor-pointer">
-                          <SelectItem value="OPTIONS" className="cursor-pointer">
+                          <SelectItem
+                            value="OPTIONS"
+                            className="cursor-pointer"
+                          >
                             Multiple Choice
                           </SelectItem>
-                          <SelectItem value="INPUT" className="cursor-pointer">Text Input</SelectItem>
+                          <SelectItem value="INPUT" className="cursor-pointer">
+                            Text Input
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -651,20 +727,76 @@ export default function CreateQuestionsPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="text-slate-900 dark:text-slate-50 bg-white dark:bg-slate-900 cursor-pointer">
-                              <SelectItem value="SINGLE" className="cursor-pointer">
+                              <SelectItem
+                                value="SINGLE"
+                                className="cursor-pointer"
+                              >
                                 Single Correct
                               </SelectItem>
-                              <SelectItem value="MULTI" className="cursor-pointer">
+                              <SelectItem
+                                value="MULTI"
+                                className="cursor-pointer"
+                              >
                                 Multiple Correct
                               </SelectItem>
                             </SelectContent>
                           </Select>
+                          {questionData.optionType === 'MULTI' && (
+                            <p className="text-xs text-blue-600 dark:text-blue-400">
+                              ✓ You can select multiple correct answers
+                            </p>
+                          )}
+                          {questionData.optionType === 'MULTI' && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                              ⚠ Minimum 2 correct answers required
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Selection Status */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                            Selection Status
+                          </Label>
+                          <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">
+                                {questionData.optionType === 'MULTI'
+                                  ? 'Multiple'
+                                  : 'Single'}{' '}
+                                selection
+                              </span>
+                              <span className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                                {questionData.correctAnswers?.length || 0}{' '}
+                                selected
+                              </span>
+                            </div>
+                            {questionData.correctAnswers?.length > 0 && (
+                              <div className="mt-2 space-y-2">
+                                <div className="text-xs text-slate-500 dark:text-slate-400">
+                                  Selected:{' '}
+                                  {questionData.correctAnswers.join(', ')}
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={clearAllSelections}
+                                  className="h-6 px-2 text-xs text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                                >
+                                  Clear All
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">Options</Label>
+                          <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                            Options
+                          </Label>
                           {questionData.options.length < 6 && (
                             <Button
                               type="button"
@@ -679,11 +811,25 @@ export default function CreateQuestionsPage() {
                           )}
                         </div>
 
+                        {/* Instructions */}
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <p className="text-sm text-blue-800 dark:text-blue-200">
+                            <strong>Instructions:</strong>{' '}
+                            {questionData.optionType === 'MULTI'
+                              ? 'Check the boxes next to all correct answers. You can select multiple options.'
+                              : 'Click the radio button next to the single correct answer.'}
+                          </p>
+                        </div>
+
                         <div className="space-y-3">
                           {questionData.options.map((option, index) => (
                             <div
                               key={index}
-                              className="flex items-center space-x-3 p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                              className={`flex items-center space-x-3 p-3 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
+                                questionData.correctAnswers?.includes(option)
+                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                  : 'border-slate-200 dark:border-slate-700'
+                              }`}
                             >
                               <div className="flex-1">
                                 <Input
@@ -702,8 +848,17 @@ export default function CreateQuestionsPage() {
                                       ? 'checkbox'
                                       : 'radio'
                                   }
-                                  name="correctAnswer"
+                                  name={
+                                    questionData.optionType === 'MULTI'
+                                      ? `correctAnswer-${index}`
+                                      : 'correctAnswer'
+                                  }
                                   value={option}
+                                  checked={
+                                    questionData.correctAnswers?.includes(
+                                      option
+                                    ) || false
+                                  }
                                   onChange={(e) =>
                                     handleCorrectAnswerChange(option)
                                   }
@@ -775,10 +930,10 @@ export default function CreateQuestionsPage() {
                         <Settings className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">
+                        <CardTitle className="text-lg text-slate-900 dark:text-slate-50">
                           Advanced Settings
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="text-slate-500 dark:text-slate-400">
                           Configure marks, explanations, and additional content
                         </CardDescription>
                       </div>
@@ -788,6 +943,7 @@ export default function CreateQuestionsPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleSection('advanced')}
+                      className="text-slate-900 dark:text-slate-50"
                     >
                       {expandedSections.advanced ? (
                         <ChevronUp className="h-4 w-4" />
@@ -816,7 +972,7 @@ export default function CreateQuestionsPage() {
                             )
                           }
                           placeholder="1.0"
-                          className="border-slate-200 dark:border-slate-700"
+                          className="border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-50"
                         />
                       </div>
                       <div className="space-y-2">
@@ -834,14 +990,16 @@ export default function CreateQuestionsPage() {
                             )
                           }
                           placeholder="-0.25"
-                          className="border-slate-200 dark:border-slate-700"
+                          className="border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-50"
                         />
                       </div>
                     </div>
 
                     {/* Explanation */}
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">Explanation</Label>
+                      <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                        Explanation
+                      </Label>
                       <Textarea
                         value={questionData.explanation}
                         onChange={(e) =>
@@ -849,7 +1007,7 @@ export default function CreateQuestionsPage() {
                         }
                         placeholder="Explain the correct answer..."
                         rows={3}
-                        className="border-slate-200 dark:border-slate-700 resize-none"
+                        className="border-slate-200 dark:border-slate-700 resize-none text-slate-900 dark:text-slate-50"
                       />
                     </div>
 
@@ -883,7 +1041,7 @@ export default function CreateQuestionsPage() {
                           }
                           placeholder="Enter detailed comprehension text..."
                           rows={4}
-                          className="border-slate-200 dark:border-slate-700 resize-none"
+                          className="border-slate-200 dark:border-slate-700 resize-none text-slate-900 dark:text-slate-50"
                         />
                       )}
                     </div>
@@ -898,7 +1056,7 @@ export default function CreateQuestionsPage() {
                           onChange={(e) =>
                             handleInputChange('isTable', e.target.checked)
                           }
-                          className="rounded border-slate-300 dark:border-slate-600"
+                          className="rounded border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50"
                         />
                         <Label
                           htmlFor="isTable"
@@ -910,7 +1068,9 @@ export default function CreateQuestionsPage() {
                       {questionData.isTable && (
                         <div className="space-y-4 p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-slate-900 dark:text-slate-50">Table Configuration</h4>
+                            <h4 className="font-medium text-slate-900 dark:text-slate-50">
+                              Table Configuration
+                            </h4>
                             <div className="flex space-x-2">
                               <Button
                                 type="button"
@@ -944,7 +1104,7 @@ export default function CreateQuestionsPage() {
                                       {row.map((cell, colIndex) => (
                                         <td
                                           key={colIndex}
-                                          className="border border-slate-200 dark:border-slate-700 p-1"
+                                          className="border border-slate-200 dark:border-slate-700 p-1 text-slate-900 dark:text-slate-50"
                                         >
                                           <Input
                                             value={cell}
@@ -958,7 +1118,7 @@ export default function CreateQuestionsPage() {
                                             placeholder={`Cell ${
                                               rowIndex + 1
                                             }-${colIndex + 1}`}
-                                            className="w-20 h-8 text-xs border-0 bg-transparent"
+                                            className="w-20 h-8 text-xs border-0 bg-transparent text-slate-900 dark:text-slate-50"
                                           />
                                           {(rowIndex === 0 ||
                                             colIndex === 0) && (
@@ -1032,7 +1192,9 @@ export default function CreateQuestionsPage() {
                       <BarChart3 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg text-slate-900 dark:text-slate-50">Questions</CardTitle>
+                      <CardTitle className="text-lg text-slate-900 dark:text-slate-50">
+                        Questions
+                      </CardTitle>
                       <CardDescription className="text-slate-500 dark:text-slate-400">
                         {existingQuestions.length} questions added
                       </CardDescription>
@@ -1069,6 +1231,11 @@ export default function CreateQuestionsPage() {
                               <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 font-medium">
                                 {getSectionName(question.section)}
                               </span>
+                              {question.optionType === 'MULTI' && (
+                                <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 font-medium">
+                                  Multiple
+                                </span>
+                              )}
                             </div>
                             <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
                               {question.questionText}
@@ -1090,6 +1257,15 @@ export default function CreateQuestionsPage() {
                                 <div className="flex items-center space-x-1 text-xs text-slate-400">
                                   <Table className="h-3 w-3" />
                                   <span>Table</span>
+                                </div>
+                              )}
+                              {question.questionType === 'OPTIONS' && (
+                                <div className="flex items-center space-x-1 text-xs text-slate-400">
+                                  <CheckCircle className="h-3 w-3" />
+                                  <span>
+                                    {question.correctAnswers?.length || 0}{' '}
+                                    correct
+                                  </span>
                                 </div>
                               )}
                             </div>

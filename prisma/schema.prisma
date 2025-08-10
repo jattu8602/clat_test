@@ -108,6 +108,7 @@ model Test {
   positiveMarks    Float      @default(1.0)
   negativeMarks    Float      @default(-0.25)
   isActive         Boolean    @default(true)
+  questionCount    Int        @default(0)
   questions        Question[]
   testAttempts     TestAttempt[]
   createdAt        DateTime   @default(now())

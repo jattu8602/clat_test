@@ -286,6 +286,9 @@ export default function CreateTestPage() {
   }
 
   const getQuestionCount = (test) => {
+    // Prefer persistent counter if available; fallback to included relation count or _count
+    if (typeof test.questionCount === 'number') return test.questionCount
+    if (test._count?.questions != null) return test._count.questions
     return test.questions?.length || 0
   }
 
