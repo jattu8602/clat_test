@@ -107,49 +107,6 @@ export default function NotificationsPage() {
         </p>
       </div>
 
-      {/* Notification Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Notifications
-            </CardTitle>
-            <Bell className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{notifications.length}</div>
-            <p className="text-xs text-muted-foreground">
-              All time notifications
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unread</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {unreadCount}
-            </div>
-            <p className="text-xs text-muted-foreground">New notifications</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Read</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {notifications.length - unreadCount}
-            </div>
-            <p className="text-xs text-muted-foreground">Read notifications</p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Notifications List */}
       <Card>
@@ -165,15 +122,14 @@ export default function NotificationsPage() {
               <Button variant="outline" size="sm">
                 Mark All Read
               </Button>
-              <Button variant="outline" size="sm">
-                <X className="h-4 w-4 mr-1" />
-                Clear All
-              </Button>
+
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+
+          {/*  make new ui   the read button will be there on every notification if new notification appears  */}
+          {/* <div className="space-y-4">
             {notifications.map((notification) => (
               <div
                 key={notification.id}
@@ -229,67 +185,11 @@ export default function NotificationsPage() {
                 </div>
               </div>
             ))}
-          </div>
+          </div> */}
         </CardContent>
       </Card>
 
-      {/* Notification Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Notification Settings</CardTitle>
-          <CardDescription>
-            Customize your notification preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">Test Results</h4>
-                <p className="text-sm text-gray-600">
-                  Get notified when your test results are ready
-                </p>
-              </div>
-              <Button variant="outline" size="sm">
-                Enabled
-              </Button>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">New Tests</h4>
-                <p className="text-sm text-gray-600">
-                  Notifications about new available tests
-                </p>
-              </div>
-              <Button variant="outline" size="sm">
-                Enabled
-              </Button>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">Study Reminders</h4>
-                <p className="text-sm text-gray-600">
-                  Daily reminders to maintain study schedule
-                </p>
-              </div>
-              <Button variant="outline" size="sm">
-                Enabled
-              </Button>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">Payment Updates</h4>
-                <p className="text-sm text-gray-600">
-                  Payment confirmations and receipts
-                </p>
-              </div>
-              <Button variant="outline" size="sm">
-                Enabled
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
     </div>
   )
 }

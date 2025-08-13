@@ -42,22 +42,6 @@ export default function Admin() {
       bgColor: 'bg-green-50 dark:bg-green-900',
     },
     {
-      title: 'Free Tests',
-      description: 'Manage free test content and questions',
-      href: '/admin/free-test',
-      icon: FileText,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-900',
-    },
-    {
-      title: 'Paid Tests',
-      description: 'Manage paid test content and questions',
-      href: '/admin/paid-test',
-      icon: Crown,
-      color: 'text-yellow-600 dark:text-yellow-400',
-      bgColor: 'bg-yellow-50 dark:bg-yellow-900',
-    },
-    {
       title: 'Notifications',
       description: 'Send notifications to users',
       href: '/admin/notifications',
@@ -72,14 +56,6 @@ export default function Admin() {
       icon: CreditCard,
       color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 dark:bg-green-900',
-    },
-    {
-      title: 'Profile',
-      description: 'Manage admin profile settings',
-      href: '/admin/profile',
-      icon: User,
-      color: 'text-indigo-600 dark:text-indigo-400',
-      bgColor: 'bg-indigo-50 dark:bg-indigo-900',
     },
   ]
 

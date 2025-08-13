@@ -1,216 +1,423 @@
 'use client'
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Download, Eye, CreditCard, Calendar, DollarSign } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
-export default function PaymentHistoryPage() {
-  const payments = [
-    {
-      id: 1,
-      testName: 'Advanced Legal Reasoning',
-      amount: '₹299',
-      date: '2024-01-15',
-      status: 'completed',
-      transactionId: 'TXN123456789',
-      paymentMethod: 'Credit Card',
-      invoice: 'INV-2024-001',
-    },
-    {
-      id: 2,
-      testName: 'Full CLAT Mock Test',
-      amount: '₹499',
-      date: '2024-01-10',
-      status: 'completed',
-      transactionId: 'TXN123456788',
-      paymentMethod: 'UPI',
-      invoice: 'INV-2024-002',
-    },
-    {
-      id: 3,
-      testName: 'CLAT Success Package',
-      amount: '₹799',
-      date: '2024-01-05',
-      status: 'pending',
-      transactionId: 'TXN123456787',
-      paymentMethod: 'Net Banking',
-      invoice: 'INV-2024-003',
-    },
-    {
-      id: 4,
-      testName: 'Legal Aptitude Mastery',
-      amount: '₹199',
-      date: '2024-01-01',
-      status: 'failed',
-      transactionId: 'TXN123456786',
-      paymentMethod: 'Credit Card',
-      invoice: 'INV-2024-004',
-    },
-  ]
+export default function UserPaymentHistory() {
+  const { data: session } = useSession()
+  const [plans, setPlans] = useState([])
+  const [userPayments, setUserPayments] = useState([])
+  const [currentPlan, setCurrentPlan] = useState(null)
+  const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800'
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'failed':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+  useEffect(() => {
+    if (session) {
+      fetchData()
+    }
+  }, [session])
+
+  const fetchData = async () => {
+    try {
+      // Fetch available plans
+      const plansResponse = await fetch('/api/payment-plans')
+      if (plansResponse.ok) {
+        const plansData = await plansResponse.json()
+        setPlans(plansData.filter((plan) => plan.isActive))
+      }
+
+      // Fetch user's payment history
+      const paymentsResponse = await fetch('/api/user/payments')
+      if (paymentsResponse.ok) {
+        const paymentsData = await paymentsResponse.json()
+        setUserPayments(paymentsData)
+
+        // Find current active plan
+        const activePayment = paymentsData.find(
+          (payment) =>
+            payment.status === 'SUCCESS' &&
+            new Date(payment.createdAt) <= new Date() &&
+            new Date(
+              payment.createdAt.getTime() +
+                payment.plan.duration * 24 * 60 * 60 * 1000
+            ) > new Date()
+        )
+
+        if (activePayment) {
+          setCurrentPlan(activePayment)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const totalSpent = payments
-    .filter((p) => p.status === 'completed')
-    .reduce((sum, p) => sum + parseInt(p.amount.replace('₹', '')), 0)
+  const handlePurchase = (plan) => {
+    setSelectedPlan(plan)
+    setIsPurchaseDialogOpen(true)
+  }
+
+  const initiatePayment = async () => {
+    try {
+      const response = await fetch('/api/payments/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId: selectedPlan.id,
+          amount: selectedPlan.discount
+            ? selectedPlan.price -
+              (selectedPlan.price * selectedPlan.discount) / 100
+            : selectedPlan.price,
+        }),
+      })
+
+      if (response.ok) {
+        const { orderId, amount, currency } = await response.json()
+
+        // Initialize Razorpay
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          amount: amount * 100, // Razorpay expects amount in paise
+          currency: currency,
+          name: 'CLAT Prep',
+          description: `Purchase: ${selectedPlan.name}`,
+          order_id: orderId,
+          handler: function (response) {
+            // Handle successful payment
+            handlePaymentSuccess(response)
+          },
+          prefill: {
+            name: session?.user?.name || '',
+            email: session?.user?.email || '',
+          },
+          theme: {
+            color: '#3B82F6',
+          },
+        }
+
+        const razorpay = new window.Razorpay(options)
+        razorpay.open()
+      }
+    } catch (error) {
+      console.error('Error creating order:', error)
+    }
+  }
+
+  const handlePaymentSuccess = async (response) => {
+    try {
+      const verifyResponse = await fetch('/api/payments/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature,
+          planId: selectedPlan.id,
+        }),
+      })
+
+      if (verifyResponse.ok) {
+        setIsPurchaseDialogOpen(false)
+        setSelectedPlan(null)
+        fetchData() // Refresh data
+        alert('Payment successful! You are now a paid user.')
+      }
+    } catch (error) {
+      console.error('Error verifying payment:', error)
+    }
+  }
+
+  const calculateRemainingDays = (payment) => {
+    const startDate = new Date(payment.createdAt)
+    const endDate = new Date(
+      startDate.getTime() + payment.plan.duration * 24 * 60 * 60 * 1000
+    )
+    const now = new Date()
+    const remainingMs = endDate - now
+    const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24))
+    return Math.max(0, remainingDays)
+  }
+
+  const formatDuration = (plan) => {
+    if (plan.durationType === 'until_date' && plan.untilDate) {
+      return `Until ${new Date(plan.untilDate).toLocaleDateString()}`
+    }
+    return `${plan.duration} ${plan.durationType}`
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Loading...</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Payment History</h1>
-        <p className="text-gray-600 mt-2">
-          View and manage your payment transactions
-        </p>
-      </div>
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Payment History & Plans</h1>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₹{totalSpent}</div>
-            <p className="text-xs text-muted-foreground">
-              On completed payments
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Transactions
+      {/* Current Plan Status */}
+      {currentPlan && (
+        <Card className="mb-8 border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="text-green-800">Current Active Plan</span>
+              <Badge variant="default" className="bg-green-600">
+                Active
+              </Badge>
             </CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{payments.length}</div>
-            <p className="text-xs text-muted-foreground">
-              All time transactions
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round(
-                (payments.filter((p) => p.status === 'completed').length /
-                  payments.length) *
-                  100
-              )}
-              %
-            </div>
-            <p className="text-xs text-muted-foreground">Successful payments</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Payment History Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
-          <CardDescription>
-            Your payment history and transaction details
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {payments.map((payment) => (
-              <div
-                key={payment.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">
-                      {payment.testName}
-                    </h4>
-                    <span className="text-lg font-bold text-gray-900">
-                      {payment.amount}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>{payment.date}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <CreditCard className="h-4 w-4" />
-                      <span>{payment.paymentMethod}</span>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${getStatusColor(
-                        payment.status
-                      )}`}
-                    >
-                      {payment.status}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Transaction ID: {payment.transactionId}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2 ml-4">
-                  <Button variant="outline" size="sm">
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-1" />
-                    Invoice
-                  </Button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <span className="text-sm text-gray-600">Plan:</span>
+                <div className="font-semibold text-lg">
+                  {currentPlan.plan.name}
                 </div>
               </div>
+              <div>
+                <span className="text-sm text-gray-600">Duration:</span>
+                <div className="font-semibold">
+                  {formatDuration(currentPlan.plan)}
+                </div>
+              </div>
+              <div>
+                <span className="text-sm text-gray-600">Days Remaining:</span>
+                <div className="font-semibold text-lg text-green-600">
+                  {calculateRemainingDays(currentPlan)} days
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Available Plans for Free Users */}
+      {!currentPlan && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">Available Plans</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plans.map((plan) => (
+              <Card
+                key={plan.id}
+                className="relative hover:shadow-lg transition-shadow"
+              >
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-xl">{plan.name}</CardTitle>
+                    {plan.discount && plan.discount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-orange-100 text-orange-800"
+                      >
+                        {plan.discount}% OFF
+                      </Badge>
+                    )}
+                  </div>
+                  {plan.thumbnailUrl && (
+                    <img
+                      src={plan.thumbnailUrl}
+                      alt={plan.name}
+                      className="w-full h-32 object-cover rounded-md mt-3"
+                    />
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Duration:</span>
+                      <span className="font-medium">
+                        {formatDuration(plan)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">
+                        Original Price:
+                      </span>
+                      <span className="font-medium">₹{plan.price}</span>
+                    </div>
+
+                    {plan.discount && plan.discount > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Discount:</span>
+                        <span className="font-medium text-green-600">
+                          {plan.discount}%
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">
+                        Final Price:
+                      </span>
+                      <span className="text-lg font-bold text-blue-600">
+                        ₹
+                        {plan.discount
+                          ? (
+                              plan.price -
+                              (plan.price * plan.discount) / 100
+                            ).toFixed(2)
+                          : plan.price}
+                      </span>
+                    </div>
+
+                    {plan.description && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        {plan.description}
+                      </p>
+                    )}
+
+                    <Button
+                      className="w-full mt-4"
+                      onClick={() => handlePurchase(plan)}
+                    >
+                      Purchase Plan
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
-      {/* Export Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Export Options</CardTitle>
-          <CardDescription>
-            Download your payment history for record keeping
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex space-x-4">
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export as PDF
-            </Button>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export as CSV
-            </Button>
+      {/* Payment History */}
+      <div>
+        <h2 className="text-2xl font-semibold mb-4">Payment History</h2>
+        {userPayments.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center text-gray-500">
+              No payment history found.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {userPayments.map((payment) => (
+              <Card key={payment.id}>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                    <div>
+                      <span className="text-sm text-gray-600">Plan:</span>
+                      <div className="font-semibold">{payment.plan.name}</div>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Amount:</span>
+                      <div className="font-semibold">₹{payment.amount}</div>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Status:</span>
+                      <Badge
+                        variant={
+                          payment.status === 'SUCCESS'
+                            ? 'default'
+                            : payment.status === 'PENDING'
+                            ? 'secondary'
+                            : 'destructive'
+                        }
+                      >
+                        {payment.status}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Date:</span>
+                      <div className="font-semibold">
+                        {new Date(payment.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
+
+      {/* Purchase Dialog */}
+      <Dialog
+        open={isPurchaseDialogOpen}
+        onOpenChange={setIsPurchaseDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Purchase</DialogTitle>
+          </DialogHeader>
+          {selectedPlan && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-2">
+                  {selectedPlan.name}
+                </h3>
+                <p className="text-gray-600 mb-4">{selectedPlan.description}</p>
+
+                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span>Original Price:</span>
+                    <span>₹{selectedPlan.price}</span>
+                  </div>
+                  {selectedPlan.discount && selectedPlan.discount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount ({selectedPlan.discount}%):</span>
+                      <span>
+                        -₹
+                        {(
+                          (selectedPlan.price * selectedPlan.discount) /
+                          100
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-lg border-t pt-2">
+                    <span>Final Price:</span>
+                    <span>
+                      ₹
+                      {selectedPlan.discount
+                        ? (
+                            selectedPlan.price -
+                            (selectedPlan.price * selectedPlan.discount) / 100
+                          ).toFixed(2)
+                        : selectedPlan.price}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-sm text-gray-600 mt-2">
+                  Duration: {formatDuration(selectedPlan)}
+                </div>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setIsPurchaseDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button className="flex-1" onClick={initiatePayment}>
+                  Proceed to Payment
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
