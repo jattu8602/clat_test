@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -27,174 +28,116 @@ import {
 
 export default function DashboardHome() {
   const { data: session } = useSession()
+  const router = useRouter()
   const [stats, setStats] = useState({
     totalTests: 0,
     completedTests: 0,
     averageScore: 0,
     rank: 0,
   })
+  const [freeTests, setFreeTests] = useState([])
+  const [paidTests, setPaidTests] = useState([])
+  const [attemptedTests, setAttemptedTests] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const userType = session?.user?.role || 'FREE'
 
   useEffect(() => {
-    setStats({
-      totalTests: 12,
-      completedTests: 8,
-      averageScore: 75,
-      rank: 156,
-    })
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        // Recent tests for display sections
+        const [freeRecentRes, paidRecentRes] = await Promise.all([
+          fetch('/api/tests/free?type=recent'),
+          fetch('/api/tests/premium?type=recent'),
+        ])
+        const [freeRecent, paidRecent] = await Promise.all([
+          freeRecentRes.ok ? freeRecentRes.json() : { tests: [] },
+          paidRecentRes.ok ? paidRecentRes.json() : { tests: [] },
+        ])
+        setFreeTests(freeRecent.tests || [])
+        setPaidTests(paidRecent.tests || [])
+
+        // Build recent results from attempted across all tests
+        const [freeAllRes, paidAllRes] = await Promise.all([
+          fetch('/api/tests/free?type=all'),
+          fetch('/api/tests/premium?type=all'),
+        ])
+        const [freeAll, paidAll] = await Promise.all([
+          freeAllRes.ok ? freeAllRes.json() : { tests: [] },
+          paidAllRes.ok ? paidAllRes.json() : { tests: [] },
+        ])
+
+        const attemptedFreeBase = (freeAll.tests || []).filter(
+          (t) => t.isAttempted
+        )
+        const attemptedPaidBase = (paidAll.tests || []).filter(
+          (t) => t.isAttempted
+        )
+        let combined = [...attemptedFreeBase, ...attemptedPaidBase]
+
+        // For free users, only show free results
+        if (userType === 'FREE') {
+          combined = combined.filter((t) => t.isPaid === false)
+        }
+
+        // Enrich attempted with marks-based score and attemptedAt
+        const enriched = await Promise.all(
+          combined.map(async (test) => {
+            if (!test.testAttemptId) return test
+            try {
+              const res = await fetch(
+                `/api/tests/${test.id}/results?attemptId=${test.testAttemptId}`
+              )
+              if (!res.ok) return test
+              const data = await res.json()
+              return {
+                ...test,
+                lastScore: data.testAttempt?.score ?? test.lastScore ?? 0,
+                attemptedAt: data.testAttempt?.completedAt ?? test.attemptedAt,
+              }
+            } catch (e) {
+              return test
+            }
+          })
+        )
+
+        const sortedRecent = enriched
+          .filter((t) => !!t.attemptedAt)
+          .sort((a, b) => new Date(b.attemptedAt) - new Date(a.attemptedAt))
+          .slice(0, 6)
+        setAttemptedTests(sortedRecent)
+
+        // Basic stats (optional)
+        setStats((prev) => ({
+          ...prev,
+          totalTests:
+            (freeRecent.tests?.length || 0) + (paidRecent.tests?.length || 0),
+          completedTests: sortedRecent.length,
+          averageScore:
+            sortedRecent.length > 0
+              ? Math.round(
+                  sortedRecent.reduce((s, t) => s + (t.lastScore || 0), 0) /
+                    sortedRecent.length
+                )
+              : 0,
+        }))
+      } catch (err) {
+        // Fail silently on dashboard
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
   }, [])
 
-  const freeTests = [
-    {
-      id: 1,
-      title: 'CLAT Mock Test 1',
-      description:
-        'Basic legal reasoning and English comprehension test for CLAT preparation',
-      durationMinutes: 90,
-      numberOfQuestions: 150,
-      isPaid: false,
-      attemptCount: 1,
-      highlights: [
-        '150 comprehensive questions',
-        'Perfect for beginners',
-        'Covers all CLAT sections',
-        'Detailed performance analysis',
-      ],
-    },
-    {
-      id: 2,
-      title: 'English Language Test',
-      description: 'Vocabulary, grammar and reading comprehension focused test',
-      durationMinutes: 60,
-      numberOfQuestions: 100,
-      isPaid: false,
-      highlights: [
-        '100 curated questions',
-        'Vocabulary & grammar focus',
-        'Reading comprehension',
-        'Instant score report',
-      ],
-    },
-    {
-      id: 3,
-      title: 'Legal Reasoning Basics',
-      description:
-        'Fundamental legal concepts and case studies for CLAT aspirants',
-      durationMinutes: 75,
-      numberOfQuestions: 125,
-      isPaid: false,
-      highlights: [
-        '125 reasoning questions',
-        'Case study based',
-        'Constitutional law focus',
-        'Expert explanations',
-      ],
-    },
-  ]
-
-  const paidTests = [
-    {
-      id: 1,
-      title: 'Advanced Legal Reasoning',
-      description:
-        'Complex case studies and constitutional law for advanced preparation',
-      durationMinutes: 120,
-      numberOfQuestions: 200,
-      isPaid: true,
-      highlights: [
-        '200 advanced questions',
-        'Complex case studies',
-        'Constitutional law deep dive',
-        'AI-powered analysis',
-      ],
-    },
-    {
-      id: 2,
-      title: 'Full CLAT Mock Test',
-      description:
-        'Complete exam simulation with detailed performance analytics',
-      durationMinutes: 150,
-      numberOfQuestions: 250,
-      isPaid: true,
-      highlights: [
-        '250 comprehensive questions',
-        'Full exam simulation',
-        'Detailed analytics',
-        'Rank prediction',
-      ],
-    },
-    {
-      id: 3,
-      title: 'CLAT Sectional Test',
-      description: 'Section-wise practice with focused improvement strategies',
-      durationMinutes: 90,
-      numberOfQuestions: 180,
-      isPaid: true,
-      highlights: [
-        '180 sectional questions',
-        'Weakness identification',
-        'Improvement roadmap',
-        'Expert feedback',
-      ],
-    },
-  ]
-
-  const attemptedTests = [
-    {
-      id: 1,
-      title: 'CLAT Mock Test 1',
-      description: 'Basic legal reasoning and English comprehension',
-      durationMinutes: 90,
-      numberOfQuestions: 150,
-      isPaid: false,
-      attemptCount: 2,
-      highlights: [
-        '150 comprehensive questions',
-        'Perfect for beginners',
-        'All sections covered',
-        'Performance tracking',
-      ],
-    },
-    {
-      id: 2,
-      title: 'English Language Test',
-      description: 'Vocabulary, grammar and reading comprehension',
-      durationMinutes: 60,
-      numberOfQuestions: 100,
-      isPaid: false,
-      attemptCount: 1,
-      highlights: [
-        '100 curated questions',
-        'Language skills focus',
-        'Comprehension practice',
-        'Score improvement tips',
-      ],
-    },
-    {
-      id: 3,
-      title: 'Legal Reasoning Basics',
-      description: 'Fundamental concepts and case studies',
-      durationMinutes: 75,
-      numberOfQuestions: 125,
-      isPaid: false,
-      attemptCount: 3,
-      highlights: [
-        '125 reasoning questions',
-        'Concept building',
-        'Case law practice',
-        'Detailed solutions',
-      ],
-    },
-  ]
-
   const handleTestAction = (test, action) => {
-    if (action === 'reattempt') {
-      console.log('Re-attempting test:', test)
-      // Add your re-attempt logic here
-      // For example: navigate to test page with re-attempt flag
+    if (action === 'upgrade') {
+      router.push('/dashboard/payment-history')
+    } else if (action === 'reattempt') {
+      router.push(`/dashboard/test/${test.id}`)
     } else if (action === 'attempt') {
-      console.log('Taking test:', test)
-      // Add your attempt logic here
-      // For example: navigate to test page
+      router.push(`/dashboard/test/${test.id}`)
     }
   }
 
@@ -366,6 +309,8 @@ export default function DashboardHome() {
                 <div key={test.id} className="flex-shrink-0 w-80 sm:w-80">
                   <TestCard
                     {...test}
+                    locked={userType === 'FREE'}
+                    lockLabel="Upgrade to Premium"
                     onAction={(action) => handleTestAction(test, action)}
                   />
                 </div>

@@ -39,6 +39,7 @@ import {
   CheckCircle2,
   History,
   Timer,
+  RefreshCw,
 } from 'lucide-react'
 
 export default function AttemptedTestsPage() {
@@ -51,19 +52,141 @@ export default function AttemptedTestsPage() {
     averageScore: 0,
     thisWeekTests: 0,
   })
+  const [loading, setLoading] = useState(true)
+  const [thisWeekTests, setThisWeekTests] = useState([])
+  const [paidTestsAttempted, setPaidTestsAttempted] = useState([])
+  const [freeTestsAttempted, setFreeTestsAttempted] = useState([])
 
   // Get user type from session - FREE, PAID, or ADMIN
   const userType = session?.user?.role || 'FREE'
 
+  // Simple cache for attempted data
+  const attemptedCache = globalThis.__attemptedCache || {
+    paid: null,
+    free: null,
+    stats: null,
+    week: null,
+    lastFetch: null,
+    expiryMs: 5 * 60 * 1000,
+  }
+  if (!globalThis.__attemptedCache) globalThis.__attemptedCache = attemptedCache
+
+  const isCacheValid = () => {
+    if (!attemptedCache.lastFetch) return false
+    return Date.now() - attemptedCache.lastFetch < attemptedCache.expiryMs
+  }
+
   useEffect(() => {
-    // Simulate API call
-    setStats({
-      totalAttemptedTests: 15,
-      totalPaidAttempted: 8,
-      totalFreeAttempted: 7,
-      averageScore: 78,
-      thisWeekTests: 3,
-    })
+    const init = async () => {
+      try {
+        if (isCacheValid() && attemptedCache.paid && attemptedCache.free) {
+          setPaidTestsAttempted(attemptedCache.paid)
+          setFreeTestsAttempted(attemptedCache.free)
+          setThisWeekTests(attemptedCache.week || [])
+          setStats(attemptedCache.stats || stats)
+          setLoading(false)
+          return
+        }
+
+        setLoading(true)
+        // Fetch all free and premium tests, then filter attempted
+        const [freeRes, paidRes] = await Promise.all([
+          fetch('/api/tests/free?type=all'),
+          fetch('/api/tests/premium?type=all'),
+        ])
+
+        if (!freeRes.ok || !paidRes.ok) {
+          toast.error('Failed to load attempted tests')
+          setLoading(false)
+          return
+        }
+
+        const [freeData, paidData] = await Promise.all([
+          freeRes.json(),
+          paidRes.json(),
+        ])
+
+        const freeAttemptedBase = (freeData.tests || []).filter(
+          (t) => t.isAttempted
+        )
+        const paidAttemptedBase = (paidData.tests || []).filter(
+          (t) => t.isAttempted
+        )
+
+        // Enrich attempted with marks-based latest score and attemptedAt from results route
+        const enrichWithResults = async (tests) => {
+          return Promise.all(
+            tests.map(async (test) => {
+              if (!test.testAttemptId) return { ...test, isAttempted: true }
+              try {
+                const res = await fetch(
+                  `/api/tests/${test.id}/results?attemptId=${test.testAttemptId}`
+                )
+                if (!res.ok) return { ...test, isAttempted: true }
+                const data = await res.json()
+                return {
+                  ...test,
+                  lastScore: data.testAttempt?.score ?? test.lastScore ?? 0,
+                  attemptedAt:
+                    data.testAttempt?.completedAt ?? test.attemptedAt,
+                  totalTimeSec: data.testAttempt?.totalTimeSec,
+                }
+              } catch (e) {
+                return { ...test, isAttempted: true }
+              }
+            })
+          )
+        }
+
+        const [freeAttempted, paidAttempted] = await Promise.all([
+          enrichWithResults(freeAttemptedBase),
+          enrichWithResults(paidAttemptedBase),
+        ])
+
+        // Compute stats
+        const allAttempted = [...freeAttempted, ...paidAttempted]
+        const avgScore =
+          allAttempted.length > 0
+            ? Math.round(
+                allAttempted.reduce((s, t) => s + (t.lastScore || 0), 0) /
+                  allAttempted.length
+              )
+            : 0
+
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        const weekList = allAttempted
+          .filter((t) =>
+            t.attemptedAt ? new Date(t.attemptedAt) >= oneWeekAgo : false
+          )
+          .sort((a, b) => new Date(b.attemptedAt) - new Date(a.attemptedAt))
+
+        const statsData = {
+          totalAttemptedTests: allAttempted.length,
+          totalPaidAttempted: paidAttempted.length,
+          totalFreeAttempted: freeAttempted.length,
+          averageScore: avgScore,
+          thisWeekTests: weekList.length,
+        }
+
+        setPaidTestsAttempted(paidAttempted)
+        setFreeTestsAttempted(freeAttempted)
+        setThisWeekTests(weekList)
+        setStats(statsData)
+
+        attemptedCache.paid = paidAttempted
+        attemptedCache.free = freeAttempted
+        attemptedCache.week = weekList
+        attemptedCache.stats = statsData
+        attemptedCache.lastFetch = Date.now()
+      } catch (err) {
+        console.error('Error loading attempted tests', err)
+        toast.error('Error loading attempted tests')
+      } finally {
+        setLoading(false)
+      }
+    }
+    init()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Helper function to format time ago
@@ -113,188 +236,103 @@ export default function AttemptedTestsPage() {
     }
   }
 
-  // This week's tests
-  const thisWeekTests = [
-    {
-      id: 1,
-      title: 'Advanced Legal Reasoning',
-      description:
-        'Complex case studies and legal analysis with detailed explanations',
-      durationMinutes: 120,
-      numberOfQuestions: 200,
-      isPaid: true,
-      lastScore: 85,
-      testAttemptId: 'mock-attempt-1',
-      attemptedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      highlights: [
-        '200 advanced questions',
-        'Detailed solutions',
-        'Performance analytics',
-        'Expert support',
-      ],
-    },
-    {
-      id: 2,
-      title: 'Current Affairs Mock Test',
-      description: 'Latest current affairs and general knowledge for CLAT 2024',
-      durationMinutes: 45,
-      numberOfQuestions: 50,
-      isPaid: false,
-      lastScore: 72,
-      testAttemptId: 'mock-attempt-2',
-      attemptedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-      highlights: [
-        '50 latest current affairs questions',
-        'General knowledge focus',
-        'Updated for 2024',
-        'Quick practice session',
-      ],
-    },
-    {
-      id: 3,
-      title: 'English Language Test',
-      description: 'Vocabulary, grammar and reading comprehension focused test',
-      durationMinutes: 60,
-      numberOfQuestions: 100,
-      isPaid: false,
-      lastScore: 68,
-      testAttemptId: 'mock-attempt-3',
-      attemptedAt: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
-      highlights: [
-        '100 curated questions',
-        'Vocabulary & grammar focus',
-        'Reading comprehension',
-        'Instant score report',
-      ],
-    },
-  ]
+  const refreshData = async () => {
+    try {
+      attemptedCache.paid = null
+      attemptedCache.free = null
+      attemptedCache.week = null
+      attemptedCache.stats = null
+      attemptedCache.lastFetch = null
+      setLoading(true)
+      // Trigger useEffect re-run by calling init logic inline
+      const [freeRes, paidRes] = await Promise.all([
+        fetch('/api/tests/free?type=all'),
+        fetch('/api/tests/premium?type=all'),
+      ])
+      if (!freeRes.ok || !paidRes.ok) {
+        toast.error('Failed to refresh attempted tests')
+        setLoading(false)
+        return
+      }
+      const [freeData, paidData] = await Promise.all([
+        freeRes.json(),
+        paidRes.json(),
+      ])
+      const freeAttemptedBase = (freeData.tests || []).filter(
+        (t) => t.isAttempted
+      )
+      const paidAttemptedBase = (paidData.tests || []).filter(
+        (t) => t.isAttempted
+      )
 
-  // Paid tests attempted (only for paid users)
-  const paidTestsAttempted = [
-    {
-      id: 4,
-      title: 'Full CLAT Mock Test',
-      description:
-        'Complete exam simulation with real-time scoring and analysis',
-      durationMinutes: 150,
-      numberOfQuestions: 250,
-      isPaid: true,
-      lastScore: 79,
-      testAttemptId: 'mock-attempt-4',
-      attemptedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
-      highlights: [
-        '250 comprehensive questions',
-        'Real-time scoring',
-        'Detailed analysis',
-        'Performance tracking',
-      ],
-    },
-    {
-      id: 5,
-      title: 'Legal Aptitude Mastery',
-      description: 'Advanced legal concepts and reasoning patterns',
-      durationMinutes: 90,
-      numberOfQuestions: 180,
-      isPaid: true,
-      lastScore: 88,
-      testAttemptId: 'mock-attempt-5',
-      attemptedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
-      highlights: [
-        '180 mastery questions',
-        'Concept videos',
-        'Practice sets',
-        'Progress tracking',
-      ],
-    },
-    {
-      id: 6,
-      title: 'CLAT Success Package',
-      description: 'Comprehensive test series with personalized study plan',
-      durationMinutes: 180,
-      numberOfQuestions: 300,
-      isPaid: true,
-      lastScore: 82,
-      testAttemptId: 'mock-attempt-6',
-      attemptedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 2 weeks ago
-      highlights: [
-        '300 comprehensive questions',
-        'Personalized plan',
-        'Expert guidance',
-        '24/7 support',
-      ],
-    },
-  ]
+      const enrichWithResults = async (tests) => {
+        return Promise.all(
+          tests.map(async (test) => {
+            if (!test.testAttemptId) return { ...test, isAttempted: true }
+            try {
+              const res = await fetch(
+                `/api/tests/${test.id}/results?attemptId=${test.testAttemptId}`
+              )
+              if (!res.ok) return { ...test, isAttempted: true }
+              const data = await res.json()
+              return {
+                ...test,
+                lastScore: data.testAttempt?.score ?? test.lastScore ?? 0,
+                attemptedAt: data.testAttempt?.completedAt ?? test.attemptedAt,
+                totalTimeSec: data.testAttempt?.totalTimeSec,
+              }
+            } catch (e) {
+              return { ...test, isAttempted: true }
+            }
+          })
+        )
+      }
 
-  // Free tests attempted
-  const freeTestsAttempted = [
-    {
-      id: 7,
-      title: 'CLAT Mock Test 1',
-      description: 'Basic legal reasoning and English comprehension',
-      durationMinutes: 90,
-      numberOfQuestions: 150,
-      isPaid: false,
-      lastScore: 75,
-      testAttemptId: 'mock-attempt-7',
-      attemptedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      highlights: [
-        '150 comprehensive questions',
-        'Perfect for beginners',
-        'All sections covered',
-        'Performance tracking',
-      ],
-    },
-    {
-      id: 8,
-      title: 'Legal Reasoning Basics',
-      description: 'Fundamental concepts and case studies',
-      durationMinutes: 75,
-      numberOfQuestions: 125,
-      isPaid: false,
-      lastScore: 82,
-      testAttemptId: 'mock-attempt-8',
-      attemptedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-      highlights: [
-        '125 reasoning questions',
-        'Concept building',
-        'Case law practice',
-        'Detailed solutions',
-      ],
-    },
-    {
-      id: 9,
-      title: 'Logical Reasoning Test',
-      description: 'Critical thinking and analytical reasoning',
-      durationMinutes: 50,
-      numberOfQuestions: 80,
-      isPaid: false,
-      lastScore: 65,
-      testAttemptId: 'mock-attempt-9',
-      attemptedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 1 month ago
-      highlights: [
-        '80 logical questions',
-        'Analytical skills',
-        'Problem solving',
-        'Quick thinking',
-      ],
-    },
-    {
-      id: 10,
-      title: 'Reading Comprehension',
-      description: 'Advanced reading skills and comprehension practice',
-      durationMinutes: 45,
-      numberOfQuestions: 60,
-      isPaid: false,
-      lastScore: 70,
-      attemptedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), // 3 months ago
-      highlights: [
-        '60 comprehension questions',
-        'Various passage types',
-        'Speed reading tips',
-        'Accuracy improvement',
-      ],
-    },
-  ]
+      const [freeAttempted, paidAttempted] = await Promise.all([
+        enrichWithResults(freeAttemptedBase),
+        enrichWithResults(paidAttemptedBase),
+      ])
+
+      const allAttempted = [...freeAttempted, ...paidAttempted]
+      const avgScore =
+        allAttempted.length > 0
+          ? Math.round(
+              allAttempted.reduce((s, t) => s + (t.lastScore || 0), 0) /
+                allAttempted.length
+            )
+          : 0
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      const weekList = allAttempted
+        .filter((t) =>
+          t.attemptedAt ? new Date(t.attemptedAt) >= oneWeekAgo : false
+        )
+        .sort((a, b) => new Date(b.attemptedAt) - new Date(a.attemptedAt))
+
+      const statsData = {
+        totalAttemptedTests: allAttempted.length,
+        totalPaidAttempted: paidAttempted.length,
+        totalFreeAttempted: freeAttempted.length,
+        averageScore: avgScore,
+        thisWeekTests: weekList.length,
+      }
+
+      setPaidTestsAttempted(paidAttempted)
+      setFreeTestsAttempted(freeAttempted)
+      setThisWeekTests(weekList)
+      setStats(statsData)
+
+      attemptedCache.paid = paidAttempted
+      attemptedCache.free = freeAttempted
+      attemptedCache.week = weekList
+      attemptedCache.stats = statsData
+      attemptedCache.lastFetch = Date.now()
+    } catch (err) {
+      console.error('Error refreshing attempted tests', err)
+      toast.error('Error refreshing attempted tests')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const statCards = [
     {
@@ -410,12 +448,35 @@ export default function AttemptedTestsPage() {
                 </p>
               </div>
             </div>
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="gap-1 flex-shrink-0">
-                <ArrowLeft className="w-4 h-4 dark:text-white" />
-                <span className="hidden sm:inline dark:text-white">Back</span>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 flex-shrink-0 border-2 border-gray-200 dark:border-gray-700"
+                onClick={refreshData}
+                disabled={loading}
+                title="Refresh data"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 dark:text-white ${
+                    loading ? 'animate-spin' : ''
+                  }`}
+                />
+                <span className="hidden sm:inline dark:text-white">
+                  Refresh
+                </span>
               </Button>
-            </Link>
+              <Link href="/dashboard">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 flex-shrink-0"
+                >
+                  <ArrowLeft className="w-4 h-4 dark:text-white" />
+                  <span className="hidden sm:inline dark:text-white">Back</span>
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -483,31 +544,50 @@ export default function AttemptedTestsPage() {
             </div>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            {/* Mobile Scrollable */}
-            <div className="lg:hidden">
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                {thisWeekTests.map((test) => (
-                  <div key={test.id} className="flex-shrink-0 w-80">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Loading recent attempts...
+                  </p>
+                </div>
+              </div>
+            ) : thisWeekTests.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No attempts in the last 7 days
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile Scrollable */}
+                <div className="lg:hidden">
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    {thisWeekTests.map((test) => (
+                      <div key={test.id} className="flex-shrink-0 w-80">
+                        <TestCard
+                          {...test}
+                          isAttempted={true}
+                          onAction={(action) => handleTestAction(test, action)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Desktop Grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-4">
+                  {thisWeekTests.map((test) => (
                     <TestCard
+                      key={test.id}
                       {...test}
                       isAttempted={true}
                       onAction={(action) => handleTestAction(test, action)}
                     />
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Desktop Grid */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-4">
-              {thisWeekTests.map((test) => (
-                <TestCard
-                  key={test.id}
-                  {...test}
-                  isAttempted={true}
-                  onAction={(action) => handleTestAction(test, action)}
-                />
-              ))}
-            </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -537,31 +617,50 @@ export default function AttemptedTestsPage() {
             </div>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            {/* Mobile Scrollable */}
-            <div className="lg:hidden">
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                {paidTestsAttempted.map((test) => (
-                  <div key={test.id} className="flex-shrink-0 w-80">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Loading premium attempts...
+                  </p>
+                </div>
+              </div>
+            ) : paidTestsAttempted.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No premium tests attempted yet
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile Scrollable */}
+                <div className="lg:hidden">
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    {paidTestsAttempted.map((test) => (
+                      <div key={test.id} className="flex-shrink-0 w-80">
+                        <TestCard
+                          {...test}
+                          isAttempted={true}
+                          onAction={(action) => handleTestAction(test, action)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Desktop Grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-4">
+                  {paidTestsAttempted.map((test) => (
                     <TestCard
+                      key={test.id}
                       {...test}
                       isAttempted={true}
                       onAction={(action) => handleTestAction(test, action)}
                     />
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Desktop Grid */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-4">
-              {paidTestsAttempted.map((test) => (
-                <TestCard
-                  key={test.id}
-                  {...test}
-                  isAttempted={true}
-                  onAction={(action) => handleTestAction(test, action)}
-                />
-              ))}
-            </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -591,31 +690,50 @@ export default function AttemptedTestsPage() {
             </div>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            {/* Mobile Scrollable */}
-            <div className="lg:hidden">
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                {freeTestsAttempted.map((test) => (
-                  <div key={test.id} className="flex-shrink-0 w-80">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-green-200 border-t-green-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Loading free attempts...
+                  </p>
+                </div>
+              </div>
+            ) : freeTestsAttempted.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No free tests attempted yet
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile Scrollable */}
+                <div className="lg:hidden">
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    {freeTestsAttempted.map((test) => (
+                      <div key={test.id} className="flex-shrink-0 w-80">
+                        <TestCard
+                          {...test}
+                          isAttempted={true}
+                          onAction={(action) => handleTestAction(test, action)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Desktop Grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-4">
+                  {freeTestsAttempted.map((test) => (
                     <TestCard
+                      key={test.id}
                       {...test}
                       isAttempted={true}
                       onAction={(action) => handleTestAction(test, action)}
                     />
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Desktop Grid */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-4">
-              {freeTestsAttempted.map((test) => (
-                <TestCard
-                  key={test.id}
-                  {...test}
-                  isAttempted={true}
-                  onAction={(action) => handleTestAction(test, action)}
-                />
-              ))}
-            </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

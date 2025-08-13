@@ -23,6 +23,7 @@ import {
   Settings,
   ToggleLeft,
   ToggleRight,
+  Lock,
 } from 'lucide-react'
 
 export default function TestCard({
@@ -42,6 +43,8 @@ export default function TestCard({
   attemptedAt, // Add attemptedAt prop for time display
   onAction,
   admin = false, // Add admin prop to control admin buttons visibility
+  locked = false, // When true, show lock CTA instead of taking test
+  lockLabel = 'Upgrade to Premium',
 }) {
   // Helper function to format time ago
   const getTimeAgo = (date) => {
@@ -195,16 +198,27 @@ export default function TestCard({
         <div className="space-y-2 pt-4">
           {/* Main action button */}
           <Button
-            onClick={() => onAction?.(isAttempted ? 'reattempt' : 'attempt')}
+            onClick={() =>
+              onAction?.(
+                locked ? 'upgrade' : isAttempted ? 'reattempt' : 'attempt'
+              )
+            }
             className={`w-full ${
-              isAttempted
+              locked
+                ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                : isAttempted
                 ? 'bg-blue-500 hover:bg-blue-600 text-white'
                 : 'bg-green-500 hover:bg-green-600 text-white'
             }`}
-            variant={isAttempted ? 'default' : 'default'}
+            variant="default"
             size="default"
           >
-            {isAttempted ? (
+            {locked ? (
+              <>
+                <Lock className="w-4 h-4 mr-2" />
+                {lockLabel}
+              </>
+            ) : isAttempted ? (
               <>
                 <RefreshCcw className="w-4 h-4 mr-2" />
                 Re-attempt Test
