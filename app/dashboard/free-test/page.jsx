@@ -2,7 +2,9 @@
 
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
+import { toast } from 'react-hot-toast'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -29,235 +31,159 @@ import {
   ArrowLeft,
 } from 'lucide-react'
 
+// Simple cache for free tests
+const freeDataCache = {
+  newTests: null,
+  allFreeTests: null,
+  attemptedTests: null,
+  stats: null,
+  lastFetchTime: null,
+  cacheExpiry: 5 * 60 * 1000,
+}
+
 export default function FreeTestsPage() {
   const { data: session } = useSession()
-  const [stats, setStats] = useState({
-    totalFreeTests: 0,
-    attemptedFreeTests: 0,
-    averageScore: 0,
-    timeSpent: 0, // in hours
-  })
+  const router = useRouter()
+
+  const [stats, setStats] = useState(
+    freeDataCache.stats || {
+      totalFreeTests: 0,
+      attemptedFreeTests: 0,
+      averageScore: 0,
+      timeSpent: 0, // in hours
+    }
+  )
+  const [newTests, setNewTests] = useState(freeDataCache.newTests || [])
+  const [allFreeTests, setAllFreeTests] = useState(
+    freeDataCache.allFreeTests || []
+  )
+  const [attemptedTests, setAttemptedTests] = useState(
+    freeDataCache.attemptedTests || []
+  )
+  const [loading, setLoading] = useState(!freeDataCache.newTests)
+
+  const isCacheValid = () => {
+    if (!freeDataCache.lastFetchTime) return false
+    return Date.now() - freeDataCache.lastFetchTime < freeDataCache.cacheExpiry
+  }
 
   useEffect(() => {
-    // Simulate API call
-    setStats({
-      totalFreeTests: 15,
-      attemptedFreeTests: 8,
-      averageScore: 72,
-      timeSpent: 24,
-    })
+    if (!freeDataCache.newTests || !isCacheValid()) {
+      fetchFreeTests()
+    } else {
+      setLoading(false)
+    }
   }, [])
 
-  // New tests uploaded this month
-  const newTests = [
-    {
-      id: 1,
-      title: 'Current Affairs Mock Test',
-      description: 'Latest current affairs and general knowledge for CLAT 2024',
-      durationMinutes: 45,
-      numberOfQuestions: 50,
-      isPaid: false,
-      attemptCount: 0,
-      highlights: [
-        '50 latest current affairs questions',
-        'General knowledge focus',
-        'Updated for 2024',
-        'Quick practice session',
-      ],
-      isNew: true,
-    },
-    {
-      id: 2,
-      title: 'Quantitative Techniques Test',
-      description: 'Mathematics and data interpretation practice test',
-      durationMinutes: 60,
-      numberOfQuestions: 75,
-      isPaid: false,
-      attemptCount: 0,
-      highlights: [
-        '75 quantitative questions',
-        'Data interpretation included',
-        'Step-by-step solutions',
-        'Difficulty progression',
-      ],
-      isNew: true,
-    },
-    {
-      id: 3,
-      title: 'Legal Reasoning Advanced',
-      description: 'Advanced legal concepts with case studies',
-      durationMinutes: 90,
-      numberOfQuestions: 100,
-      isPaid: false,
-      attemptCount: 0,
-      highlights: [
-        '100 advanced questions',
-        'Recent case studies',
-        'Constitutional law focus',
-        'Expert commentary',
-      ],
-      isNew: true,
-    },
-  ]
+  const fetchFreeTests = async () => {
+    try {
+      setLoading(true)
 
-  // All free tests
-  const allFreeTests = [
-    {
-      id: 4,
-      title: 'CLAT Mock Test 1',
-      description:
-        'Basic legal reasoning and English comprehension test for CLAT preparation',
-      durationMinutes: 90,
-      numberOfQuestions: 150,
-      isPaid: false,
-      attemptCount: 0,
-      highlights: [
-        '150 comprehensive questions',
-        'Perfect for beginners',
-        'Covers all CLAT sections',
-        'Detailed performance analysis',
-      ],
-    },
-    {
-      id: 5,
-      title: 'English Language Test',
-      description: 'Vocabulary, grammar and reading comprehension focused test',
-      durationMinutes: 60,
-      numberOfQuestions: 100,
-      isPaid: false,
-      attemptCount: 0,
-      highlights: [
-        '100 curated questions',
-        'Vocabulary & grammar focus',
-        'Reading comprehension',
-        'Instant score report',
-      ],
-    },
-    {
-      id: 6,
-      title: 'Legal Reasoning Basics',
-      description:
-        'Fundamental legal concepts and case studies for CLAT aspirants',
-      durationMinutes: 75,
-      numberOfQuestions: 125,
-      isPaid: false,
-      attemptCount: 0,
-      highlights: [
-        '125 reasoning questions',
-        'Case study based',
-        'Constitutional law focus',
-        'Expert explanations',
-      ],
-    },
-    {
-      id: 7,
-      title: 'Logical Reasoning Test',
-      description: 'Critical thinking and analytical reasoning practice',
-      durationMinutes: 50,
-      numberOfQuestions: 80,
-      isPaid: false,
-      attemptCount: 0,
-      highlights: [
-        '80 logical questions',
-        'Critical thinking focus',
-        'Pattern recognition',
-        'Analytical skills',
-      ],
-    },
-    {
-      id: 8,
-      title: 'Reading Comprehension',
-      description: 'Advanced reading skills and comprehension practice',
-      durationMinutes: 45,
-      numberOfQuestions: 60,
-      isPaid: false,
-      attemptCount: 0,
-      highlights: [
-        '60 comprehension questions',
-        'Various passage types',
-        'Speed reading tips',
-        'Accuracy improvement',
-      ],
-    },
-  ]
+      const recentResponse = await fetch('/api/tests/free?type=recent')
+      const recentData = await recentResponse.json()
 
-  // Attempted free tests
-  const attemptedTests = [
-    {
-      id: 9,
-      title: 'CLAT Mock Test 1',
-      description: 'Basic legal reasoning and English comprehension',
-      durationMinutes: 90,
-      numberOfQuestions: 150,
-      isPaid: false,
-      attemptCount: 2,
-      lastScore: 75,
-      highlights: [
-        '150 comprehensive questions',
-        'Perfect for beginners',
-        'All sections covered',
-        'Performance tracking',
-      ],
-    },
-    {
-      id: 10,
-      title: 'English Language Test',
-      description: 'Vocabulary, grammar and reading comprehension',
-      durationMinutes: 60,
-      numberOfQuestions: 100,
-      isPaid: false,
-      attemptCount: 1,
-      lastScore: 68,
-      highlights: [
-        '100 curated questions',
-        'Language skills focus',
-        'Comprehension practice',
-        'Score improvement tips',
-      ],
-    },
-    {
-      id: 11,
-      title: 'Legal Reasoning Basics',
-      description: 'Fundamental concepts and case studies',
-      durationMinutes: 75,
-      numberOfQuestions: 125,
-      isPaid: false,
-      attemptCount: 3,
-      lastScore: 82,
-      highlights: [
-        '125 reasoning questions',
-        'Concept building',
-        'Case law practice',
-        'Detailed solutions',
-      ],
-    },
-    {
-      id: 12,
-      title: 'Logical Reasoning Test',
-      description: 'Critical thinking and analytical reasoning',
-      durationMinutes: 50,
-      numberOfQuestions: 80,
-      isPaid: false,
-      attemptCount: 1,
-      lastScore: 65,
-      highlights: [
-        '80 logical questions',
-        'Analytical skills',
-        'Problem solving',
-        'Quick thinking',
-      ],
-    },
-  ]
+      const allResponse = await fetch('/api/tests/free?type=all')
+      const allData = await allResponse.json()
+
+      if (!recentResponse.ok || !allResponse.ok) {
+        toast.error('Failed to fetch free tests')
+        return
+      }
+
+      const recentFreeTests = recentData.tests || []
+      const attempted = (allData.tests || []).filter((t) => t.isAttempted)
+      const nonAttempted = (allData.tests || []).filter((t) => !t.isAttempted)
+
+      const attemptedWithScores = await Promise.all(
+        attempted.map(async (test) => {
+          if (!test.testAttemptId) return test
+          try {
+            const res = await fetch(
+              `/api/tests/${test.id}/results?attemptId=${test.testAttemptId}`
+            )
+            if (!res.ok) return test
+            const data = await res.json()
+            return {
+              ...test,
+              lastScore: data.testAttempt?.score ?? test.lastScore ?? 0,
+              lastMarksObtained: data.testAttempt?.totalMarksObtained,
+              lastPossibleMarks: data.testAttempt?.totalPossibleMarks,
+              attemptedAt: data.testAttempt?.completedAt ?? test.attemptedAt,
+            }
+          } catch (err) {
+            console.error(
+              'Failed to fetch attempt result for test',
+              test.id,
+              err
+            )
+            return test
+          }
+        })
+      )
+
+      const averageScore =
+        attemptedWithScores.length > 0
+          ? Math.round(
+              attemptedWithScores.reduce(
+                (sum, t) => sum + (t.lastScore || 0),
+                0
+              ) / attemptedWithScores.length
+            )
+          : 0
+
+      const totalTimeSec = attemptedWithScores.reduce(
+        (sum, t) => sum + (t.totalTimeSec || 0),
+        0
+      )
+      const timeSpentHours = Math.round((totalTimeSec / 3600) * 10) / 10
+
+      const statsData = {
+        totalFreeTests: (allData.tests || []).length,
+        attemptedFreeTests: attemptedWithScores.length,
+        averageScore,
+        timeSpent: timeSpentHours,
+      }
+
+      setNewTests(recentFreeTests)
+      setAllFreeTests(nonAttempted)
+      setAttemptedTests(attemptedWithScores)
+      setStats(statsData)
+
+      freeDataCache.newTests = recentFreeTests
+      freeDataCache.allFreeTests = nonAttempted
+      freeDataCache.attemptedTests = attemptedWithScores
+      freeDataCache.stats = statsData
+      freeDataCache.lastFetchTime = Date.now()
+    } catch (error) {
+      console.error('Error fetching free tests:', error)
+      toast.error('Error loading free tests')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const refreshData = () => {
+    freeDataCache.newTests = null
+    freeDataCache.allFreeTests = null
+    freeDataCache.attemptedTests = null
+    freeDataCache.stats = null
+    freeDataCache.lastFetchTime = null
+    fetchFreeTests()
+  }
 
   const handleTestAction = (test, action) => {
     if (action === 'reattempt') {
-      console.log('Re-attempting test:', test)
-      // Add your re-attempt logic here
-      // For example: navigate to test page with re-attempt flag
+      router.push(`/dashboard/test/${test.id}`)
     } else if (action === 'attempt') {
-      console.log('Taking test:', test)
-      // Add your attempt logic here
-      // For example: navigate to test page
+      router.push(`/dashboard/test/${test.id}`)
+    } else if (action === 'evaluate') {
+      if (test.testAttemptId) {
+        router.push(
+          `/dashboard/test/${test.id}/evaluate?attemptId=${test.testAttemptId}`
+        )
+      } else {
+        toast.error('Test attempt ID not found. Please try again.')
+      }
     }
   }
 
@@ -312,12 +238,35 @@ export default function FreeTestsPage() {
                 </p>
               </div>
             </div>
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="gap-1 flex-shrink-0">
-                <ArrowLeft className="w-4 h-4 dark:text-white" />
-                <span className="hidden sm:inline dark:text-white">Back</span>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 flex-shrink-0 border-2 border-gray-200 dark:border-gray-700"
+                onClick={refreshData}
+                disabled={loading}
+                title="Refresh data"
+              >
+                <ChevronRight
+                  className={`w-4 h-4 rotate-90 dark:text-white ${
+                    loading ? 'animate-spin' : ''
+                  }`}
+                />
+                <span className="hidden sm:inline dark:text-white">
+                  Refresh
+                </span>
               </Button>
-            </Link>
+              <Link href="/dashboard">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 flex-shrink-0"
+                >
+                  <ArrowLeft className="w-4 h-4 dark:text-white" />
+                  <span className="hidden sm:inline dark:text-white">Back</span>
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -385,29 +334,48 @@ export default function FreeTestsPage() {
             </div>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            {/* Mobile Scrollable */}
-            <div className="lg:hidden">
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                {newTests.map((test) => (
-                  <div key={test.id} className="flex-shrink-0 w-80">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-yellow-200 border-t-yellow-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Loading free tests...
+                  </p>
+                </div>
+              </div>
+            ) : newTests.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No new free tests this month
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile Scrollable */}
+                <div className="lg:hidden">
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    {newTests.map((test) => (
+                      <div key={test.id} className="flex-shrink-0 w-80">
+                        <TestCard
+                          {...test}
+                          onAction={(action) => handleTestAction(test, action)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Desktop Grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-4">
+                  {newTests.map((test) => (
                     <TestCard
+                      key={test.id}
                       {...test}
                       onAction={(action) => handleTestAction(test, action)}
                     />
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Desktop Grid */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-4">
-              {newTests.map((test) => (
-                <TestCard
-                  key={test.id}
-                  {...test}
-                  onAction={(action) => handleTestAction(test, action)}
-                />
-              ))}
-            </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -438,29 +406,48 @@ export default function FreeTestsPage() {
             </div>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            {/* Mobile Scrollable */}
-            <div className="lg:hidden">
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                {allFreeTests.map((test) => (
-                  <div key={test.id} className="flex-shrink-0 w-80">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Loading free tests...
+                  </p>
+                </div>
+              </div>
+            ) : allFreeTests.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No free tests available
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile Scrollable */}
+                <div className="lg:hidden">
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    {allFreeTests.map((test) => (
+                      <div key={test.id} className="flex-shrink-0 w-80">
+                        <TestCard
+                          {...test}
+                          onAction={(action) => handleTestAction(test, action)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Desktop Grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-4">
+                  {allFreeTests.map((test) => (
                     <TestCard
+                      key={test.id}
                       {...test}
                       onAction={(action) => handleTestAction(test, action)}
                     />
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Desktop Grid */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-4">
-              {allFreeTests.map((test) => (
-                <TestCard
-                  key={test.id}
-                  {...test}
-                  onAction={(action) => handleTestAction(test, action)}
-                />
-              ))}
-            </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -491,31 +478,53 @@ export default function FreeTestsPage() {
             </div>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            {/* Mobile Scrollable */}
-            <div className="lg:hidden">
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                {attemptedTests.map((test) => (
-                  <div key={test.id} className="flex-shrink-0 w-80">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-green-200 border-t-green-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Loading attempted tests...
+                  </p>
+                </div>
+              </div>
+            ) : attemptedTests.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  No tests attempted yet
+                </p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                  Start with a free test to see your progress here
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile Scrollable */}
+                <div className="lg:hidden">
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    {attemptedTests.map((test) => (
+                      <div key={test.id} className="flex-shrink-0 w-80">
+                        <TestCard
+                          {...test}
+                          isAttempted={true}
+                          onAction={(action) => handleTestAction(test, action)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Desktop Grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-4">
+                  {attemptedTests.map((test) => (
                     <TestCard
+                      key={test.id}
                       {...test}
                       isAttempted={true}
                       onAction={(action) => handleTestAction(test, action)}
                     />
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Desktop Grid */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-4">
-              {attemptedTests.map((test) => (
-                <TestCard
-                  key={test.id}
-                  {...test}
-                  isAttempted={true}
-                  onAction={(action) => handleTestAction(test, action)}
-                />
-              ))}
-            </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
