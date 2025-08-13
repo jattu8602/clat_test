@@ -103,7 +103,7 @@ export default function Leaderboard() {
   const otherUsers = leaderboardData?.slice(3, 10) || []
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen w-full dark:bg-slate-900">
       <div className="container mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8 max-w-7xl">
         {/* Header */}
         <div className="text-center space-y-3 sm:space-y-4">
@@ -118,75 +118,16 @@ export default function Leaderboard() {
         {/* Top 3 Users - Podium Style */}
         {top3Users.length > 0 && (
           <div className="w-full max-w-4xl mx-auto">
-            {/* Mobile Stack Layout (sm and below) */}
-            {/* <div className="block sm:hidden space-y-4">
-              {top3Users.map((user, index) => (
-                <Card
-                  key={user.id}
-                  className={`${
-                    index === 0
-                      ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20'
-                      : index === 1
-                      ? 'border-gray-400'
-                      : 'border-amber-600'
-                  } border-2`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="relative flex-shrink-0">
-                        <Avatar
-                          className={`w-12 h-12 border-2 ${
-                            index === 0
-                              ? 'border-yellow-500'
-                              : index === 1
-                              ? 'border-gray-400'
-                              : 'border-amber-600'
-                          }`}
-                        >
-                          <AvatarImage src={user.image} />
-                          <AvatarFallback className="text-sm font-semibold">
-                            {getUserInitials(user.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="absolute -top-1 -right-1">
-                          {getRankIcon(index + 1)}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                            {user.name}
-                          </h3>
-                          <Badge className={getRankBadgeColor(index + 1)}>
-                            {index === 0 ? '1st' : index === 1 ? '2nd' : '3rd'}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-bold text-slate-900 dark:text-slate-100">
-                            {user.totalScore} pts
-                          </span>
-                          <div className="flex items-center space-x-1 text-slate-600 dark:text-slate-400">
-                            <Users className="w-3 h-3" />
-                            <span>{user.totalTests} tests</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div> */}
-
             {/* Desktop Podium Layout (sm and above) */}
             <div className="">
-              <div className="flex justify-center items-end space-x-4 lg:space-x-8">
+              <div className="flex justify-center items-end space-x-4 md:space-x-8 lg:space-x-8">
                 {/* 2nd Place - Left */}
                 {top3Users[1] && (
                   <div className="flex flex-col items-center space-y-3 sm:space-y-4 transform scale-90 sm:scale-95">
                     <div className="relative">
                       <Avatar className="w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 border-4 border-gray-400">
                         <AvatarImage src={top3Users[1].image} />
-                        <AvatarFallback className="text-base sm:text-lg font-semibold">
+                        <AvatarFallback className="text-slate-900 dark:text-slate-100 sm:text-lg font-semibold ">
                           {getUserInitials(top3Users[1].name)}
                         </AvatarFallback>
                       </Avatar>
@@ -221,7 +162,7 @@ export default function Leaderboard() {
                     <div className="relative">
                       <Avatar className="w-20 h-20 sm:w-22 sm:h-22 lg:w-24 lg:h-24 border-4 border-yellow-500">
                         <AvatarImage src={top3Users[0].image} />
-                        <AvatarFallback className="text-lg sm:text-xl font-semibold">
+                        <AvatarFallback className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">
                           {getUserInitials(top3Users[0].name)}
                         </AvatarFallback>
                       </Avatar>
@@ -256,7 +197,7 @@ export default function Leaderboard() {
                     <div className="relative">
                       <Avatar className="w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 border-4 border-amber-600">
                         <AvatarImage src={top3Users[2].image} />
-                        <AvatarFallback className="text-base sm:text-lg font-semibold">
+                        <AvatarFallback className="text-slate-900 dark:text-slate-100 sm:text-lg font-semibold">
                           {getUserInitials(top3Users[2].name)}
                         </AvatarFallback>
                       </Avatar>
@@ -292,11 +233,13 @@ export default function Leaderboard() {
         {/* Users 4-10 - Single Column Strip Layout */}
         {otherUsers.length > 0 && (
           <div className="w-full max-w-4xl mx-auto">
-            <Card>
+            <Card className="border-2 border-primary bg-primary/5 dark:border-slate-700">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
-                  <Target className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>Other Top Performers</span>
+                  <Target className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900 dark:text-slate-100" />
+                  <span className="text-slate-900 dark:text-slate-100">
+                    Other Top Performers
+                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -304,14 +247,14 @@ export default function Leaderboard() {
                   {otherUsers.map((user) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-4 sm:p-6 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200 hover:shadow-md"
+                      className="flex items-center justify-between p-4 sm:p-6 rounded-lg border border-slate-900 dark:border-slate-700 dark:hover:bg-slate-800 transition-all duration-200 hover:shadow-md"
                     >
                       {/* Left side - User info */}
                       <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
                         <div className="relative flex-shrink-0">
                           <Avatar className="w-12 h-12 sm:w-14 sm:h-14 border-2 border-slate-200 dark:border-slate-700">
                             <AvatarImage src={user.image} />
-                            <AvatarFallback className="text-sm sm:text-base font-semibold">
+                            <AvatarFallback className="text-sm text-slate-900 dark:text-slate-100 font-semibold">
                               {getUserInitials(user.name)}
                             </AvatarFallback>
                           </Avatar>
@@ -365,20 +308,22 @@ export default function Leaderboard() {
 
         {/* Current User's Rank */}
         {currentUser && (
-          <div className="w-full max-w-4xl mx-auto">
-            <Card className="border-2 border-primary bg-primary/5 dark:bg-primary/10">
+          <div className="w-full max-w-4xl mx-auto ">
+            <Card className="border-2 border-primary bg-primary/5 dark:border-slate-700">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
-                  <Star className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                  <span>Your Ranking</span>
+                  <Star className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900 dark:text-slate-100" />
+                  <span className="text-slate-900 dark:text-slate-100">
+                    Your Ranking
+                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                   <div className="relative flex-shrink-0">
-                    <Avatar className="w-14 h-14 sm:w-16 sm:h-16 border-2 border-primary">
+                    <Avatar className="w-14 h-14 sm:w-16 sm:h-16 border-2 border-slate-900 dark:border-slate-400">
                       <AvatarImage src={currentUser.image} />
-                      <AvatarFallback className="text-base sm:text-lg font-semibold">
+                      <AvatarFallback className="text-slate-900 dark:text-slate-100 sm:text-lg font-semibold">
                         {getUserInitials(currentUser.name)}
                       </AvatarFallback>
                     </Avatar>
