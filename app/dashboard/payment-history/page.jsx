@@ -21,6 +21,7 @@ export default function UserPaymentHistory() {
   const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
   useEffect(() => {
     if (session) {
@@ -71,6 +72,7 @@ export default function UserPaymentHistory() {
   }
 
   const initiatePayment = async () => {
+    setIsProcessingPayment(true)
     try {
       const response = await fetch('/api/payments/create-order', {
         method: 'POST',
@@ -110,9 +112,16 @@ export default function UserPaymentHistory() {
 
         const razorpay = new window.Razorpay(options)
         razorpay.open()
+      } else {
+        // Handle API errors
+        const errorData = await response.json()
+        alert(`Failed to create order: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error creating order:', error)
+      alert('Failed to create payment order. Please try again.')
+    } finally {
+      setIsProcessingPayment(false)
     }
   }
 
@@ -354,7 +363,7 @@ export default function UserPaymentHistory() {
         open={isPurchaseDialogOpen}
         onOpenChange={setIsPurchaseDialogOpen}
       >
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-slate-900">
           <DialogHeader>
             <DialogTitle>Confirm Purchase</DialogTitle>
           </DialogHeader>
@@ -410,8 +419,19 @@ export default function UserPaymentHistory() {
                 >
                   Cancel
                 </Button>
-                <Button className="flex-1" onClick={initiatePayment}>
-                  Proceed to Payment
+                <Button
+                  className="flex-1"
+                  onClick={initiatePayment}
+                  disabled={isProcessingPayment}
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    'Proceed to Payment'
+                  )}
                 </Button>
               </div>
             </div>

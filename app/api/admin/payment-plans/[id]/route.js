@@ -29,38 +29,67 @@ export async function PUT(request, { params }) {
     } = body
 
     // Validate required fields
-    if (!name || !price || !duration) {
+    if (!name || !price) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Name and price are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate duration based on duration type
+    if (durationType === 'until_date') {
+      if (!untilDate) {
+        return NextResponse.json(
+          {
+            error:
+              'Until date is required when duration type is "until specific date"',
+          },
+          { status: 400 }
+        )
+      }
+    } else if (!duration || duration <= 0) {
+      return NextResponse.json(
+        { error: 'Duration is required and must be greater than 0' },
         { status: 400 }
       )
     }
 
     // Calculate duration in days based on type
-    let durationInDays = duration
+    let durationInDays = 0
+    // Temporarily simplify duration calculation to test basic functionality
     if (durationType === 'months') {
-      durationInDays = duration * 30
+      durationInDays = parseInt(duration) * 30
     } else if (durationType === 'years') {
-      durationInDays = duration * 365
+      durationInDays = parseInt(duration) * 365
     } else if (durationType === 'until_date' && untilDate) {
       const now = new Date()
       const targetDate = new Date(untilDate)
       durationInDays = Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24))
+    } else {
+      durationInDays = parseInt(duration) || 0
     }
+
+    // Create plan data object
+    const planData = {
+      name,
+      price: parseFloat(price),
+      duration: durationInDays,
+      isActive,
+    }
+
+    // Add optional fields only if they exist
+    // Temporarily comment out problematic fields to test basic functionality
+    // if (durationType) planData.durationType = durationType
+    // if (untilDate) planData.untilDate = new Date(untilDate)
+    if (thumbnailUrl) planData.thumbnailUrl = thumbnailUrl
+    if (description) planData.description = description
+    if (discount) planData.discount = parseFloat(discount)
+
+    console.log('Updating plan with data:', planData)
 
     const plan = await prisma.paymentPlan.update({
       where: { id },
-      data: {
-        name,
-        price: parseFloat(price),
-        duration: durationInDays,
-        durationType,
-        untilDate: untilDate ? new Date(untilDate) : null,
-        thumbnailUrl,
-        description,
-        discount: discount ? parseFloat(discount) : null,
-        isActive,
-      },
+      data: planData,
     })
 
     return NextResponse.json(plan)

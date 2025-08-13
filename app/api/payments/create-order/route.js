@@ -40,17 +40,34 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
     }
 
-    // Create Razorpay order
-    const order = await razorpay.orders.create({
-      amount: Math.round(amount * 100), // Convert to paise
-      currency: 'INR',
-      receipt: `plan_${planId}_${Date.now()}`,
-      notes: {
-        planId: planId,
-        userId: session.user.id,
-        planName: plan.name,
-      },
-    })
+    // Create Razorpay order safely
+    let order
+    try {
+      order = await razorpay.orders.create({
+        amount: Math.round(amount * 100),
+        currency: 'INR',
+        receipt: `plan_${Date.now().toString().slice(-8)}`,
+        notes: {
+          planId,
+          userId: session.user.id,
+          planName: plan.name,
+        },
+      })
+    } catch (razorpayErr) {
+      console.error('Razorpay order creation failed:', razorpayErr)
+      return NextResponse.json(
+        { error: 'Failed to create Razorpay order' },
+        { status: 400 }
+      )
+    }
+
+    // Make sure the order has a valid ID
+    if (!order?.id) {
+      return NextResponse.json(
+        { error: 'Invalid order response from Razorpay' },
+        { status: 500 }
+      )
+    }
 
     // Create payment record in database
     const payment = await prisma.payment.create({
@@ -71,6 +88,19 @@ export async function POST(request) {
     })
   } catch (error) {
     console.error('Error creating order:', error)
+
+    // Handle Razorpay specific errors
+    if (error.statusCode === 400) {
+      return NextResponse.json(
+        {
+          error: `Razorpay error: ${
+            error.error?.description || 'Invalid request'
+          }`,
+        },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
