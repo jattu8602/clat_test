@@ -74,13 +74,12 @@ export async function PUT(request, { params }) {
       name,
       price: parseFloat(price),
       duration: durationInDays,
-      isActive,
+      durationType: durationType || 'days',
+      isActive: isActive !== undefined ? isActive : true,
     }
 
     // Add optional fields only if they exist
-    // Temporarily comment out problematic fields to test basic functionality
-    // if (durationType) planData.durationType = durationType
-    // if (untilDate) planData.untilDate = new Date(untilDate)
+    if (untilDate) planData.untilDate = new Date(untilDate)
     if (thumbnailUrl) planData.thumbnailUrl = thumbnailUrl
     if (description) planData.description = description
     if (discount) planData.discount = parseFloat(discount)
