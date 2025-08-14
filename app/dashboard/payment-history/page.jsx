@@ -625,6 +625,16 @@ export default function UserPaymentHistory() {
         // Show success message
         toast.success('Payment successful! You are now a paid user.')
 
+        // Refresh sidebar stats if available
+        if (window.refreshSidebarStats) {
+          window.refreshSidebarStats()
+        }
+
+        // Refresh header notifications if available
+        if (window.refreshHeaderNotifications) {
+          window.refreshHeaderNotifications()
+        }
+
         // Force a page refresh to update the UI
         window.location.reload()
       } else {

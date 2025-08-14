@@ -1,7 +1,7 @@
 'use client'
 
 import { useSession, signOut } from 'next-auth/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -35,6 +35,49 @@ export default function Header({
   const { data: session } = useSession()
   const router = useRouter()
   const [searchFocus, setSearchFocus] = useState(false)
+  const [notificationCount, setNotificationCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  // Fetch notification count
+  useEffect(() => {
+    if (session) {
+      fetchNotificationCount()
+    }
+  }, [session])
+
+  const fetchNotificationCount = async () => {
+    try {
+      const response = await fetch('/api/dashboard/stats')
+      if (response.ok) {
+        const data = await response.json()
+        if (session?.user?.role === 'ADMIN') {
+          setNotificationCount(
+            data.stats.notifications.unreadNotifications || 0
+          )
+        } else {
+          setNotificationCount(
+            data.stats.notifications.unreadUserNotifications || 0
+          )
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching notification count:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Refresh notification count function that can be called from parent components
+  const refreshNotificationCount = () => {
+    fetchNotificationCount()
+  }
+
+  // Expose refresh function to parent component
+  useEffect(() => {
+    if (window) {
+      window.refreshHeaderNotifications = refreshNotificationCount
+    }
+  }, [])
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/' })
@@ -131,16 +174,18 @@ export default function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-500 dark:bg-slate-800 transition-all duration-200 dark:text-white  "
+              className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-500 dark:bg-slate-800 transition-all duration-200 dark:text-white"
               onClick={() => {
                 router.push('/dashboard/notifications')
                 setSidebarOpen(false)
               }}
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-xs text-white flex items-center justify-center font-medium shadow-lg animate-pulse">
-                3
-              </span>
+              {notificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-xs text-white flex items-center justify-center font-medium shadow-lg animate-pulse">
+                  {loading ? '...' : notificationCount}
+                </span>
+              )}
             </Button>
           </div>
 

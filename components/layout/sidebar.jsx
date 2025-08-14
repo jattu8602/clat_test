@@ -4,6 +4,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -41,15 +42,51 @@ export default function Sidebar({
   const { data: session } = useSession()
   const router = useRouter()
   const pathname = usePathname()
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  // Fetch dashboard statistics
+  useEffect(() => {
+    if (session) {
+      fetchStats()
+    }
+  }, [session])
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/dashboard/stats')
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data.stats)
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Refresh stats function that can be called from parent components
+  const refreshStats = () => {
+    fetchStats()
+  }
+
+  // Expose refresh function to parent component
+  useEffect(() => {
+    if (window) {
+      window.refreshSidebarStats = refreshStats
+    }
+  }, [])
 
   const navigation = isAdmin
     ? [
         { name: 'Dashboard', href: '/admin', icon: Home },
         {
-          name: 'Users Management',
+          name: 'Users',
           href: '/admin/users',
           icon: Users,
-          badge: '24',
+          badge: stats?.user?.totalUsers || '0',
         },
         { name: 'Create Test', href: '/admin/create-test', icon: Plus },
         { name: 'Payments', href: '/admin/payment-history', icon: CreditCard },
@@ -57,9 +94,8 @@ export default function Sidebar({
           name: 'Notifications',
           href: '/admin/notifications',
           icon: Bell,
-          badge: '3',
+          badge: stats?.notifications?.totalNotifications || '0',
         },
-        { name: 'Profile', href: '/admin/profile', icon: User },
       ]
     : [
         { name: 'Home', href: '/dashboard', icon: Home, badge: null },
@@ -67,20 +103,20 @@ export default function Sidebar({
           name: 'Free Tests',
           href: '/dashboard/free-test',
           icon: FileText,
-          badge: '5',
+          badge: stats?.tests?.free || '0',
         },
         {
           name: 'Paid Tests',
           href: '/dashboard/paid-test',
           icon: Crown,
-          badge: 'New',
-      },
-      {
-        name: 'Attempted Tests',
-        href: '/dashboard/attempted',
-        icon: FileText,
-        badge: '10',
-      },
+          badge: stats?.tests?.paid || '0',
+        },
+        {
+          name: 'Attempted Tests',
+          href: '/dashboard/attempted',
+          icon: FileText,
+          badge: stats?.user?.userTestAttempts || '0',
+        },
         {
           name: 'Leaderboard',
           href: '/dashboard/leaderboard',
@@ -97,7 +133,7 @@ export default function Sidebar({
           name: 'Notifications',
           href: '/dashboard/notifications',
           icon: Bell,
-          badge: '2',
+          badge: stats?.notifications?.unreadUserNotifications || '0',
         },
         {
           name: 'Profile',
@@ -152,14 +188,29 @@ export default function Sidebar({
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden rounded-xl dark:hover:bg-white/10 hover:bg-gray-100"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="h-4 w-4 text-foreground dark:text-white" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-xl dark:hover:bg-white/10 hover:bg-gray-100"
+                onClick={refreshStats}
+                disabled={loading}
+              >
+                <BarChart3
+                  className={`h-4 w-4 text-foreground dark:text-white ${
+                    loading ? 'animate-spin' : ''
+                  }`}
+                />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden rounded-xl dark:hover:bg-white/10 hover:bg-gray-100"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <X className="h-4 w-4 text-foreground dark:text-white" />
+              </Button>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -194,16 +245,13 @@ export default function Sidebar({
                   <div className="flex items-center space-x-2">
                     {item.badge && (
                       <span
-                        className={`px-2 py-0.5 text-xs font-semibold rounded-md transition-colors duration-200
-      ${
-        item.badge === 'New'
-          ? 'bg-green-600 text-white dark:bg-green-500'
-          : active
-          ? 'bg-zinc-700 text-white dark:bg-zinc-300 dark:text-black'
-          : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200'
-      }`}
+                        className={`px-2 py-0.5 text-xs font-semibold rounded-md transition-colors duration-200 ${
+                          active
+                            ? 'bg-zinc-700 text-white dark:bg-zinc-300 dark:text-black'
+                            : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200'
+                        }`}
                       >
-                        {item.badge}
+                        {loading && item.badge !== '0' ? '...' : item.badge}
                       </span>
                     )}
 

@@ -39,6 +39,11 @@ export default function UserNotificationsPage() {
       if (response.ok) {
         const data = await response.json()
         setNotifications(data.notifications || [])
+
+        // Refresh header notifications to ensure count is accurate
+        if (window.refreshHeaderNotifications) {
+          window.refreshHeaderNotifications()
+        }
       }
     } catch (error) {
       console.error('Error fetching notifications:', error)
@@ -67,6 +72,11 @@ export default function UserNotificationsPage() {
               : notification
           )
         )
+
+        // Refresh header notifications if available
+        if (window.refreshHeaderNotifications) {
+          window.refreshHeaderNotifications()
+        }
       }
     } catch (error) {
       console.error('Error marking notification as read:', error)

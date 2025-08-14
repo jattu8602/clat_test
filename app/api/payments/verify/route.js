@@ -126,6 +126,7 @@ export async function POST(request) {
     return NextResponse.json({
       message: 'Payment verified successfully',
       paidUntil: finalPaidUntil,
+      refreshStats: true, // Signal to refresh sidebar stats
     })
   } catch (error) {
     console.error('Error verifying payment:', error)
