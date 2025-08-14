@@ -1,195 +1,339 @@
 'use client'
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Bell, CheckCircle, AlertCircle, Info, X, Check } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import {
+  Bell,
+  Eye,
+  Megaphone,
+  CheckCircle,
+  AlertCircle,
+  Calendar,
+  Users,
+  ArrowRight,
+  Play,
+  Trophy,
+  RefreshCcw,
+} from 'lucide-react'
+import toast from 'react-hot-toast'
 
-export default function NotificationsPage() {
-  const notifications = [
-    {
-      id: 1,
-      title: 'New Test Available',
-      message: 'Advanced Legal Reasoning test is now available for purchase',
-      type: 'info',
-      date: '2024-01-15 10:30 AM',
-      read: false,
-      action: 'View Test',
-    },
-    {
-      id: 2,
-      title: 'Test Result Ready',
-      message: 'Your CLAT Mock Test 1 results are now available',
-      type: 'success',
-      date: '2024-01-14 02:15 PM',
-      read: true,
-      action: 'View Results',
-    },
-    {
-      id: 3,
-      title: 'Payment Successful',
-      message:
-        'Payment of ₹299 for Advanced Legal Reasoning has been processed',
-      type: 'success',
-      date: '2024-01-13 11:45 AM',
-      read: true,
-      action: 'View Receipt',
-    },
-    {
-      id: 4,
-      title: 'Study Reminder',
-      message:
-        "You haven't taken a test in 3 days. Keep up with your preparation!",
-      type: 'warning',
-      date: '2024-01-12 09:00 AM',
-      read: false,
-      action: 'Take Test',
-    },
-    {
-      id: 5,
-      title: 'System Maintenance',
-      message: 'Scheduled maintenance on Sunday, 2:00 AM - 4:00 AM',
-      type: 'info',
-      date: '2024-01-11 06:30 PM',
-      read: true,
-      action: 'Learn More',
-    },
-    {
-      id: 6,
-      title: 'Payment Failed',
-      message: 'Payment for Full CLAT Mock Test failed. Please try again.',
-      type: 'error',
-      date: '2024-01-10 03:20 PM',
-      read: false,
-      action: 'Retry Payment',
-    },
-  ]
+export default function UserNotificationsPage() {
+  const { data: session } = useSession()
+  const router = useRouter()
+  const [notifications, setNotifications] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (session) {
+      fetchNotifications()
+    }
+  }, [session])
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/user/notifications')
+      if (response.ok) {
+        const data = await response.json()
+        setNotifications(data.notifications || [])
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+      toast.error('Failed to fetch notifications')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const markAsRead = async (notificationId) => {
+    try {
+      const response = await fetch('/api/user/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notificationId }),
+      })
+
+      if (response.ok) {
+        // Update local state
+        setNotifications((prev) =>
+          prev.map((notification) =>
+            notification.id === notificationId
+              ? { ...notification, isRead: true }
+              : notification
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
+  }
+
+  const handleNotificationClick = (notification) => {
+    // Mark as read when clicked
+    if (!notification.isRead) {
+      markAsRead(notification.id)
+    }
+
+    // Handle different notification types
+    switch (notification.type) {
+      case 'TEST_ACTIVATION':
+        // Check if it's a free or paid test notification
+        if (notification.message.toLowerCase().includes('free')) {
+          router.push('/dashboard/free-test')
+        } else if (notification.message.toLowerCase().includes('paid')) {
+          router.push('/dashboard/paid-test')
+        } else {
+          // Default to free test if can't determine
+          router.push('/dashboard/free-test')
+        }
+        break
+
+      case 'ADMIN_BROADCAST':
+        // If there's a button link, navigate to it
+        if (notification.buttonLink) {
+          router.push(notification.buttonLink)
+        }
+        break
+
+      case 'PAYMENT_SUCCESS':
+        router.push('/dashboard/payment-history')
+        break
+
+      case 'PLAN_EXPIRY':
+        router.push('/dashboard/payment-history')
+        break
+
+      default:
+        // Do nothing for other types
+        break
+    }
+  }
 
   const getNotificationIcon = (type) => {
     switch (type) {
-      case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
-      case 'warning':
-        return <AlertCircle className="h-5 w-5 text-yellow-500" />
-      case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-500" />
+      case 'TEST_ACTIVATION':
+        return <Eye className="w-5 h-5 text-blue-500" />
+      case 'ADMIN_BROADCAST':
+        return <Megaphone className="w-5 h-5 text-purple-500" />
+      case 'PAYMENT_SUCCESS':
+        return <CheckCircle className="w-5 h-5 text-green-500" />
+      case 'PLAN_EXPIRY':
+        return <AlertCircle className="w-5 h-5 text-red-500" />
       default:
-        return <Info className="h-5 w-5 text-blue-500" />
+        return <Bell className="w-5 h-5 text-gray-500" />
     }
   }
 
-  const getNotificationColor = (type) => {
+  const getNotificationTypeLabel = (type) => {
     switch (type) {
-      case 'success':
-        return 'border-green-200 bg-green-50'
-      case 'warning':
-        return 'border-yellow-200 bg-yellow-50'
-      case 'error':
-        return 'border-red-200 bg-red-50'
+      case 'TEST_ACTIVATION':
+        return 'Test Activation'
+      case 'ADMIN_BROADCAST':
+        return 'Admin Message'
+      case 'PAYMENT_SUCCESS':
+        return 'Payment Success'
+      case 'PLAN_EXPIRY':
+        return 'Plan Expiry'
       default:
-        return 'border-blue-200 bg-blue-50'
+        return 'Notification'
     }
   }
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const getActionButton = (notification) => {
+    switch (notification.type) {
+      case 'TEST_ACTIVATION':
+        const isFreeTest = notification.message.toLowerCase().includes('free')
+        return (
+          <Button
+            onClick={() => handleNotificationClick(notification)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {isFreeTest ? (
+              <>
+                <Play className="w-4 h-4" />
+                Take Free Test
+              </>
+            ) : (
+              <>
+                <Trophy className="w-4 h-4" />
+                Take Paid Test
+              </>
+            )}
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        )
+
+      case 'ADMIN_BROADCAST':
+        if (notification.buttonText && notification.buttonLink) {
+          return (
+            <Button
+              onClick={() => handleNotificationClick(notification)}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {notification.buttonText}
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          )
+        }
+        return null
+
+      case 'PAYMENT_SUCCESS':
+        return (
+          <Button
+            onClick={() => handleNotificationClick(notification)}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+          >
+            View Payment
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        )
+
+      case 'PLAN_EXPIRY':
+        return (
+          <Button
+            onClick={() => handleNotificationClick(notification)}
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+          >
+            Renew Plan
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="flex items-center gap-2">
+            <RefreshCcw className="h-6 w-6 animate-spin text-blue-600" />
+            <span className="text-lg">Loading notifications...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-        <p className="text-gray-600 mt-2">
-          Stay updated with your test progress and important updates
+    <div className="container mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Notifications</h1>
+        <p className="text-gray-600 dark:text-gray-300">
+          Stay updated with the latest news and test activations
         </p>
       </div>
 
-
-      {/* Notifications List */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Recent Notifications</CardTitle>
-              <CardDescription>
-                Your latest updates and important messages
-              </CardDescription>
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm">
-                Mark All Read
-              </Button>
-
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-
-          {/*  make new ui   the read button will be there on every notification if new notification appears  */}
-          {/* <div className="space-y-4">
-            {notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`p-4 border rounded-lg transition-all duration-200 hover:shadow-md ${
-                  notification.read ? 'opacity-75' : ''
-                } ${getNotificationColor(notification.type)}`}
-              >
-                <div className="flex items-start space-x-3">
+      {notifications.length === 0 ? (
+        <Card className="text-center py-12">
+          <CardContent>
+            <div className="text-6xl mb-4">🔔</div>
+            <h3 className="text-xl font-semibold mb-2">No notifications yet</h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              You're all caught up! Check back later for new updates.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {notifications.map((notification) => (
+            <Card
+              key={notification.id}
+              className={`transition-all duration-200 hover:shadow-md ${
+                !notification.isRead
+                  ? 'border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-l-4 border-l-gray-200 dark:border-l-gray-700'
+              }`}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  {/* Icon */}
                   <div className="flex-shrink-0 mt-1">
                     {getNotificationIcon(notification.type)}
                   </div>
+
+                  {/* Content */}
                   <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
+                            {notification.title}
+                          </h3>
+                          <Badge variant="secondary" className="text-xs">
+                            {getNotificationTypeLabel(notification.type)}
+                          </Badge>
+                          {notification.isBroadcast && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs border-purple-200 text-purple-700 dark:border-purple-700 dark:text-purple-300"
+                            >
+                              Broadcast
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-300 mb-3">
+                          {notification.message}
+                        </p>
+                      </div>
+
+                      {/* Thumbnail */}
+                      {notification.thumbnailUrl && (
+                        <div className="flex-shrink-0">
+                          <img
+                            src={notification.thumbnailUrl}
+                            alt="Notification thumbnail"
+                            className="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer */}
                     <div className="flex items-center justify-between">
-                      <h4
-                        className={`font-medium ${
-                          notification.read ? 'text-gray-600' : 'text-gray-900'
-                        }`}
-                      >
-                        {notification.title}
-                      </h4>
-                      <div className="flex items-center space-x-2">
-                        {!notification.read && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        )}
-                        <span className="text-xs text-gray-500">
-                          {notification.date}
+                      <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(
+                            notification.createdAt
+                          ).toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          {notification.isBroadcast ? 'All Users' : 'You'}
                         </span>
                       </div>
-                    </div>
-                    <p
-                      className={`text-sm mt-1 ${
-                        notification.read ? 'text-gray-500' : 'text-gray-700'
-                      }`}
-                    >
-                      {notification.message}
-                    </p>
-                    <div className="flex items-center justify-between mt-3">
-                      <Button variant="outline" size="sm">
-                        {notification.action}
-                      </Button>
-                      <div className="flex items-center space-x-2">
-                        {!notification.read && (
-                          <Button variant="ghost" size="sm">
-                            <Check className="h-4 w-4" />
+
+                      {/* Action Button */}
+                      <div className="flex items-center gap-2">
+                        {getActionButton(notification)}
+
+                        {!notification.isRead && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => markAsRead(notification.id)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/20"
+                          >
+                            Mark as Read
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm">
-                          <X className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div> */}
-        </CardContent>
-      </Card>
-
-
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

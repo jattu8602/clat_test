@@ -42,6 +42,13 @@ enum SectionType {
   QUANTITATIVE_TECHNIQUES
 }
 
+enum NotificationType {
+  TEST_ACTIVATION
+  ADMIN_BROADCAST
+  PAYMENT_SUCCESS
+  PLAN_EXPIRY
+}
+
 model Account {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId
   userId            String  @db.ObjectId
@@ -208,11 +215,16 @@ model Payment {
 }
 
 model Notification {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String?          @db.ObjectId // null for broadcast notifications
+  title       String
+  message     String
+  type        NotificationType
+  thumbnailUrl String?
+  buttonText  String?
+  buttonLink  String?
+  isRead      Boolean          @default(false)
+  isBroadcast Boolean          @default(false) // true for admin broadcast notifications
+  createdAt   DateTime         @default(now())
+  user        User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

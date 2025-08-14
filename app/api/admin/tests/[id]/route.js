@@ -77,6 +77,33 @@ export async function PUT(request, { params }) {
         },
       })
 
+      // If test is being activated, create a notification for all users
+      if (updatedTest.isActive) {
+        const notificationTitle = `New ${
+          test.type === 'FREE' ? 'Free' : 'Paid'
+        } Test Available!`
+        const notificationMessage = `${test.title} is now available for ${
+          test.type === 'FREE' ? 'free' : 'paid'
+        } users. Start practicing now!`
+
+        // Create broadcast notification
+        await prisma.notification.create({
+          data: {
+            title: notificationTitle,
+            message: notificationMessage,
+            type: 'TEST_ACTIVATION',
+            thumbnailUrl: test.thumbnailUrl || null,
+            buttonText:
+              test.type === 'FREE' ? 'Take Free Test' : 'Take Paid Test',
+            buttonLink:
+              test.type === 'FREE'
+                ? '/dashboard/free-test'
+                : '/dashboard/paid-test',
+            isBroadcast: true,
+          },
+        })
+      }
+
       return NextResponse.json({
         success: true,
         test: updatedTest,
