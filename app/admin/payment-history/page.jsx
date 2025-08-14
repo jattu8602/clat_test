@@ -340,6 +340,8 @@ export default function AdminPaymentHistory() {
                     }
                     placeholder="0"
                   />
+
+                  
                 </div>
                 <div className="flex items-end">
                   <div className="w-full p-3 bg-gray-100 rounded-md">
