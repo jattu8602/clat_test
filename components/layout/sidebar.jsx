@@ -96,6 +96,12 @@ export default function Sidebar({
           icon: Bell,
           badge: stats?.notifications?.totalNotifications || '0',
         },
+        {
+          name: 'Back to Dashboard',
+          href: '/dashboard',
+          icon: Home,
+          badge: null,
+        },
       ]
     : [
         { name: 'Home', href: '/dashboard', icon: Home, badge: null },
