@@ -790,9 +790,12 @@ export default function TestTakingPage() {
                     <h3 className="font-medium text-gray-900 dark:text-white mb-2">
                       Comprehension:
                     </h3>
-                    <p className="text-gray-700 dark:text-gray-300">
-                      {currentQuestion.comprehension}
-                    </p>
+                    <div
+                      className="text-gray-700 dark:text-gray-300 prose dark:prose-invert"
+                      dangerouslySetInnerHTML={{
+                        __html: currentQuestion.comprehension,
+                      }}
+                    />
                   </CardContent>
                 </Card>
               )}

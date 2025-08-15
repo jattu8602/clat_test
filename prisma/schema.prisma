@@ -132,6 +132,7 @@ model Question {
   imageUrls       String[]       // Multiple image URLs
   isComprehension Boolean        @default(false)
   comprehension   String?
+  comprehensionFormat Json?      // Store formatting data for comprehension text
 
   isTable         Boolean        @default(false)
   tableData       Json?          // Represent table like [["a1b1", "a1b2"], ["a2b1", "a2b2"]]

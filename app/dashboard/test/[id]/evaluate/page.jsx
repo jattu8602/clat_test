@@ -371,7 +371,6 @@ export default function TestEvaluationPage() {
                       >
                         {currentQuestion.section.replace('_', ' ')}
                       </Badge>
-
                     </div>
                     <div className="text-sm text-gray-500">
                       {currentQuestionIndex + 1} of {questions.length}
@@ -389,9 +388,12 @@ export default function TestEvaluationPage() {
                     {currentQuestion.isComprehension &&
                       currentQuestion.comprehension && (
                         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-4">
-                          <p className="text-gray-700 dark:text-gray-300">
-                            {currentQuestion.comprehension}
-                          </p>
+                          <div
+                            className="text-gray-700 dark:text-gray-300 prose dark:prose-invert"
+                            dangerouslySetInnerHTML={{
+                              __html: currentQuestion.comprehension,
+                            }}
+                          />
                         </div>
                       )}
 
@@ -508,26 +510,34 @@ export default function TestEvaluationPage() {
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Your Answer:</span>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Your Answer:
+                        </span>
                         <div className="font-medium text-gray-900 dark:text-white">
                           {currentQuestion.userAnswer || 'Not attempted'}
                         </div>
                       </div>
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Correct Answer:</span>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Correct Answer:
+                        </span>
                         <div className="font-medium text-green-600 dark:text-green-400">
                           {currentQuestion.correctAnswers.join(', ')}
                         </div>
                       </div>
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Marks:</span>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Marks:
+                        </span>
                         <div className="font-medium text-gray-900 dark:text-white">
                           {currentQuestion.marksObtained} /{' '}
                           {currentQuestion.positiveMarks}
                         </div>
                       </div>
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Time:</span>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Time:
+                        </span>
                         <div className="font-medium text-gray-900 dark:text-white">
                           {Math.round(currentQuestion.timeTakenSec / 60)}m{' '}
                           {currentQuestion.timeTakenSec % 60}s

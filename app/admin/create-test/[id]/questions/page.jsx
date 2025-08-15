@@ -18,6 +18,19 @@ import { Label } from '@/components/ui/label'
 import ImageUpload from '@/components/ui/image-upload'
 import SectionTabs from '@/components/admin/SectionTabs'
 import QuestionView from '@/components/admin/QuestionView'
+import dynamic from 'next/dynamic'
+
+const RichTextEditor = dynamic(
+  () => import('@/components/ui/rich-text-editor'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="border rounded-lg p-4 bg-slate-50 dark:bg-slate-800/50">
+        Loading editor...
+      </div>
+    ),
+  }
+)
 import {
   Select,
   SelectContent,
@@ -87,6 +100,7 @@ export default function CreateQuestionsPage() {
     imageUrls: [],
     isComprehension: false,
     comprehension: '',
+    comprehensionFormat: null,
     isTable: false,
     tableData: {
       rows: 2,
@@ -154,6 +168,7 @@ export default function CreateQuestionsPage() {
       correctAnswers: question.correctAnswers || [],
       explanation: question.explanation || '',
       comprehension: question.comprehension || '',
+      comprehensionFormat: question.comprehensionFormat || null,
     })
     window.scrollTo(0, 0)
   }
@@ -230,8 +245,9 @@ export default function CreateQuestionsPage() {
     if (field === 'comprehension') {
       setQuestionData((prev) => ({
         ...prev,
-        comprehension: value,
-        isComprehension: value.trim() !== '',
+        comprehension: value.html,
+        comprehensionFormat: value.json,
+        isComprehension: value.html.trim() !== '',
       }))
       return
     }
@@ -762,15 +778,11 @@ export default function CreateQuestionsPage() {
                     >
                       Comprehension Text (Optional)
                     </Label>
-                    <Textarea
-                      id="comprehension"
+                    <RichTextEditor
                       value={questionData.comprehension}
-                      onChange={(e) =>
-                        handleInputChange('comprehension', e.target.value)
+                      onChange={(value) =>
+                        handleInputChange('comprehension', value)
                       }
-                      placeholder="If this question has a comprehension passage, enter it here."
-                      rows={6}
-                      className="resize-none border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-50"
                     />
                   </div>
 
