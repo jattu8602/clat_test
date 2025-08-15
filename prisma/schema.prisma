@@ -170,6 +170,14 @@ model TestAttempt {
   totalAttempted Int?      // How many questions attempted
   startedAt    DateTime    @default(now())
   completedAt  DateTime?
+
+  // New fields for reattempt management
+  attemptNumber Int         @default(1)  // 1st, 2nd, 3rd attempt etc.
+  isLatest     Boolean     @default(true) // Only the latest attempt is marked as latest
+  previousAttemptId String? @db.ObjectId  // Link to previous attempt for comparison
+
+  @@unique([userId, testId, attemptNumber])
+  @@index([userId, testId, isLatest])
 }
 
 model Answer {

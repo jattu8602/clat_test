@@ -214,24 +214,41 @@ export default function AttemptedTestsPage() {
     return 'Just now'
   }
 
-  const handleTestAction = (test, action) => {
+  const handleTestAction = (test, action, specificAttempt = null) => {
     if (action === 'reattempt') {
       console.log('Re-attempting test:', test)
-      // Add your re-attempt logic here
-      // For example: navigate to test page with re-attempt flag
+      // Navigate to test page for reattempt
+      router.push(`/dashboard/test/${test.id}`)
     } else if (action === 'attempt') {
       console.log('Taking test:', test)
-      // Add your attempt logic here
-      // For example: navigate to test page
+      // Navigate to test page
+      router.push(`/dashboard/test/${test.id}`)
     } else if (action === 'evaluate') {
-      console.log('Evaluating test:', test)
-      // Navigate to evaluation page - we need the test attempt ID
+      console.log('Evaluating latest attempt for test:', test)
+      // Navigate to evaluation page with the latest attempt ID
       if (test.testAttemptId) {
         router.push(
           `/dashboard/test/${test.id}/evaluate?attemptId=${test.testAttemptId}`
         )
       } else {
         toast.error('Test attempt ID not found. Please try again.')
+      }
+    } else if (action === 'evaluateSpecific') {
+      console.log('Evaluating specific attempt:', specificAttempt)
+      console.log(
+        'Attempt object structure:',
+        JSON.stringify(specificAttempt, null, 2)
+      )
+      // Navigate to evaluation page with the specific attempt ID
+      const attemptId = specificAttempt?.id || specificAttempt?._id
+      if (attemptId) {
+        console.log('Using attempt ID:', attemptId)
+        router.push(
+          `/dashboard/test/${test.id}/evaluate?attemptId=${attemptId}`
+        )
+      } else {
+        console.error('No attempt ID found in:', specificAttempt)
+        toast.error('Attempt ID not found. Please try again.')
       }
     }
   }
@@ -269,19 +286,34 @@ export default function AttemptedTestsPage() {
         return Promise.all(
           tests.map(async (test) => {
             if (!test.testAttemptId) return { ...test, isAttempted: true }
+
             try {
+              // First get the latest attempt result
               const res = await fetch(
                 `/api/tests/${test.id}/results?attemptId=${test.testAttemptId}`
               )
               if (!res.ok) return { ...test, isAttempted: true }
               const data = await res.json()
+
+              // Now fetch attempt history to show multiple attempts
+              const attemptsRes = await fetch(
+                `/api/tests/${test.id}/attempts?userId=${session?.user?.id}`
+              )
+              let attemptHistory = []
+              if (attemptsRes.ok) {
+                attemptHistory = await attemptsRes.json()
+              }
+
               return {
                 ...test,
                 lastScore: data.testAttempt?.score ?? test.lastScore ?? 0,
                 attemptedAt: data.testAttempt?.completedAt ?? test.attemptedAt,
                 totalTimeSec: data.testAttempt?.totalTimeSec,
+                attemptHistory: attemptHistory,
+                attemptCount: attemptHistory.length,
               }
             } catch (e) {
+              console.error('Error enriching test with results:', e)
               return { ...test, isAttempted: true }
             }
           })
@@ -388,8 +420,6 @@ export default function AttemptedTestsPage() {
           <p className="text-sm sm:text-base lg:text-lg text-center text-gray-600 dark:text-gray-300 mb-6 max-w-lg">
             Access your premium test attempts and detailed performance analytics
           </p>
-
-
 
           {/* CTA Buttons */}
           <div className="w-full max-w-sm mx-auto space-y-3">
@@ -550,7 +580,10 @@ export default function AttemptedTestsPage() {
                         <TestCard
                           {...test}
                           isAttempted={true}
-                          onAction={(action) => handleTestAction(test, action)}
+                          attemptHistory={test.attemptHistory || []}
+                          onAction={(action, specificAttempt) =>
+                            handleTestAction(test, action, specificAttempt)
+                          }
                         />
                       </div>
                     ))}
@@ -563,7 +596,10 @@ export default function AttemptedTestsPage() {
                       key={test.id}
                       {...test}
                       isAttempted={true}
-                      onAction={(action) => handleTestAction(test, action)}
+                      attemptHistory={test.attemptHistory || []}
+                      onAction={(action, specificAttempt) =>
+                        handleTestAction(test, action, specificAttempt)
+                      }
                     />
                   ))}
                 </div>
@@ -623,7 +659,10 @@ export default function AttemptedTestsPage() {
                         <TestCard
                           {...test}
                           isAttempted={true}
-                          onAction={(action) => handleTestAction(test, action)}
+                          attemptHistory={test.attemptHistory || []}
+                          onAction={(action, specificAttempt) =>
+                            handleTestAction(test, action, specificAttempt)
+                          }
                         />
                       </div>
                     ))}
@@ -636,7 +675,10 @@ export default function AttemptedTestsPage() {
                       key={test.id}
                       {...test}
                       isAttempted={true}
-                      onAction={(action) => handleTestAction(test, action)}
+                      attemptHistory={test.attemptHistory || []}
+                      onAction={(action, specificAttempt) =>
+                        handleTestAction(test, action, specificAttempt)
+                      }
                     />
                   ))}
                 </div>
@@ -696,7 +738,10 @@ export default function AttemptedTestsPage() {
                         <TestCard
                           {...test}
                           isAttempted={true}
-                          onAction={(action) => handleTestAction(test, action)}
+                          attemptHistory={test.attemptHistory || []}
+                          onAction={(action, specificAttempt) =>
+                            handleTestAction(test, action, specificAttempt)
+                          }
                         />
                       </div>
                     ))}
@@ -709,7 +754,10 @@ export default function AttemptedTestsPage() {
                       key={test.id}
                       {...test}
                       isAttempted={true}
-                      onAction={(action) => handleTestAction(test, action)}
+                      attemptHistory={test.attemptHistory || []}
+                      onAction={(action, specificAttempt) =>
+                        handleTestAction(test, action, specificAttempt)
+                      }
                     />
                   ))}
                 </div>

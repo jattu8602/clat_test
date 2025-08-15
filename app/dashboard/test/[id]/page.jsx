@@ -15,6 +15,9 @@ import {
   ArrowRight,
   Bookmark,
   CheckCircle,
+  Check,
+  CheckSquare,
+  RefreshCcw,
   AlertCircle,
   Play,
   Pause,
@@ -37,6 +40,15 @@ export default function TestTakingPage() {
   const [answers, setAnswers] = useState({})
   const [markedForLater, setMarkedForLater] = useState(new Set())
   const [visitedQuestions, setVisitedQuestions] = useState(new Set())
+
+  // New state for reattempt management
+  const [currentAttemptId, setCurrentAttemptId] = useState(null)
+  const [attemptHistory, setAttemptHistory] = useState([])
+  const [isReattempt, setIsReattempt] = useState(false)
+
+  // Prevent multiple auto-submissions
+  const [isAutoSubmitting, setIsAutoSubmitting] = useState(false)
+
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [isTestStarted, setIsTestStarted] = useState(false)
   const [isTestCompleted, setIsTestCompleted] = useState(false)
@@ -57,8 +69,20 @@ export default function TestTakingPage() {
 
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
+        // Show warning when 5 minutes remaining
+        if (prev === 300 && !isTestCompleted) {
+          toast.warning('⚠️ 5 minutes remaining! Please submit your test soon.')
+        }
+
+        // Show warning when 1 minute remaining
+        if (prev === 60 && !isTestCompleted) {
+          toast.error('🚨 1 minute remaining! Test will auto-submit soon.')
+        }
+
         if (prev <= 1) {
           // Auto submit when time runs out
+          // Clear the timer immediately to prevent multiple calls
+          clearInterval(timer)
           handleAutoSubmit()
           return 0
         }
@@ -102,10 +126,11 @@ export default function TestTakingPage() {
     }
   }, [isTestStarted, currentQuestion, questionStartTime])
 
-  // Fetch test data
+  // Fetch test data and attempt history
   useEffect(() => {
     if (testId) {
       fetchTestData()
+      fetchAttemptHistory()
     }
   }, [testId])
 
@@ -155,6 +180,20 @@ export default function TestTakingPage() {
     }
   }
 
+  const fetchAttemptHistory = async () => {
+    try {
+      const response = await fetch(
+        `/api/tests/${testId}/attempts?userId=${session?.user?.id}`
+      )
+      if (response.ok) {
+        const attempts = await response.json()
+        setAttemptHistory(attempts)
+      }
+    } catch (error) {
+      console.error('Error fetching attempt history:', error)
+    }
+  }
+
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
@@ -164,13 +203,51 @@ export default function TestTakingPage() {
       .padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const handleStartTest = () => {
-    setShowStartModal(false)
-    setIsTestStarted(true)
-    setQuestionStartTime(Date.now())
-    // Request fullscreen
-    if (document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen()
+  const handleStartTest = async () => {
+    try {
+      // Check for existing attempts and create new one if needed
+      if (attemptHistory.length > 0) {
+        // This is a reattempt
+        setIsReattempt(true)
+
+        // Create new attempt
+        const response = await fetch(`/api/tests/${testId}/attempts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: session?.user?.id,
+            testId,
+          }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log('New attempt created:', data)
+          setCurrentAttemptId(data.attempt.id)
+        } else {
+          const errorData = await response.text()
+          console.error('Failed to create attempt:', response.status, errorData)
+          toast.error('Failed to create new attempt')
+          return
+        }
+      }
+
+      setShowStartModal(false)
+      setIsTestStarted(true)
+      setQuestionStartTime(Date.now())
+
+      console.log('Test started. Is reattempt:', isReattempt)
+      console.log('Current attempt ID:', currentAttemptId)
+
+      // Request fullscreen
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen()
+      }
+    } catch (error) {
+      console.error('Error starting test:', error)
+      toast.error('Failed to start test')
     }
   }
 
@@ -232,9 +309,37 @@ export default function TestTakingPage() {
   }
 
   const handleAutoSubmit = async () => {
-    setIsTestCompleted(true)
-    recordTimeForCurrentQuestion()
-    await submitTest()
+    // Prevent multiple auto-submissions
+    if (isAutoSubmitting || isTestCompleted) return
+
+    try {
+      setIsAutoSubmitting(true)
+
+      // Record time for current question before auto-submitting
+      recordTimeForCurrentQuestion()
+
+      // Set test as completed to prevent further interactions
+      setIsTestCompleted(true)
+
+      // Show a toast notification
+      toast.error('Time is up! Test will be submitted automatically.')
+
+      // Wait a moment for state updates, then submit
+      setTimeout(async () => {
+        await submitTest()
+      }, 100)
+    } catch (error) {
+      console.error('Error in auto submit:', error)
+      // Fallback: try to submit anyway
+      try {
+        await submitTest()
+      } catch (fallbackError) {
+        console.error('Fallback submit also failed:', fallbackError)
+        toast.error('Failed to auto-submit test. Please contact support.')
+      }
+    } finally {
+      setIsAutoSubmitting(false)
+    }
   }
 
   const handleSubmitTest = async () => {
@@ -245,9 +350,12 @@ export default function TestTakingPage() {
 
   const submitTest = async () => {
     try {
+      // Ensure we capture the final state before submitting
       const currentElapsed = questionStartTime
         ? Math.max(0, Math.floor((Date.now() - questionStartTime) / 1000))
         : 0
+
+      // Create final question times including current question
       const finalQuestionTimes = {
         ...questionTimes,
         ...(currentQuestion?.id
@@ -257,27 +365,61 @@ export default function TestTakingPage() {
             }
           : {}),
       }
+
+      // Ensure we have all the current answers and marked questions
+      const finalAnswers = { ...answers }
+      const finalMarkedForLater = new Set(markedForLater)
+
+      // If there's a current question with an answer, ensure it's included
+      if (currentQuestion?.id && finalAnswers[currentQuestion.id]) {
+        // Answer is already captured
+      }
+
+      const submitPayload = {
+        answers: finalAnswers,
+        markedForLater: Array.from(finalMarkedForLater),
+        timeSpent: test.durationInMinutes * 60 - timeRemaining,
+        questionTimes: finalQuestionTimes,
+      }
+
+      // If this is a reattempt, include the attempt ID
+      if (currentAttemptId) {
+        submitPayload.attemptId = currentAttemptId
+      }
+
+      console.log('Submitting test with payload:', submitPayload)
+      console.log('Current attempt ID:', currentAttemptId)
+      console.log('Is reattempt:', !!currentAttemptId)
+      console.log('Answers count:', Object.keys(submitPayload.answers).length)
+      console.log(
+        'Marked for later count:',
+        submitPayload.markedForLater.length
+      )
+      console.log('Time spent:', submitPayload.timeSpent)
+
       const response = await fetch(`/api/tests/${testId}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          answers,
-          markedForLater: Array.from(markedForLater),
-          timeSpent: test.durationInMinutes * 60 - timeRemaining,
-          questionTimes: finalQuestionTimes,
-        }),
+        body: JSON.stringify(submitPayload),
       })
 
       if (response.ok) {
         const resultData = await response.json()
+        console.log('Test submission successful:', resultData)
         setTestResults(resultData)
         setShowResults(true)
         setIsTestCompleted(true)
-        toast.success('Test submitted successfully!')
+
+        const message = resultData.isReattempt
+          ? 'Test reattempt submitted successfully!'
+          : 'Test submitted successfully!'
+        toast.success(message)
       } else {
-        toast.error('Failed to submit test')
+        const errorData = await response.text()
+        console.error('Test submission failed:', response.status, errorData)
+        toast.error(`Failed to submit test: ${response.status}`)
       }
     } catch (error) {
       console.error('Error submitting test:', error)
@@ -463,6 +605,9 @@ export default function TestTakingPage() {
 
   // Start confirmation modal
   if (showStartModal) {
+    const hasPreviousAttempts = attemptHistory.length > 0
+    const latestAttempt = attemptHistory[0]
+
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
         <Card className="w-full max-w-md border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
@@ -472,20 +617,41 @@ export default function TestTakingPage() {
                 <AlertTriangle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Test Instructions
+                {hasPreviousAttempts ? 'Reattempt Test' : 'Test Instructions'}
               </h2>
+
+              {hasPreviousAttempts && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    Previous attempt: {latestAttempt.score}% (
+                    {latestAttempt.correctAnswers}/
+                    {latestAttempt.totalQuestions} correct)
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    Attempt #{latestAttempt.attemptNumber} •{' '}
+                    {new Date(latestAttempt.completedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+
               <p className="text-gray-600 dark:text-gray-300">
-                You are about to enter full-screen test mode. Once started:
+                {hasPreviousAttempts
+                  ? 'You are about to start a new attempt. Previous attempts will be preserved.'
+                  : 'You are about to enter full-screen test mode. Once started:'}
               </p>
-              <ul className="text-left text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                <li>• Test will run in full-screen mode</li>
-                <li>• Exiting full-screen will auto-submit the test</li>
-                <li>
-                  • Timer will countdown from{' '}
-                  {formatTime(test.durationInMinutes * 60)}
-                </li>
-                <li>• Test auto-submits when time runs out</li>
-              </ul>
+
+              {!hasPreviousAttempts && (
+                <ul className="text-left text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                  <li>• Test will run in full-screen mode</li>
+                  <li>• Exiting full-screen will auto-submit the test</li>
+                  <li>
+                    • Timer will countdown from{' '}
+                    {formatTime(test.durationInMinutes * 60)}
+                  </li>
+                  <li>• Test auto-submits when time runs out</li>
+                </ul>
+              )}
+
               <div className="flex gap-3 pt-4">
                 <Button
                   variant="outline"
@@ -498,13 +664,28 @@ export default function TestTakingPage() {
                   onClick={handleStartTest}
                   className="flex-1 border-2 border-gray-200 dark:border-gray-700 dark:text-white"
                 >
-                  Start Test
+                  {hasPreviousAttempts ? 'Start Reattempt' : 'Start Test'}
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+    )
+  }
+
+  // Exit confirmation modal
+  if (showExitModal) {
+    return (
+      <ConfirmModal
+        isOpen={showExitModal}
+        onClose={() => setShowExitModal(false)}
+        onConfirm={handleSubmitTest}
+        title="Exit Test?"
+        message="Are you sure you want to exit? This will submit your test automatically."
+        confirmText="Submit & Exit"
+        cancelText="Continue Test"
+      />
     )
   }
 
@@ -547,10 +728,27 @@ export default function TestTakingPage() {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-red-500" />
-              <span className="text-lg font-mono font-semibold text-red-600">
+              <Clock
+                className={`w-5 h-5 ${
+                  timeRemaining <= 300
+                    ? 'text-red-500 animate-pulse'
+                    : 'text-red-500'
+                }`}
+              />
+              <span
+                className={`text-lg font-mono font-semibold ${
+                  timeRemaining <= 300
+                    ? 'text-red-600 animate-pulse'
+                    : 'text-red-600'
+                }`}
+              >
                 {formatTime(timeRemaining)}
               </span>
+              {timeRemaining <= 300 && (
+                <span className="text-xs text-red-500 font-medium animate-pulse">
+                  ⚠️ Time running out!
+                </span>
+              )}
             </div>
             <Button
               variant="outline"
@@ -967,6 +1165,19 @@ export default function TestTakingPage() {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
                 </Button>
+                {attemptHistory.length > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowResults(false)
+                      setShowStartModal(true)
+                    }}
+                    className="border-2 border-blue-200 dark:border-blue-700 dark:text-blue-400"
+                  >
+                    <RefreshCcw className="w-4 h-4 mr-2" />
+                    Take Again
+                  </Button>
+                )}
               </div>
 
               {/* Note about detailed results */}
@@ -975,6 +1186,12 @@ export default function TestTakingPage() {
                   Click "View Detailed Results" to see question-by-question
                   analysis on a separate page
                 </p>
+                {attemptHistory.length > 0 && (
+                  <p className="mt-2 text-sm">
+                    This is attempt #{attemptHistory.length + 1}. Previous
+                    attempts are preserved for comparison.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -1021,7 +1238,11 @@ export default function TestTakingPage() {
             </div>
             {currentQuestionIndex === questions.length - 1 ? (
               <Button
-                onClick={() => setShowExitModal(true)}
+                onClick={() => {
+                  console.log('Submit button clicked')
+                  console.log('Current attempt ID:', currentAttemptId)
+                  setShowExitModal(true)
+                }}
                 className="bg-green-600 hover:bg-green-700 "
               >
                 Submit Test

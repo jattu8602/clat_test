@@ -189,7 +189,7 @@ export default function PaidTestsPage() {
     fetchPremiumTests()
   }
 
-  const handleTestAction = (test, action) => {
+  const handleTestAction = (test, action, specificAttempt = null) => {
     if (action === 'reattempt') {
       console.log('Re-attempting test:', test)
       // Navigate to test taking page for re-attempt
@@ -199,15 +199,31 @@ export default function PaidTestsPage() {
       // Navigate to test taking page
       router.push(`/dashboard/test/${test.id}`)
     } else if (action === 'evaluate') {
-      console.log('Evaluating test:', test)
-      // Navigate to evaluation page - we need the test attempt ID
-      // For now, we'll need to get this from the test data or create a separate API call
+      console.log('Evaluating latest attempt for test:', test)
+      // Navigate to evaluation page with the latest attempt ID
       if (test.testAttemptId) {
         router.push(
           `/dashboard/test/${test.id}/evaluate?attemptId=${test.testAttemptId}`
         )
       } else {
         toast.error('Test attempt ID not found. Please try again.')
+      }
+    } else if (action === 'evaluateSpecific') {
+      console.log('Evaluating specific attempt:', specificAttempt)
+      console.log(
+        'Attempt object structure:',
+        JSON.stringify(specificAttempt, null, 2)
+      )
+      // Navigate to evaluation page with the specific attempt ID
+      const attemptId = specificAttempt?.id || specificAttempt?._id
+      if (attemptId) {
+        console.log('Using attempt ID:', attemptId)
+        router.push(
+          `/dashboard/test/${test.id}/evaluate?attemptId=${attemptId}`
+        )
+      } else {
+        console.error('No attempt ID found in:', specificAttempt)
+        toast.error('Attempt ID not found. Please try again.')
       }
     }
   }
@@ -268,8 +284,6 @@ export default function PaidTestsPage() {
             expert support
           </p>
 
-
-
           {/* CTA Buttons */}
           <div className="w-full max-w-sm mx-auto space-y-3">
             <Button
@@ -306,7 +320,6 @@ export default function PaidTestsPage() {
                 <p className="text-xs sm:text-sm lg:text-lg text-gray-600 dark:text-gray-300 mt-1">
                   Advanced tests with detailed analytics and expert support
                 </p>
-
               </div>
             </div>
             <div className="flex gap-2">
@@ -431,7 +444,10 @@ export default function PaidTestsPage() {
                       <div key={test.id} className="flex-shrink-0 w-80">
                         <TestCard
                           {...test}
-                          onAction={(action) => handleTestAction(test, action)}
+                          attemptHistory={test.attemptHistory || []}
+                          onAction={(action, specificAttempt) =>
+                            handleTestAction(test, action, specificAttempt)
+                          }
                         />
                       </div>
                     ))}
@@ -443,7 +459,10 @@ export default function PaidTestsPage() {
                     <TestCard
                       key={test.id}
                       {...test}
-                      onAction={(action) => handleTestAction(test, action)}
+                      attemptHistory={test.attemptHistory || []}
+                      onAction={(action, specificAttempt) =>
+                        handleTestAction(test, action, specificAttempt)
+                      }
                     />
                   ))}
                 </div>
@@ -503,7 +522,10 @@ export default function PaidTestsPage() {
                       <div key={test.id} className="flex-shrink-0 w-80">
                         <TestCard
                           {...test}
-                          onAction={(action) => handleTestAction(test, action)}
+                          attemptHistory={test.attemptHistory || []}
+                          onAction={(action, specificAttempt) =>
+                            handleTestAction(test, action, specificAttempt)
+                          }
                         />
                       </div>
                     ))}
@@ -515,7 +537,10 @@ export default function PaidTestsPage() {
                     <TestCard
                       key={test.id}
                       {...test}
-                      onAction={(action) => handleTestAction(test, action)}
+                      attemptHistory={test.attemptHistory || []}
+                      onAction={(action, specificAttempt) =>
+                        handleTestAction(test, action, specificAttempt)
+                      }
                     />
                   ))}
                 </div>

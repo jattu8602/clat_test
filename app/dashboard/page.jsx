@@ -131,13 +131,40 @@ export default function DashboardHome() {
     fetchData()
   }, [])
 
-  const handleTestAction = (test, action) => {
+  const handleTestAction = (test, action, specificAttempt = null) => {
     if (action === 'upgrade') {
       router.push('/dashboard/payment-history')
     } else if (action === 'reattempt') {
       router.push(`/dashboard/test/${test.id}`)
     } else if (action === 'attempt') {
       router.push(`/dashboard/test/${test.id}`)
+    } else if (action === 'evaluate') {
+      console.log('Evaluating latest attempt for test:', test)
+      // Navigate to evaluation page with the latest attempt ID
+      if (test.testAttemptId) {
+        router.push(
+          `/dashboard/test/${test.id}/evaluate?attemptId=${test.testAttemptId}`
+        )
+      } else {
+        toast.error('Test attempt ID not found. Please try again.')
+      }
+    } else if (action === 'evaluateSpecific') {
+      console.log('Evaluating specific attempt:', specificAttempt)
+      console.log(
+        'Attempt object structure:',
+        JSON.stringify(specificAttempt, null, 2)
+      )
+      // Navigate to evaluation page with the specific attempt ID
+      const attemptId = specificAttempt?.id || specificAttempt?._id
+      if (attemptId) {
+        console.log('Using attempt ID:', attemptId)
+        router.push(
+          `/dashboard/test/${test.id}/evaluate?attemptId=${attemptId}`
+        )
+      } else {
+        console.error('No attempt ID not found in:', specificAttempt)
+        toast.error('Attempt ID not found. Please try again.')
+      }
     }
   }
 
@@ -360,7 +387,10 @@ export default function DashboardHome() {
                   <TestCard
                     {...test}
                     isAttempted={true}
-                    onAction={(action) => handleTestAction(test, action)}
+                    attemptHistory={test.attemptHistory || []}
+                    onAction={(action, specificAttempt) =>
+                      handleTestAction(test, action, specificAttempt)
+                    }
                   />
                 </div>
               ))}

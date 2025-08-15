@@ -8,7 +8,6 @@ const prisma = new PrismaClient()
 export async function POST(request, { params }) {
   try {
     const session = await getServerSession(authOptions)
-
     if (!session || !session.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -19,7 +18,19 @@ export async function POST(request, { params }) {
       markedForLater,
       timeSpent,
       questionTimes = {},
+      attemptId, // New: specific attempt ID for reattempts
     } = await request.json()
+
+    console.log('Submit API called with:', {
+      testId,
+      attemptId,
+      userId: session.user.id,
+    })
+    console.log('Payload:', {
+      answers: Object.keys(answers),
+      markedForLater,
+      timeSpent,
+    })
 
     // Fetch test and questions for validation
     const test = await prisma.test.findUnique({
@@ -40,20 +51,59 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 })
     }
 
-    // Check if user has already completed this test
-    const existingAttempt = await prisma.testAttempt.findFirst({
-      where: {
-        testId,
-        userId: session.user.id,
-        completed: true,
-      },
-    })
+    let testAttempt
 
-    if (existingAttempt) {
-      return NextResponse.json(
-        { error: 'Test already completed' },
-        { status: 400 }
+    // If attemptId provided, update existing attempt (reattempt)
+    if (attemptId) {
+      console.log('Processing reattempt with attemptId:', attemptId)
+
+      testAttempt = await prisma.testAttempt.findUnique({
+        where: { id: attemptId, userId: session.user.id },
+      })
+
+      console.log(
+        'Found attempt:',
+        testAttempt
+          ? { id: testAttempt.id, completed: testAttempt.completed }
+          : 'Not found'
       )
+
+      if (!testAttempt) {
+        console.error(
+          'Attempt not found for ID:',
+          attemptId,
+          'and userId:',
+          session.user.id
+        )
+        return NextResponse.json(
+          { error: 'Attempt not found' },
+          { status: 404 }
+        )
+      }
+
+      if (testAttempt.completed) {
+        console.error('Attempt already completed:', testAttempt.id)
+        return NextResponse.json(
+          { error: 'Attempt already completed' },
+          { status: 400 }
+        )
+      }
+    } else {
+      // Check if user has already completed this test (for first-time attempts)
+      const existingAttempt = await prisma.testAttempt.findFirst({
+        where: {
+          testId,
+          userId: session.user.id,
+          completed: true,
+        },
+      })
+
+      if (existingAttempt) {
+        return NextResponse.json(
+          { error: 'Test already completed. Use reattempt feature.' },
+          { status: 400 }
+        )
+      }
     }
 
     // Calculate score
@@ -104,22 +154,51 @@ export async function POST(request, { params }) {
       }
     })
 
-    // Create test attempt
-    const testAttempt = await prisma.testAttempt.create({
-      data: {
-        userId: session.user.id,
-        testId,
-        score: 0, // We'll calculate percentage after creation
-        totalQuestions: test.questions.length,
-        correctAnswers,
-        wrongAnswers: incorrectAnswers,
-        unattempted: unattemptedQuestions,
-        completed: true,
-        totalTimeSec: timeSpent,
-        totalAttempted: test.questions.length - unattemptedQuestions,
-        completedAt: new Date(),
-      },
-    })
+    // Calculate percentage score based on correct answers vs total questions
+    const percentageScore =
+      test.questions.length > 0
+        ? (correctAnswers / test.questions.length) * 100
+        : 0
+
+    if (attemptId) {
+      // Update existing attempt
+      testAttempt = await prisma.testAttempt.update({
+        where: { id: attemptId },
+        data: {
+          score: Math.round(percentageScore * 100) / 100,
+          totalQuestions: test.questions.length,
+          correctAnswers,
+          wrongAnswers: incorrectAnswers,
+          unattempted: unattemptedQuestions,
+          completed: true,
+          totalTimeSec: timeSpent,
+          totalAttempted: test.questions.length - unattemptedQuestions,
+          completedAt: new Date(),
+        },
+      })
+
+      // Delete existing answers and create new ones
+      await prisma.answer.deleteMany({
+        where: { testAttemptId: attemptId },
+      })
+    } else {
+      // Create new test attempt
+      testAttempt = await prisma.testAttempt.create({
+        data: {
+          userId: session.user.id,
+          testId,
+          score: Math.round(percentageScore * 100) / 100,
+          totalQuestions: test.questions.length,
+          correctAnswers,
+          wrongAnswers: incorrectAnswers,
+          unattempted: unattemptedQuestions,
+          completed: true,
+          totalTimeSec: timeSpent,
+          totalAttempted: test.questions.length - unattemptedQuestions,
+          completedAt: new Date(),
+        },
+      })
+    }
 
     // Create answers for each question
     await Promise.all(
@@ -141,22 +220,10 @@ export async function POST(request, { params }) {
       )
     )
 
-    // Calculate percentage score based on correct answers vs total questions
-    const percentageScore =
-      test.questions.length > 0
-        ? (correctAnswers / test.questions.length) * 100
-        : 0
-
-    // Update the test attempt with the calculated percentage score
-    await prisma.testAttempt.update({
-      where: { id: testAttempt.id },
-      data: { score: Math.round(percentageScore * 100) / 100 },
-    })
-
-    return NextResponse.json({
+    const responseData = {
       success: true,
       testAttemptId: testAttempt.id,
-      score: Math.round(percentageScore * 100) / 100, // Return percentage score
+      score: Math.round(percentageScore * 100) / 100,
       percentageScore: Math.round(percentageScore * 100) / 100,
       totalPositiveMarks,
       totalNegativeMarks,
@@ -165,7 +232,11 @@ export async function POST(request, { params }) {
       unattemptedQuestions,
       totalQuestions: test.questions.length,
       timeSpent,
-    })
+      isReattempt: !!attemptId,
+    }
+
+    console.log('Test submission successful:', responseData)
+    return NextResponse.json(responseData)
   } catch (error) {
     console.error('Error submitting test:', error)
     return NextResponse.json(

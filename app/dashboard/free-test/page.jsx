@@ -21,6 +21,7 @@ import {
   BarChart3,
   Trophy,
   Target,
+  History,
   ChevronRight,
   GraduationCap,
   TrendingUp,
@@ -97,25 +98,33 @@ export default function FreeTestsPage() {
       const attemptedWithScores = await Promise.all(
         attempted.map(async (test) => {
           if (!test.testAttemptId) return test
+
           try {
+            // First get the latest attempt result
             const res = await fetch(
               `/api/tests/${test.id}/results?attemptId=${test.testAttemptId}`
             )
             if (!res.ok) return test
             const data = await res.json()
+
+            // Now fetch attempt history to show multiple attempts
+            const attemptsRes = await fetch(
+              `/api/tests/${test.id}/attempts?userId=${session?.user?.id}`
+            )
+            let attemptHistory = []
+            if (attemptsRes.ok) {
+              attemptHistory = await attemptsRes.json()
+            }
+
             return {
               ...test,
               lastScore: data.testAttempt?.score ?? test.lastScore ?? 0,
-              lastMarksObtained: data.testAttempt?.totalMarksObtained,
-              lastPossibleMarks: data.testAttempt?.totalPossibleMarks,
               attemptedAt: data.testAttempt?.completedAt ?? test.attemptedAt,
+              attemptHistory: attemptHistory,
+              attemptCount: attemptHistory.length,
             }
-          } catch (err) {
-            console.error(
-              'Failed to fetch attempt result for test',
-              test.id,
-              err
-            )
+          } catch (e) {
+            console.error('Error enriching test with results:', e)
             return test
           }
         })
@@ -171,18 +180,37 @@ export default function FreeTestsPage() {
     fetchFreeTests()
   }
 
-  const handleTestAction = (test, action) => {
+  const handleTestAction = (test, action, specificAttempt = null) => {
     if (action === 'reattempt') {
       router.push(`/dashboard/test/${test.id}`)
     } else if (action === 'attempt') {
       router.push(`/dashboard/test/${test.id}`)
     } else if (action === 'evaluate') {
+      console.log('Evaluating latest attempt for test:', test)
+      // Navigate to evaluation page with the latest attempt ID
       if (test.testAttemptId) {
         router.push(
           `/dashboard/test/${test.id}/evaluate?attemptId=${test.testAttemptId}`
         )
       } else {
         toast.error('Test attempt ID not found. Please try again.')
+      }
+    } else if (action === 'evaluateSpecific') {
+      console.log('Evaluating specific attempt:', specificAttempt)
+      console.log(
+        'Attempt object structure:',
+        JSON.stringify(specificAttempt, null, 2)
+      )
+      // Navigate to evaluation page with the specific attempt ID
+      const attemptId = specificAttempt?.id || specificAttempt?._id
+      if (attemptId) {
+        console.log('Using attempt ID:', attemptId)
+        router.push(
+          `/dashboard/test/${test.id}/evaluate?attemptId=${attemptId}`
+        )
+      } else {
+        console.error('No attempt ID found in:', specificAttempt)
+        toast.error('Attempt ID not found. Please try again.')
       }
     }
   }
@@ -506,7 +534,10 @@ export default function FreeTestsPage() {
                         <TestCard
                           {...test}
                           isAttempted={true}
-                          onAction={(action) => handleTestAction(test, action)}
+                          attemptHistory={test.attemptHistory || []}
+                          onAction={(action, specificAttempt) =>
+                            handleTestAction(test, action, specificAttempt)
+                          }
                         />
                       </div>
                     ))}

@@ -14,6 +14,7 @@ import {
   Plus,
   Minus,
   RefreshCcw,
+  History,
   Play,
   Star,
   Users,
@@ -41,6 +42,7 @@ export default function TestCard({
   isNew = false, // Add isNew prop
   isAttempted = false, // Add isAttempted prop to show re-attempt button
   attemptedAt, // Add attemptedAt prop for time display
+  attemptHistory = [], // Add attemptHistory prop for multiple attempts
   onAction,
   admin = false, // Add admin prop to control admin buttons visibility
   locked = false, // When true, show lock CTA instead of taking test
@@ -192,6 +194,55 @@ export default function TestCard({
               </div>
             </div>
           </div>
+
+          {/* Attempt History - Show if multiple attempts exist */}
+          {isAttempted && attemptHistory && attemptHistory.length > 1 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                  Attempt History ({attemptHistory.length} attempts)
+                </span>
+              </div>
+              <div className="space-y-1 max-h-20 overflow-y-auto">
+                {attemptHistory.slice(0, 3).map((attempt, index) => (
+                  <div
+                    key={
+                      attempt.id ||
+                      attempt._id ||
+                      `attempt-${attempt.attemptNumber}`
+                    }
+                    className="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-700 rounded px-2 py-1"
+                  >
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Attempt #{attempt.attemptNumber}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          attempt.score >= 80
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                            : attempt.score >= 60
+                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                        }`}
+                      >
+                        {attempt.score}%
+                      </span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {new Date(attempt.completedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {attemptHistory.length > 3 && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    +{attemptHistory.length - 3} more attempts
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons - Always at bottom */}
@@ -233,15 +284,53 @@ export default function TestCard({
 
           {/* Evaluate button for attempted tests */}
           {isAttempted && (
-            <Button
-              onClick={() => onAction?.('evaluate')}
-              variant="outline"
-              className="w-full border-purple-200 text-purple-600 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20"
-              size="default"
-            >
-              <BookOpen className="w-4 h-4 mr-2" />
-              Evaluate Answers
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={() => onAction?.('evaluate')}
+                variant="outline"
+                className="w-full border-purple-200 text-purple-600 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20"
+                size="default"
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                Evaluate Latest
+              </Button>
+
+              {/* {attemptHistory && attemptHistory.length > 1 && (
+                <div className="text-center">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Or evaluate specific attempt:
+                  </span>
+                  <div className="flex gap-1 mt-1 justify-center">
+                    {attemptHistory.slice(0, 5).map((attempt) => (
+                      <button
+                        key={
+                          attempt.id ||
+                          attempt._id ||
+                          `attempt-${attempt.attemptNumber}`
+                        }
+                        onClick={() => {
+                          console.log('Attempt clicked:', attempt)
+                          console.log('Attempt ID:', attempt.id || attempt._id)
+                          console.log('Attempt Number:', attempt.attemptNumber)
+                          onAction?.('evaluateSpecific', attempt)
+                        }}
+                        className={`px-2 py-1 text-xs rounded border ${
+                          attempt.isLatest
+                            ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700'
+                            : 'bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600'
+                        } hover:opacity-80 transition-opacity`}
+                        title={`Attempt #${attempt.attemptNumber} - ${attempt.score}%`}
+                      >
+                        #{attempt.attemptNumber}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              )}
+
+              */}
+            </div>
           )}
 
           {/* Admin Actions */}
