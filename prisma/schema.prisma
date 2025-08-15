@@ -93,6 +93,7 @@ model User {
   testAttempts TestAttempt[]
   notifications Notification[]
   payments Payment[]
+  broadcastNotificationsRead BroadcastNotificationRead[]
 }
 
 model VerificationToken {
@@ -227,4 +228,20 @@ model Notification {
   isBroadcast Boolean          @default(false) // true for admin broadcast notifications
   createdAt   DateTime         @default(now())
   user        User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Track which users have read this broadcast notification
+  readByUsers BroadcastNotificationRead[]
+}
+
+// New model to track which users have read which broadcast notifications
+model BroadcastNotificationRead {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String       @db.ObjectId
+  notificationId String       @db.ObjectId
+  readAt         DateTime     @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationId])
 }

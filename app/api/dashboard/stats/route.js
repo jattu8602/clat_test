@@ -55,7 +55,13 @@ export async function GET(request) {
           }),
           prisma.notification.count({
             where: {
-              OR: [{ userId: session.user.id }, { isBroadcast: true }],
+              OR: [
+                { userId: session.user.id },
+                { isBroadcast: true },
+                { type: 'TEST_ACTIVATION', userId: session.user.id },
+                { type: 'PAYMENT_SUCCESS', userId: session.user.id },
+                { type: 'PLAN_EXPIRY', userId: session.user.id },
+              ],
             },
           }),
         ])
@@ -86,18 +92,39 @@ export async function GET(request) {
       }
     } else {
       // Users get their notification counts
+      // For users, we count:
+      // 1. Their personal unread notifications
+      // 2. Broadcast notifications they haven't read yet
       const [totalUserNotifications, unreadUserNotifications] =
         await Promise.all([
           prisma.notification.count({
             where: {
-              OR: [{ userId: session.user.id }, { isBroadcast: true }],
+              OR: [
+                { userId: session.user.id },
+                { isBroadcast: true },
+                { type: 'TEST_ACTIVATION', userId: session.user.id },
+                { type: 'PAYMENT_SUCCESS', userId: session.user.id },
+                { type: 'PLAN_EXPIRY', userId: session.user.id },
+              ],
             },
           }),
           prisma.notification.count({
             where: {
               OR: [
+                // Unread user-specific notifications
                 { userId: session.user.id, isRead: false },
-                { isBroadcast: true, isRead: false },
+                // Broadcast notifications not marked as read by this user
+                {
+                  isBroadcast: true,
+                  id: {
+                    notIn: await prisma.broadcastNotificationRead
+                      .findMany({
+                        where: { userId: session.user.id },
+                        select: { notificationId: true },
+                      })
+                      .then((reads) => reads.map((r) => r.notificationId)),
+                  },
+                },
               ],
             },
           }),

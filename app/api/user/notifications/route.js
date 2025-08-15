@@ -14,30 +14,54 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user-specific notifications
-    const userNotifications = await prisma.notification.findMany({
+    // Get all notifications for this user, including:
+    // 1. User-specific notifications
+    // 2. Broadcast notifications
+    // 3. Test activation notifications
+    // 4. Payment notifications
+    // 5. Plan expiry notifications
+    const notifications = await prisma.notification.findMany({
       where: {
-        userId: session.user.id,
+        OR: [
+          // User-specific notifications
+          { userId: session.user.id },
+          // Broadcast notifications
+          { isBroadcast: true },
+          // Test activation notifications for this user
+          { type: 'TEST_ACTIVATION', userId: session.user.id },
+          // Payment notifications for this user
+          { type: 'PAYMENT_SUCCESS', userId: session.user.id },
+          // Plan expiry notifications for this user
+          { type: 'PLAN_EXPIRY', userId: session.user.id },
+        ],
       },
       orderBy: { createdAt: 'desc' },
     })
 
-    // Get broadcast notifications (admin notifications for all users)
-    const broadcastNotifications = await prisma.notification.findMany({
-      where: {
-        isBroadcast: true,
-        userId: null, // Broadcast notifications don't have a specific user
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+    // Get which broadcast notifications this user has read
+    const readBroadcastNotifications =
+      await prisma.broadcastNotificationRead.findMany({
+        where: {
+          userId: session.user.id,
+        },
+        select: {
+          notificationId: true,
+        },
+      })
 
-    // Combine and sort all notifications by creation date
-    const allNotifications = [
-      ...userNotifications,
-      ...broadcastNotifications,
-    ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    const readBroadcastIds = readBroadcastNotifications.map(
+      (r) => r.notificationId
+    )
 
-    return NextResponse.json({ notifications: allNotifications })
+    // Add read status to notifications
+    const notificationsWithReadStatus = notifications.map((notification) => ({
+      ...notification,
+      isRead: notification.isBroadcast
+        ? readBroadcastIds.includes(notification.id)
+        : notification.isRead,
+    }))
+
+    return NextResponse.json({ notifications: notificationsWithReadStatus })
   } catch (error) {
     console.error('Error fetching notifications:', error)
     return NextResponse.json(
@@ -66,11 +90,42 @@ export async function POST(request) {
       )
     }
 
-    // Mark notification as read
-    await prisma.notification.update({
+    // Check if this is a broadcast notification
+    const notification = await prisma.notification.findUnique({
       where: { id: notificationId },
-      data: { isRead: true },
     })
+
+    if (!notification) {
+      return NextResponse.json(
+        { error: 'Notification not found' },
+        { status: 404 }
+      )
+    }
+
+    if (notification.isBroadcast) {
+      // For broadcast notifications, mark as read for this specific user
+      await prisma.broadcastNotificationRead.upsert({
+        where: {
+          userId_notificationId: {
+            userId: session.user.id,
+            notificationId: notificationId,
+          },
+        },
+        update: {
+          readAt: new Date(),
+        },
+        create: {
+          userId: session.user.id,
+          notificationId: notificationId,
+        },
+      })
+    } else {
+      // For user-specific notifications, mark as read
+      await prisma.notification.update({
+        where: { id: notificationId },
+        data: { isRead: true },
+      })
+    }
 
     return NextResponse.json({
       message: 'Notification marked as read',

@@ -73,20 +73,29 @@ export default function UserNotificationsPage() {
           )
         )
 
-        // Refresh header notifications if available
-        if (window.refreshHeaderNotifications) {
-          window.refreshHeaderNotifications()
-        }
+        // Refresh header and sidebar notifications
+        // Add a small delay to ensure the backend has processed the update
+        setTimeout(() => {
+          if (window.refreshHeaderNotifications) {
+            window.refreshHeaderNotifications()
+          }
+          if (window.refreshSidebarStats) {
+            window.refreshSidebarStats()
+          }
+        }, 100)
+
+        toast.success('Notification marked as read')
       }
     } catch (error) {
       console.error('Error marking notification as read:', error)
+      toast.error('Failed to mark notification as read')
     }
   }
 
-  const handleNotificationClick = (notification) => {
-    // Mark as read when clicked
+  const handleNotificationClick = async (notification) => {
+    // First mark as read if unread, regardless of type
     if (!notification.isRead) {
-      markAsRead(notification.id)
+      await markAsRead(notification.id)
     }
 
     // Handle different notification types

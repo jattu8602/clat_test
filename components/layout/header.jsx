@@ -47,6 +47,7 @@ export default function Header({
 
   const fetchNotificationCount = async () => {
     try {
+      setLoading(true)
       const response = await fetch('/api/dashboard/stats')
       if (response.ok) {
         const data = await response.json()
@@ -55,9 +56,15 @@ export default function Header({
             data.stats.notifications.unreadNotifications || 0
           )
         } else {
-          setNotificationCount(
+          // For regular users, count unread notifications
+          const unreadCount =
             data.stats.notifications.unreadUserNotifications || 0
-          )
+          setNotificationCount(unreadCount)
+
+          // Update the favicon badge if available
+          if (window.updateFaviconBadge) {
+            window.updateFaviconBadge(unreadCount)
+          }
         }
       }
     } catch (error) {
@@ -77,7 +84,7 @@ export default function Header({
     if (window) {
       window.refreshHeaderNotifications = refreshNotificationCount
     }
-  }, [])
+  }, [refreshNotificationCount])
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/' })
@@ -181,8 +188,14 @@ export default function Header({
               }}
             >
               <Bell className="h-5 w-5" />
-              {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-r from-red-500 to-red-600 text-xs text-white flex items-center justify-center font-medium shadow-lg animate-pulse">
+              {(loading || notificationCount > 0) && (
+                <span
+                  className={`absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs text-white flex items-center justify-center font-medium shadow-lg ${
+                    loading
+                      ? 'bg-gray-500'
+                      : 'bg-gradient-to-r from-red-500 to-red-600 animate-pulse'
+                  }`}
+                >
                   {loading ? '...' : notificationCount}
                 </span>
               )}

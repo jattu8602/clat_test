@@ -77,7 +77,7 @@ export default function Sidebar({
     if (window) {
       window.refreshSidebarStats = refreshStats
     }
-  }, [])
+  }, [refreshStats])
 
   const navigation = isAdmin
     ? [
@@ -94,7 +94,7 @@ export default function Sidebar({
           name: 'Notifications',
           href: '/admin/notifications',
           icon: Bell,
-          badge: stats?.notifications?.totalNotifications || '0',
+          badge: stats?.notifications?.unreadNotifications || '0',
         },
         {
           name: 'Back to Dashboard',
@@ -121,7 +121,7 @@ export default function Sidebar({
           name: 'Attempted Tests',
           href: '/dashboard/attempted',
           icon: FileText,
-          badge: stats?.user?.userTestAttempts || '0',
+          badge: null,
         },
         {
           name: 'Leaderboard',
@@ -139,7 +139,7 @@ export default function Sidebar({
           name: 'Notifications',
           href: '/dashboard/notifications',
           icon: Bell,
-          badge: stats?.notifications?.unreadUserNotifications || '0',
+          badge: null,
         },
         {
           name: 'Profile',
