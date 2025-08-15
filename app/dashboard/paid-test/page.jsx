@@ -268,35 +268,16 @@ export default function PaidTestsPage() {
             expert support
           </p>
 
-          {/* Price Card - Compact */}
-          <Card className="w-full max-w-sm mx-auto mb-6 border-2 border-yellow-200 dark:border-yellow-700 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20">
-            <CardContent className="p-4 sm:p-6">
-              <div className="text-center space-y-3">
-                {/* Original Price */}
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-sm sm:text-base text-gray-500 line-through">
-                    ₹7999
-                  </span>
-                  <Badge className="bg-red-500 text-white text-xs">
-                    -50% OFF
-                  </Badge>
-                </div>
 
-                {/* Current Price */}
-                <div className="space-y-1">
-                  <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-yellow-600 dark:text-yellow-400">
-                    ₹3999
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* CTA Buttons */}
           <div className="w-full max-w-sm mx-auto space-y-3">
             <Button
               className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white text-base sm:text-lg font-semibold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
               size="lg"
+              onClick={() => {
+                router.push('/dashboard/payment-history')
+              }}
             >
               <Crown className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Unlock Premium Access
