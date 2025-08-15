@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
+import { Toaster, toast } from 'sonner'
 import {
   Card,
   CardContent,
@@ -15,6 +16,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import ImageUpload from '@/components/ui/image-upload'
+import SectionTabs from '@/components/admin/SectionTabs'
+import QuestionView from '@/components/admin/QuestionView'
 import {
   Select,
   SelectContent,
@@ -58,6 +61,16 @@ export default function CreateQuestionsPage() {
   const params = useParams()
   const testId = params.id
 
+  const sectionsOrder = [
+    'ENGLISH',
+    'GK_CA',
+    'LEGAL_REASONING',
+    'LOGICAL_REASONING',
+    'QUANTITATIVE_TECHNIQUES',
+  ]
+  const [currentSection, setCurrentSection] = useState(sectionsOrder[0])
+  const [editingQuestion, setEditingQuestion] = useState(null)
+
   const [loading, setLoading] = useState(false)
   const [testInfo, setTestInfo] = useState(null)
   const [existingQuestions, setExistingQuestions] = useState([])
@@ -100,6 +113,13 @@ export default function CreateQuestionsPage() {
     fetchExistingQuestions()
   }, [testId])
 
+  useEffect(() => {
+    setQuestionData((prev) => ({
+      ...prev,
+      section: currentSection,
+    }))
+  }, [currentSection])
+
   const fetchTestInfo = async () => {
     try {
       const response = await fetch(`/api/admin/tests/${testId}`)
@@ -124,7 +144,98 @@ export default function CreateQuestionsPage() {
     }
   }
 
+  const handleEditQuestion = (question) => {
+    setEditingQuestion(question)
+    setQuestionData({
+      ...question,
+      positiveMarks: question.positiveMarks || 1.0,
+      negativeMarks: question.negativeMarks || -0.25,
+      options: question.options || ['', '', '', ''],
+      correctAnswers: question.correctAnswers || [],
+      explanation: question.explanation || '',
+      comprehension: question.comprehension || '',
+    })
+    window.scrollTo(0, 0)
+  }
+
+  const handleDeleteQuestion = async (questionId) => {
+    if (window.confirm('Are you sure you want to delete this question?')) {
+      try {
+        const response = await fetch(
+          `/api/admin/tests/${testId}/questions?questionId=${questionId}`,
+          {
+            method: 'DELETE',
+          }
+        )
+
+        if (response.ok) {
+          fetchExistingQuestions()
+          toast.success('Question deleted successfully!')
+        } else {
+          const error = await response.json()
+          toast.error(error.message || 'Error deleting question')
+        }
+      } catch (error) {
+        console.error('Error deleting question:', error)
+        toast.error('Error deleting question')
+      }
+    }
+  }
+
+  const isPreviousSection =
+    sectionsOrder.indexOf(currentSection) <
+    sectionsOrder.indexOf(
+      existingQuestions[existingQuestions.length - 1]?.section
+    )
+
+  const latestSection =
+    existingQuestions.length > 0
+      ? existingQuestions[existingQuestions.length - 1].section
+      : sectionsOrder[0]
+
+  const handleMoveToLatestSection = () => {
+    cancelEdit()
+    setCurrentSection(latestSection)
+  }
+
+  const cancelEdit = () => {
+    setEditingQuestion(null)
+    setQuestionData({
+      questionText: '',
+      imageUrls: [],
+      isComprehension: false,
+      comprehension: '',
+      isTable: false,
+      tableData: {
+        rows: 2,
+        columns: 2,
+        data: [
+          ['', ''],
+          ['', ''],
+        ],
+      },
+      questionType: 'OPTIONS',
+      optionType: 'SINGLE',
+      options: ['', '', '', ''],
+      inputAnswer: '',
+      correctAnswers: [],
+      positiveMarks: 1.0,
+      negativeMarks: -0.25,
+      section: currentSection,
+      explanation: '',
+    })
+  }
+
   const handleInputChange = (field, value) => {
+    if (field === 'comprehension') {
+      setQuestionData((prev) => ({
+        ...prev,
+        comprehension: value,
+        isComprehension: value.trim() !== '',
+      }))
+      return
+    }
+
     if (field === 'optionType') {
       // When switching option types, handle correct answers appropriately
       if (value === 'SINGLE' && questionData.correctAnswers?.length > 1) {
@@ -320,13 +431,13 @@ export default function CreateQuestionsPage() {
     try {
       // Validate required fields
       if (!questionData.questionText) {
-        alert('Question text is required')
+        toast.error('Question text is required')
         setLoading(false)
         return
       }
 
       if (!questionData.section) {
-        alert('Please select a section')
+        toast.error('Please select a section')
         setLoading(false)
         return
       }
@@ -337,13 +448,13 @@ export default function CreateQuestionsPage() {
           (opt) => opt.trim() !== ''
         )
         if (validOptions.length < 2) {
-          alert('Please add at least 2 options')
+          toast.error('Please add at least 2 options')
           setLoading(false)
           return
         }
 
         if (questionData.correctAnswers.length === 0) {
-          alert('Please select at least one correct answer')
+          toast.error('Please select at least one correct answer')
           setLoading(false)
           return
         }
@@ -353,7 +464,7 @@ export default function CreateQuestionsPage() {
           questionData.optionType === 'MULTI' &&
           questionData.correctAnswers.length < 2
         ) {
-          alert(
+          toast.warning(
             'For multiple correct questions, please select at least 2 correct answers'
           )
           setLoading(false)
@@ -364,7 +475,7 @@ export default function CreateQuestionsPage() {
           (answer) => !validOptions.includes(answer)
         )
         if (invalidAnswers.length > 0) {
-          alert('Some selected answers are not in the options list')
+          toast.error('Some selected answers are not in the options list')
           setLoading(false)
           return
         }
@@ -372,7 +483,7 @@ export default function CreateQuestionsPage() {
         questionData.options = validOptions
       } else if (questionData.questionType === 'INPUT') {
         if (!questionData.inputAnswer?.trim()) {
-          alert('Please enter the correct answer for input type question')
+          toast.error('Please enter the correct answer for input type question')
           setLoading(false)
           return
         }
@@ -386,7 +497,7 @@ export default function CreateQuestionsPage() {
           .filter((row) => row.some((cell) => cell !== ''))
 
         if (cleanedData.length === 0) {
-          alert('Please add some data to the table')
+          toast.error('Please add some data to the table')
           setLoading(false)
           return
         }
@@ -394,13 +505,6 @@ export default function CreateQuestionsPage() {
         questionData.tableData.data = cleanedData
         questionData.tableData.rows = cleanedData.length
         questionData.tableData.columns = cleanedData[0].length
-      }
-
-      // Clean up comprehension text if present
-      if (questionData.isComprehension && !questionData.comprehension?.trim()) {
-        alert('Please enter comprehension text')
-        setLoading(false)
-        return
       }
 
       // Prepare final data
@@ -419,8 +523,14 @@ export default function CreateQuestionsPage() {
         negativeMarks: Number(questionData.negativeMarks),
       }
 
-      const response = await fetch(`/api/admin/tests/${testId}/questions`, {
-        method: 'POST',
+      const url = editingQuestion
+        ? `/api/admin/tests/${testId}/questions?questionId=${editingQuestion.id}`
+        : `/api/admin/tests/${testId}/questions`
+
+      const method = editingQuestion ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -453,18 +563,41 @@ export default function CreateQuestionsPage() {
           section: currentSection,
           explanation: '',
         })
+        setEditingQuestion(null)
 
         fetchExistingQuestions()
-        alert('Question added successfully!')
+        toast.success(
+          `Question ${editingQuestion ? 'updated' : 'added'} successfully!`
+        )
       } else {
         const error = await response.json()
-        alert(error.message || 'Error adding question')
+        toast.error(
+          error.message ||
+            `Error ${editingQuestion ? 'updating' : 'adding'} question`
+        )
       }
     } catch (error) {
-      console.error('Error adding question:', error)
-      alert('Error adding question')
+      console.error(
+        `Error ${editingQuestion ? 'updating' : 'adding'} question:`,
+        error
+      )
+      toast.error(`Error ${editingQuestion ? 'updating' : 'adding'} question`)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleNextSection = () => {
+    const currentIndex = sectionsOrder.indexOf(currentSection)
+    if (currentIndex < sectionsOrder.length - 1) {
+      setCurrentSection(sectionsOrder[currentIndex + 1])
+    }
+  }
+
+  const handlePrevSection = () => {
+    const currentIndex = sectionsOrder.indexOf(currentSection)
+    if (currentIndex > 0) {
+      setCurrentSection(sectionsOrder[currentIndex - 1])
     }
   }
 
@@ -492,6 +625,7 @@ export default function CreateQuestionsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+      <Toaster richColors />
       {/* Header */}
       <div className="bg-white/80 dark:bg-slate-900/90 backdrop-blur-lg shadow-sm dark:shadow-md border-b border-slate-200/70 dark:border-slate-800/70 sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -540,7 +674,21 @@ export default function CreateQuestionsPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl  py-8">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <SectionTabs
+          sectionsOrder={sectionsOrder}
+          existingQuestions={existingQuestions}
+          currentSection={currentSection}
+          setCurrentSection={setCurrentSection}
+        />
+        {isPreviousSection && !editingQuestion && (
+          <div className="mb-6 p-4 bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg text-center">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              You have moved to a new section. You can only edit questions in
+              this section, not add new ones.
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
           {/* Question Form - 3 columns */}
           <div className="xl:col-span-3 space-y-6">
@@ -548,17 +696,39 @@ export default function CreateQuestionsPage() {
               {/* Basic Question Info */}
               <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
                 <CardHeader className="pb-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                        <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg text-slate-900 dark:text-slate-50">
+                          {editingQuestion
+                            ? 'Edit Question'
+                            : 'Add New Question'}
+                        </CardTitle>
+                        <CardDescription className="text-slate-500 dark:text-slate-400">
+                          {editingQuestion
+                            ? `Editing question in ${getSectionName(
+                                editingQuestion.section
+                              )}`
+                            : `Adding new question in ${getSectionName(
+                                currentSection
+                              )}`}
+                        </CardDescription>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-lg text-slate-900 dark:text-slate-50">
-                        Question Details
-                      </CardTitle>
-                      <CardDescription className="text-slate-500 dark:text-slate-400">
-                        Enter the main question content and basic information
-                      </CardDescription>
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className="px-3 py-1.5 rounded-full text-sm font-semibold
+                    bg-blue-100/80 dark:bg-blue-900/40 shadow-sm dark:shadow-inner
+                    border border-blue-200/70 dark:border-blue-800/70
+                    text-blue-800 dark:text-blue-200"
+                      >
+                        {editingQuestion
+                          ? `Q${editingQuestion.questionNumber}`
+                          : `Q${existingQuestions.length + 1}`}
+                      </span>
                     </div>
                   </div>
                 </CardHeader>
@@ -584,6 +754,26 @@ export default function CreateQuestionsPage() {
                     />
                   </div>
 
+                  {/* Comprehension Text */}
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="comprehension"
+                      className="text-sm font-medium text-slate-900 dark:text-slate-50"
+                    >
+                      Comprehension Text (Optional)
+                    </Label>
+                    <Textarea
+                      id="comprehension"
+                      value={questionData.comprehension}
+                      onChange={(e) =>
+                        handleInputChange('comprehension', e.target.value)
+                      }
+                      placeholder="If this question has a comprehension passage, enter it here."
+                      rows={6}
+                      className="resize-none border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-50"
+                    />
+                  </div>
+
                   {/* Section Selection */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -591,45 +781,11 @@ export default function CreateQuestionsPage() {
                         Section
                         <span className="text-red-500 pl-1">*</span>
                       </Label>
-                      <Select
-                        value={questionData.section}
-                        onValueChange={(value) =>
-                          handleInputChange('section', value)
-                        }
-                      >
-                        <SelectTrigger className="border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-50 cursor-pointer">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="text-slate-900 dark:text-slate-50 bg-white dark:bg-slate-900 cursor-pointer">
-                          <SelectItem
-                            value="ENGLISH"
-                            className="cursor-pointer"
-                          >
-                            English
-                          </SelectItem>
-                          <SelectItem value="GK_CA" className="cursor-pointer">
-                            General Knowledge & Current Affairs
-                          </SelectItem>
-                          <SelectItem
-                            value="LEGAL_REASONING"
-                            className="cursor-pointer"
-                          >
-                            Legal Reasoning
-                          </SelectItem>
-                          <SelectItem
-                            value="LOGICAL_REASONING"
-                            className="cursor-pointer"
-                          >
-                            Logical Reasoning
-                          </SelectItem>
-                          <SelectItem
-                            value="QUANTITATIVE_TECHNIQUES"
-                            className="cursor-pointer"
-                          >
-                            Quantitative Techniques
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <span className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                          {getSectionName(currentSection)}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
@@ -1012,39 +1168,7 @@ export default function CreateQuestionsPage() {
                     </div>
 
                     {/* Comprehension */}
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="isComprehension"
-                          checked={questionData.isComprehension}
-                          onChange={(e) =>
-                            handleInputChange(
-                              'isComprehension',
-                              e.target.checked
-                            )
-                          }
-                          className="rounded border-slate-300 dark:border-slate-600"
-                        />
-                        <Label
-                          htmlFor="isComprehension"
-                          className="text-sm font-medium text-slate-900 dark:text-slate-50"
-                        >
-                          Include Comprehension Text
-                        </Label>
-                      </div>
-                      {questionData.isComprehension && (
-                        <Textarea
-                          value={questionData.comprehension}
-                          onChange={(e) =>
-                            handleInputChange('comprehension', e.target.value)
-                          }
-                          placeholder="Enter detailed comprehension text..."
-                          rows={4}
-                          className="border-slate-200 dark:border-slate-700 resize-none text-slate-900 dark:text-slate-50"
-                        />
-                      )}
-                    </div>
+                    {/* This section is now moved to the top */}
 
                     {/* Table Data */}
                     <div className="space-y-4">
@@ -1152,32 +1276,75 @@ export default function CreateQuestionsPage() {
               </Card>
 
               {/* Submit Buttons */}
-              <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200 dark:border-slate-700">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.back()}
-                  className="px-6 text-slate-900 dark:text-slate-50"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={loading || !questionData.questionText}
-                  className="px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-slate-900 dark:text-slate-50"
-                >
-                  {loading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                      <span>Adding...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <Save className="h-4 w-4" />
-                      <span>Add Question</span>
-                    </div>
+              <div className="flex justify-between items-center pt-6 border-t border-slate-200 dark:border-slate-700">
+                <div className="flex space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePrevSection}
+                    disabled={sectionsOrder.indexOf(currentSection) === 0}
+                    className="px-6 text-slate-900 dark:text-slate-50"
+                  >
+                    Previous Section
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleNextSection}
+                    disabled={
+                      sectionsOrder.indexOf(currentSection) ===
+                      sectionsOrder.length - 1
+                    }
+                    className="px-6 text-slate-900 dark:text-slate-50"
+                  >
+                    Next Section
+                  </Button>
+                </div>
+                <div className="flex justify-end space-x-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                    className="px-6 text-slate-900 dark:text-slate-50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={
+                      loading ||
+                      !questionData.questionText ||
+                      (isPreviousSection && !editingQuestion)
+                    }
+                    className="px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-slate-900 dark:text-slate-50"
+                  >
+                    {loading ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                        <span>
+                          {editingQuestion ? 'Updating...' : 'Adding...'}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <Save className="h-4 w-4" />
+                        <span>
+                          {editingQuestion ? 'Update' : 'Add'} Question
+                        </span>
+                      </div>
+                    )}
+                  </Button>
+                  {editingQuestion && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={cancelEdit}
+                      className="px-6"
+                    >
+                      Cancel Edit
+                    </Button>
                   )}
-                </Button>
+                </div>
               </div>
             </form>
           </div>
@@ -1216,73 +1383,49 @@ export default function CreateQuestionsPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto text-slate-900 dark:text-slate-50">
-                    {existingQuestions.map((question, index) => (
-                      <div
-                        key={question.id}
-                        className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer text-slate-900 dark:text-slate-50"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <span className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                                Q{question.questionNumber}
-                              </span>
-                              <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 font-medium">
-                                {getSectionName(question.section)}
-                              </span>
-                              {question.optionType === 'MULTI' && (
-                                <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 font-medium">
-                                  Multiple
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-                              {question.questionText}
-                            </p>
-                            <div className="flex items-center space-x-2 mt-2">
-                              {question.imageUrls?.length > 0 && (
-                                <div className="flex items-center space-x-1 text-xs text-slate-400">
-                                  <ImageIcon className="h-3 w-3" />
-                                  <span>{question.imageUrls.length}</span>
-                                </div>
-                              )}
-                              {question.isComprehension && (
-                                <div className="flex items-center space-x-1 text-xs text-slate-400">
-                                  <FileText className="h-3 w-3" />
-                                  <span>Comprehension</span>
-                                </div>
-                              )}
-                              {question.isTable && (
-                                <div className="flex items-center space-x-1 text-xs text-slate-400">
-                                  <Table className="h-3 w-3" />
-                                  <span>Table</span>
-                                </div>
-                              )}
-                              {question.questionType === 'OPTIONS' && (
-                                <div className="flex items-center space-x-1 text-xs text-slate-400">
-                                  <CheckCircle className="h-3 w-3" />
-                                  <span>
-                                    {question.correctAnswers?.length || 0}{' '}
-                                    correct
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-1 ml-2">
-                            {question.correctAnswers?.length > 0 ? (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <AlertCircle className="h-4 w-4 text-yellow-600" />
-                            )}
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto text-slate-900 dark:text-slate-50">
+                    {sectionsOrder
+                      .filter(
+                        (section) =>
+                          existingQuestions.filter((q) => q.section === section)
+                            .length > 0
+                      )
+                      .map((section) => (
+                        <div key={section}>
+                          <h3 className="text-md font-semibold text-slate-800 dark:text-slate-200 mb-2">
+                            {getSectionName(section)}
+                          </h3>
+                          <div className="space-y-2">
+                            {existingQuestions
+                              .filter((q) => q.section === section)
+                              .sort(
+                                (a, b) => a.questionNumber - b.questionNumber
+                              )
+                              .map((question) => (
+                                <QuestionView
+                                  key={question.id}
+                                  question={question}
+                                  onEdit={handleEditQuestion}
+                                  onDelete={handleDeleteQuestion}
+                                  getSectionName={getSectionName}
+                                />
+                              ))}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 )}
               </CardContent>
+              {existingQuestions.length > 0 && (
+                <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+                  <Button
+                    onClick={handleMoveToLatestSection}
+                    className="w-full"
+                  >
+                    Move to Latest Section
+                  </Button>
+                </div>
+              )}
             </Card>
           </div>
         </div>

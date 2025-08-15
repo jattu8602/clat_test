@@ -189,3 +189,136 @@ export async function GET(request, { params }) {
     )
   }
 }
+
+export async function PUT(request, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { testId } = params
+  const { searchParams } = new URL(request.url)
+  const questionId = searchParams.get('questionId')
+
+  if (!questionId) {
+    return NextResponse.json(
+      { message: 'Question ID is required' },
+      { status: 400 }
+    )
+  }
+
+  try {
+    const body = await request.json()
+    const {
+      questionText,
+      imageUrls,
+      isComprehension,
+      comprehension,
+      isTable,
+      tableData,
+      questionType,
+      optionType,
+      options,
+      correctAnswers,
+      positiveMarks,
+      negativeMarks,
+      section,
+      explanation,
+    } = body
+
+    const updatedQuestion = await prisma.question.update({
+      where: { id: questionId },
+      data: {
+        questionText,
+        imageUrls,
+        isComprehension,
+        comprehension,
+        isTable,
+        tableData,
+        questionType,
+        optionType,
+        options,
+        correctAnswers,
+        positiveMarks,
+        negativeMarks,
+        section,
+        explanation,
+      },
+    })
+
+    return NextResponse.json({
+      message: 'Question updated successfully',
+      question: updatedQuestion,
+    })
+  } catch (error) {
+    console.error('Error updating question:', error)
+    return NextResponse.json(
+      { message: 'Internal Server Error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request, { params }) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { testId } = params
+  const { searchParams } = new URL(request.url)
+  const questionId = searchParams.get('questionId')
+
+  if (!questionId) {
+    return NextResponse.json(
+      { message: 'Question ID is required' },
+      { status: 400 }
+    )
+  }
+
+  try {
+    // Start a transaction to delete the question and re-number subsequent questions
+    await prisma.$transaction(async (prisma) => {
+      const questionToDelete = await prisma.question.findUnique({
+        where: { id: questionId },
+      })
+
+      if (!questionToDelete) {
+        throw new Error('Question not found')
+      }
+
+      await prisma.question.delete({
+        where: { id: questionId },
+      })
+
+      // Update question numbers of subsequent questions in the same test
+      await prisma.question.updateMany({
+        where: {
+          testId: testId,
+          questionNumber: {
+            gt: questionToDelete.questionNumber,
+          },
+        },
+        data: {
+          questionNumber: {
+            decrement: 1,
+          },
+        },
+      })
+    })
+
+    return NextResponse.json({ message: 'Question deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting question:', error)
+    if (error.message === 'Question not found') {
+      return NextResponse.json(
+        { message: 'Question not found' },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json(
+      { message: 'Internal Server Error' },
+      { status: 500 }
+    )
+  }
+}
