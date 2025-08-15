@@ -74,17 +74,33 @@ export default function Header({
     }
   }
 
+  // Function to manually decrement notification count (for immediate UI updates)
+  const decrementNotificationCount = () => {
+    setNotificationCount((prev) => Math.max(0, prev - 1))
+  }
+
+  // Function to manually increment notification count (for new notifications)
+  const incrementNotificationCount = () => {
+    setNotificationCount((prev) => prev + 1)
+  }
+
   // Refresh notification count function that can be called from parent components
   const refreshNotificationCount = () => {
     fetchNotificationCount()
   }
 
-  // Expose refresh function to parent component
+  // Expose refresh functions to parent component
   useEffect(() => {
     if (window) {
       window.refreshHeaderNotifications = refreshNotificationCount
+      window.decrementHeaderNotificationCount = decrementNotificationCount
+      window.incrementHeaderNotificationCount = incrementNotificationCount
     }
-  }, [refreshNotificationCount])
+  }, [
+    refreshNotificationCount,
+    decrementNotificationCount,
+    incrementNotificationCount,
+  ])
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/' })
@@ -188,7 +204,7 @@ export default function Header({
               }}
             >
               <Bell className="h-5 w-5" />
-              {(loading || notificationCount > 0) && (
+              {/* {(loading || notificationCount > 0) && (
                 <span
                   className={`absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs text-white flex items-center justify-center font-medium shadow-lg ${
                     loading
@@ -198,7 +214,7 @@ export default function Header({
                 >
                   {loading ? '...' : notificationCount}
                 </span>
-              )}
+              )} */}
             </Button>
           </div>
 

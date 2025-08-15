@@ -35,10 +35,33 @@ export default function UserNotificationsPage() {
 
   const fetchNotifications = async () => {
     try {
+      setLoading(true)
       const response = await fetch('/api/user/notifications')
       if (response.ok) {
         const data = await response.json()
-        setNotifications(data.notifications || [])
+        const newNotifications = data.notifications || []
+
+        // Check if there are new notifications
+        const currentIds = new Set(notifications.map((n) => n.id))
+        const newNotificationIds = newNotifications.filter(
+          (n) => !currentIds.has(n.id)
+        )
+
+        // If there are new notifications, increment the header count
+        if (
+          newNotificationIds.length > 0 &&
+          window.incrementHeaderNotificationCount
+        ) {
+          // Only increment for unread notifications
+          const newUnreadCount = newNotificationIds.filter(
+            (n) => !n.isRead
+          ).length
+          for (let i = 0; i < newUnreadCount; i++) {
+            window.incrementHeaderNotificationCount()
+          }
+        }
+
+        setNotifications(newNotifications)
 
         // Refresh header notifications to ensure count is accurate
         if (window.refreshHeaderNotifications) {
@@ -73,16 +96,20 @@ export default function UserNotificationsPage() {
           )
         )
 
-        // Refresh header and sidebar notifications
-        // Add a small delay to ensure the backend has processed the update
-        setTimeout(() => {
-          if (window.refreshHeaderNotifications) {
-            window.refreshHeaderNotifications()
-          }
-          if (window.refreshSidebarStats) {
-            window.refreshSidebarStats()
-          }
-        }, 100)
+        // Immediately decrement header notification count for better UX
+        if (window.decrementHeaderNotificationCount) {
+          window.decrementHeaderNotificationCount()
+        }
+
+        // Also refresh the actual count from server to ensure accuracy
+        if (window.refreshHeaderNotifications) {
+          window.refreshHeaderNotifications()
+        }
+
+        // Also update sidebar stats if available
+        if (window.refreshSidebarStats) {
+          window.refreshSidebarStats()
+        }
 
         toast.success('Notification marked as read')
       }
@@ -92,9 +119,48 @@ export default function UserNotificationsPage() {
     }
   }
 
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch('/api/user/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ markAllAsRead: true }),
+      })
+
+      if (response.ok) {
+        // Update local state
+        setNotifications((prev) =>
+          prev.map((notification) => ({ ...notification, isRead: true }))
+        )
+
+        // Reset header notification count to 0
+        if (window.refreshHeaderNotifications) {
+          window.refreshHeaderNotifications()
+        }
+
+        // Also update sidebar stats if available
+        if (window.refreshSidebarStats) {
+          window.refreshSidebarStats()
+        }
+
+        toast.success('All notifications marked as read')
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
+      toast.error('Failed to mark all notifications as read')
+    }
+  }
+
   const handleNotificationClick = async (notification) => {
     // First mark as read if unread, regardless of type
     if (!notification.isRead) {
+      // Immediately decrement the count for better UX
+      if (window.decrementHeaderNotificationCount) {
+        window.decrementHeaderNotificationCount()
+      }
+
       await markAsRead(notification.id)
     }
 
@@ -249,6 +315,35 @@ export default function UserNotificationsPage() {
           Stay updated with the latest news and test activations
         </p>
       </div>
+
+      {notifications.length > 0 && (
+        <div className="mb-6 flex justify-between items-center">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {notifications.filter((n) => !n.isRead).length} unread notification
+            {notifications.filter((n) => !n.isRead).length !== 1 ? 's' : ''}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={fetchNotifications}
+              variant="outline"
+              size="sm"
+              className="text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-900/20"
+            >
+              <RefreshCcw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+            {notifications.some((n) => !n.isRead) && (
+              <Button
+                onClick={markAllAsRead}
+                variant="outline"
+                className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/20"
+              >
+                Mark All as Read
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {notifications.length === 0 ? (
         <Card className="text-center py-12">

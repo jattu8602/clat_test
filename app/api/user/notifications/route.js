@@ -81,7 +81,65 @@ export async function POST(request) {
     }
 
     const body = await request.json()
-    const { notificationId } = body
+    const { notificationId, markAllAsRead } = body
+
+    if (markAllAsRead) {
+      // Mark all notifications as read for this user
+      // First, get all unread notifications for this user
+      const unreadNotifications = await prisma.notification.findMany({
+        where: {
+          OR: [
+            // User-specific notifications that are unread
+            { userId: session.user.id, isRead: false },
+            // Broadcast notifications that this user hasn't read
+            {
+              isBroadcast: true,
+              NOT: {
+                readByUsers: {
+                  some: {
+                    userId: session.user.id,
+                  },
+                },
+              },
+            },
+          ],
+        },
+      })
+
+      // Mark user-specific notifications as read
+      await prisma.notification.updateMany({
+        where: {
+          userId: session.user.id,
+          isRead: false,
+        },
+        data: { isRead: true },
+      })
+
+      // Mark broadcast notifications as read for this user
+      for (const notification of unreadNotifications) {
+        if (notification.isBroadcast) {
+          await prisma.broadcastNotificationRead.upsert({
+            where: {
+              userId_notificationId: {
+                userId: session.user.id,
+                notificationId: notification.id,
+              },
+            },
+            update: {
+              readAt: new Date(),
+            },
+            create: {
+              userId: session.user.id,
+              notificationId: notification.id,
+            },
+          })
+        }
+      }
+
+      return NextResponse.json({
+        message: 'All notifications marked as read',
+      })
+    }
 
     if (!notificationId) {
       return NextResponse.json(
