@@ -14,7 +14,12 @@ export async function POST(request, { params }) {
     }
 
     const { id: testId } = await params
-    const { answers, markedForLater, timeSpent } = await request.json()
+    const {
+      answers,
+      markedForLater,
+      timeSpent,
+      questionTimes = {},
+    } = await request.json()
 
     // Fetch test and questions for validation
     const test = await prisma.test.findUnique({
@@ -86,7 +91,7 @@ export async function POST(request, { params }) {
           questionId: question.id,
           selectedOption: Array.isArray(userAnswer) ? userAnswer : [userAnswer],
           isCorrect,
-          timeTakenSec: 0, // This will be calculated from individual question timings
+          timeTakenSec: Number(questionTimes[question.id]) || 0,
         })
       } else {
         unattemptedQuestions++
@@ -94,7 +99,7 @@ export async function POST(request, { params }) {
           questionId: question.id,
           selectedOption: [],
           isCorrect: false,
-          timeTakenSec: 0,
+          timeTakenSec: Number(questionTimes[question.id]) || 0,
         })
       }
     })

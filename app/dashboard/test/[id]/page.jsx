@@ -36,12 +36,14 @@ export default function TestTakingPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState({})
   const [markedForLater, setMarkedForLater] = useState(new Set())
+  const [visitedQuestions, setVisitedQuestions] = useState(new Set())
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [isTestStarted, setIsTestStarted] = useState(false)
   const [isTestCompleted, setIsTestCompleted] = useState(false)
   const [showExitModal, setShowExitModal] = useState(false)
   const [showStartModal, setShowStartModal] = useState(true)
   const [questionStartTime, setQuestionStartTime] = useState(null)
+  const [questionTimes, setQuestionTimes] = useState({})
   const [loading, setLoading] = useState(true)
   const [testResults, setTestResults] = useState(null)
   const [showResults, setShowResults] = useState(false)
@@ -73,6 +75,32 @@ export default function TestTakingPage() {
       setQuestionStartTime(Date.now())
     }
   }, [currentQuestionIndex, isTestStarted])
+
+  // Track visited questions for accurate status coloring
+  useEffect(() => {
+    if (!isTestStarted || !currentQuestion?.id) return
+    setVisitedQuestions((prev) => {
+      const updated = new Set(prev)
+      updated.add(currentQuestion.id)
+      return updated
+    })
+  }, [isTestStarted, currentQuestion])
+
+  const recordTimeForCurrentQuestion = useCallback(() => {
+    try {
+      if (!isTestStarted || !currentQuestion || !questionStartTime) return
+      const elapsedMs = Date.now() - questionStartTime
+      const elapsedSec = Math.max(0, Math.floor(elapsedMs / 1000))
+      if (elapsedSec <= 0) return
+      setQuestionTimes((prev) => ({
+        ...prev,
+        [currentQuestion.id]: (prev[currentQuestion.id] || 0) + elapsedSec,
+      }))
+      setQuestionStartTime(Date.now())
+    } catch (e) {
+      // no-op
+    }
+  }, [isTestStarted, currentQuestion, questionStartTime])
 
   // Fetch test data
   useEffect(() => {
@@ -185,33 +213,50 @@ export default function TestTakingPage() {
   }
 
   const handleNextQuestion = () => {
+    recordTimeForCurrentQuestion()
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1)
     }
   }
 
   const handlePreviousQuestion = () => {
+    recordTimeForCurrentQuestion()
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1)
     }
   }
 
   const handleQuestionNavigation = (index) => {
+    recordTimeForCurrentQuestion()
     setCurrentQuestionIndex(index)
   }
 
   const handleAutoSubmit = async () => {
     setIsTestCompleted(true)
+    recordTimeForCurrentQuestion()
     await submitTest()
   }
 
   const handleSubmitTest = async () => {
     setShowExitModal(false)
+    recordTimeForCurrentQuestion()
     await submitTest()
   }
 
   const submitTest = async () => {
     try {
+      const currentElapsed = questionStartTime
+        ? Math.max(0, Math.floor((Date.now() - questionStartTime) / 1000))
+        : 0
+      const finalQuestionTimes = {
+        ...questionTimes,
+        ...(currentQuestion?.id
+          ? {
+              [currentQuestion.id]:
+                (questionTimes[currentQuestion.id] || 0) + currentElapsed,
+            }
+          : {}),
+      }
       const response = await fetch(`/api/tests/${testId}/submit`, {
         method: 'POST',
         headers: {
@@ -221,6 +266,7 @@ export default function TestTakingPage() {
           answers,
           markedForLater: Array.from(markedForLater),
           timeSpent: test.durationInMinutes * 60 - timeRemaining,
+          questionTimes: finalQuestionTimes,
         }),
       })
 
@@ -255,9 +301,16 @@ export default function TestTakingPage() {
     const question = questions[questionIndex]
     if (!question) return 'unattempted'
 
+    const hasAnswer = (() => {
+      const ans = answers[question.id]
+      if (Array.isArray(ans)) return ans.length > 0
+      if (typeof ans === 'string') return ans.trim() !== ''
+      return Boolean(ans)
+    })()
+
+    if (hasAnswer) return 'attempted'
     if (markedForLater.has(question.id)) return 'marked'
-    if (answers[question.id]) return 'attempted'
-    if (questionIndex < currentQuestionIndex) return 'seen'
+    if (visitedQuestions.has(question.id)) return 'seen'
     return 'unattempted'
   }
 
@@ -720,6 +773,34 @@ export default function TestTakingPage() {
                             </span>
                           </label>
                         ))}
+                        {(() => {
+                          const ans = answers[currentQuestion.id]
+                          const hasAnswer = Array.isArray(ans)
+                            ? ans.length > 0
+                            : typeof ans === 'string'
+                            ? ans.trim() !== ''
+                            : Boolean(ans)
+                          if (!hasAnswer) return null
+                          return (
+                            <div className="pt-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setAnswers((prev) => {
+                                    const updated = { ...prev }
+                                    delete updated[currentQuestion.id]
+                                    return updated
+                                  })
+                                }}
+                                className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
+                              >
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                Clear response
+                              </Button>
+                            </div>
+                          )
+                        })()}
                       </div>
                     )}
 
@@ -735,6 +816,33 @@ export default function TestTakingPage() {
                         placeholder="Enter your answer..."
                         className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       />
+                      {(() => {
+                        const ans = answers[currentQuestion.id]
+                        const hasAnswer =
+                          typeof ans === 'string'
+                            ? ans.trim() !== ''
+                            : Boolean(ans)
+                        if (!hasAnswer) return null
+                        return (
+                          <div className="pt-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setAnswers((prev) => {
+                                  const updated = { ...prev }
+                                  delete updated[currentQuestion.id]
+                                  return updated
+                                })
+                              }}
+                              className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
+                            >
+                              <RotateCcw className="w-4 h-4 mr-2" />
+                              Clear response
+                            </Button>
+                          </div>
+                        )
+                      })()}
                     </div>
                   )}
                 </CardContent>
@@ -762,7 +870,7 @@ export default function TestTakingPage() {
                       <button
                         key={index}
                         onClick={() => handleQuestionNavigation(index)}
-                        className={`w-8 h-8 rounded text-xs font-medium transition-colors ${getQuestionStatusColor(
+                        className={`relative w-8 h-8 rounded text-xs font-medium transition-colors ${getQuestionStatusColor(
                           status
                         )} ${
                           index === currentQuestionIndex
@@ -771,6 +879,10 @@ export default function TestTakingPage() {
                         }`}
                       >
                         {index + 1}
+                        {markedForLater.has(questions[index].id) &&
+                          answers[questions[index].id] && (
+                            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-orange-500 rounded-full ring-1 ring-white"></span>
+                          )}
                       </button>
                     )
                   })}
@@ -899,11 +1011,12 @@ export default function TestTakingPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400  ">
-              Time per question:{' '}
-              {questionStartTime
-                ? Math.floor((Date.now() - questionStartTime) / 1000)
-                : 0}
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Time on this question:{' '}
+              {(questionTimes[currentQuestion?.id] || 0) +
+                (questionStartTime
+                  ? Math.floor((Date.now() - questionStartTime) / 1000)
+                  : 0)}
               s
             </div>
             {currentQuestionIndex === questions.length - 1 ? (
