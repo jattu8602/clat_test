@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata = {
-  title: 'CLATPrep - AI-Powered Mock Tests',
+  title: 'OUTLAWED | CLAT Exam Tests | CLAT Exam Preparation',
   description:
     'Master CLAT with AI-Powered Mock Tests and comprehensive preparation platform',
 }

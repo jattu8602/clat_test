@@ -33,6 +33,7 @@ import {
   BarChart3,
   BookOpen,
 } from 'lucide-react'
+import Image from 'next/image'
 
 export default function Sidebar({
   isAdmin = false,
@@ -178,7 +179,7 @@ export default function Sidebar({
               <div className="relative">
                 <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center shadow-lg dark:bg-orange-800">
                   <span className="text-primary-foreground font-bold text-lg dark:text-white">
-                    CL
+                    <Image src="/outlawed.png" alt="OUTLAWED" width={32} height={32} />
                   </span>
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background dark:border-darkBg shadow-sm">
@@ -187,7 +188,7 @@ export default function Sidebar({
               </div>
               <div>
                 <h1 className="text-lg font-bold text-foreground dark:text-white">
-                  {isAdmin ? 'Admin Panel' : 'CLAT Prep'}
+                  {isAdmin ? 'Admin Panel' : 'OUTLAWED'}
                 </h1>
                 <p className="text-xs text-muted-foreground dark:text-white/70 font-medium">
                   {isAdmin ? 'Management Hub' : 'Study Platform'}
