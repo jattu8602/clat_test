@@ -37,7 +37,6 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hot-toast": "^2.5.2",
-    "react-quill": "^2.0.0",
     "react-toastify": "^11.0.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1"
