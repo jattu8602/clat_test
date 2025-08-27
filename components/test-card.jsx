@@ -132,7 +132,7 @@ export default function TestCard({
   // Group questions by section to show subject breakdown
   const getSubjectBreakdown = () => {
     if (!questions || questions.length === 0) {
-      // Fallback to default sections if no questions data
+      // Fallback to default sections if no questions data - CLAT pattern
       return [
         {
           name: 'English',
@@ -142,13 +142,13 @@ export default function TestCard({
         },
         {
           name: 'GK & CA',
-          questions: Math.ceil(numberOfQuestions * 0.25),
+          questions: Math.ceil(numberOfQuestions * 0.26),
           icon: subjectIcons.GK_CA,
           color: 'from-purple-500 to-purple-600',
         },
         {
           name: 'Legal Reasoning',
-          questions: Math.ceil(numberOfQuestions * 0.25),
+          questions: Math.ceil(numberOfQuestions * 0.26),
           icon: subjectIcons.LEGAL_REASONING,
           color: 'from-amber-500 to-orange-600',
         },
@@ -160,13 +160,14 @@ export default function TestCard({
         },
         {
           name: 'Quantitative',
-          questions: Math.ceil(numberOfQuestions * 0.1),
+          questions: Math.ceil(numberOfQuestions * 0.08),
           icon: subjectIcons.QUANTITATIVE_TECHNIQUES,
           color: 'from-rose-500 to-pink-600',
         },
       ]
     }
 
+    // Count actual questions by section from the questions data
     const sectionCounts = {}
     questions.forEach((q) => {
       const sectionName = q.section.replace(/_/g, ' ')
@@ -184,14 +185,18 @@ export default function TestCard({
       'Quantitative Techniques': 'from-rose-500 to-pink-600',
     }
 
-    return Object.entries(sectionCounts).map(([name, count]) => ({
-      name,
-      questions: count,
-      icon:
-        subjectIcons[name.toUpperCase().replace(/\s+/g, '_')] ||
-        subjectIcons.ENGLISH,
-      color: colorMap[name] || 'from-gray-500 to-gray-600',
-    }))
+    // Only show sections that actually have questions
+    return Object.entries(sectionCounts)
+      .filter(([name, count]) => count > 0) // Only show sections with questions
+      .sort((a, b) => b.questions - a.questions) // Sort by question count (descending)
+      .map(([name, count]) => ({
+        name,
+        questions: count,
+        icon:
+          subjectIcons[name.toUpperCase().replace(/\s+/g, '_')] ||
+          subjectIcons.ENGLISH,
+        color: colorMap[name] || 'from-gray-500 to-gray-600',
+      }))
   }
 
   const getStatusBadge = () => {
@@ -235,12 +240,10 @@ export default function TestCard({
 
     if (lastScore !== undefined && lastScore !== null) {
       let scoreColor = 'text-gray-600 dark:text-gray-400'
-      if (lastScore >= 80) scoreColor = 'text-emerald-600 dark:text-emerald-400'
+      if (lastScore >= 80) scoreColor = 'text-green-600 dark:text-green-400'
       else if (lastScore >= 60)
-        scoreColor = 'text-amber-600 dark:text-amber-400'
-      else if (lastScore >= 40)
-        scoreColor = 'text-orange-600 dark:text-orange-400'
-      else scoreColor = 'text-rose-600 dark:text-rose-400'
+        scoreColor = 'text-orange-500 dark:text-orange-400'
+      else scoreColor = 'text-red-500 dark:text-red-400'
 
       return (
         <div className="flex items-center gap-2">
@@ -415,15 +418,28 @@ export default function TestCard({
         {/* Progress indicator for attempted tests */}
         {isAttempted && lastScore !== undefined && (
           <div className="mt-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Performance</span>
-              <span className="font-medium">{lastScore}%</span>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Score
+              </span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {lastScore}%
+              </span>
             </div>
-            <Progress
-              value={lastScore}
-              className={`h-2 bg-gray-200 dark:bg-gray-700`}
-              indicatorClassName={`bg-gradient-to-r ${colors.primary}`}
-            />
+            <div className="relative">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    lastScore >= 80
+                      ? 'bg-green-600'
+                      : lastScore >= 60
+                      ? 'bg-orange-500'
+                      : 'bg-red-500'
+                  }`}
+                  style={{ width: `${lastScore}%` }}
+                ></div>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>

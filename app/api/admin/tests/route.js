@@ -79,6 +79,12 @@ export async function GET(request) {
     const tests = await prisma.test.findMany({
       where,
       include: {
+        questions: {
+          select: {
+            id: true,
+            section: true,
+          },
+        },
         _count: {
           select: {
             questions: true,

@@ -806,6 +806,7 @@ export default function CreateTestPage() {
                       numberOfQuestions={getQuestionCount(test)}
                       durationMinutes={test.durationInMinutes}
                       highlights={test.highlightPoints || []}
+                      questions={test.questions || []}
                       onAction={(action) => {
                         switch (action) {
                           case 'continue':
@@ -865,6 +866,7 @@ export default function CreateTestPage() {
                       numberOfQuestions={getQuestionCount(test)}
                       durationMinutes={test.durationInMinutes}
                       highlights={test.highlightPoints || []}
+                      questions={test.questions || []}
                       onAction={(action) => {
                         switch (action) {
                           case 'continue':
@@ -924,6 +926,7 @@ export default function CreateTestPage() {
                       numberOfQuestions={getQuestionCount(test)}
                       durationMinutes={test.durationInMinutes}
                       highlights={test.highlightPoints || []}
+                      questions={test.questions || []}
                       isAttempted={true}
                       onAction={(action) => {
                         switch (action) {
@@ -985,6 +988,7 @@ export default function CreateTestPage() {
                       numberOfQuestions={getQuestionCount(test)}
                       durationMinutes={test.durationInMinutes}
                       highlights={test.highlightPoints || []}
+                      questions={test.questions || []}
                       isAttempted={true}
                       onAction={(action) => {
                         switch (action) {

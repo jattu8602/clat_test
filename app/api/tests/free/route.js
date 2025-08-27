@@ -37,6 +37,12 @@ export async function GET(request) {
     const tests = await prisma.test.findMany({
       where: baseWhere,
       include: {
+        questions: {
+          select: {
+            id: true,
+            section: true,
+          },
+        },
         _count: {
           select: {
             questions: true,
@@ -100,6 +106,7 @@ export async function GET(request) {
           ? 'Medium'
           : 'Easy',
       rating: 4.5, // Placeholder; compute from feedback later
+      questions: test.questions, // Include questions for section breakdown
     }))
 
     return NextResponse.json({
