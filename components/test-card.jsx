@@ -270,21 +270,25 @@ export default function TestCard({
   }
 
   const getActionButtons = () => {
-    if (locked) {
-      return (
-        <div className="flex items-center gap-2">
-          <Lock className="h-4 w-4 text-muted-foreground" />
-          <Button
-            variant="outline"
-            disabled
-            className="text-muted-foreground bg-transparent"
-          >
-            <Crown className="h-4 w-4 mr-2" />
-            Pro Only
-          </Button>
-        </div>
-      )
-    }
+  if (locked) {
+    return (
+      <div className="flex items-center gap-2">
+        <Lock className="h-4 w-4 mr-2 opacity-80 dark:text-white" />
+        <Button
+          disabled
+          className="relative overflow-hidden bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700
+                   text-white border border-orange-700 shadow-lg px-4 py-2 font-semibold
+                   cursor-not-allowed rounded-xl
+                   transition-all duration-300"
+        >
+          <Crown className="h-4 w-4 mr-2 text-yellow-300" />
+          Pro Only
+        </Button>
+      </div>
+    )
+  }
+
+
 
     if (!isAttempted) {
       return (
