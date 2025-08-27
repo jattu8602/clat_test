@@ -102,7 +102,20 @@ const Hero = () => {
   // GSAP ANIMATION SETUP
   // ============================================================================
   // useGSAP hook ensures animations are properly cleaned up when component unmounts
-gsap.registerPlugin(ScrollTrigger)
+useEffect(() => {
+  const marquee = document.querySelector('#marquee')
+
+  gsap.to(marquee, {
+    xPercent: -90, // move by half its width
+    ease: 'none',
+    duration: 5, // slower = smoother (adjust based on feel)
+    repeat: -1,
+    modifiers: {
+      xPercent: gsap.utils.wrap(-200, 0), // seamless loop
+    },
+  })
+}, [])
+
 
   useGSAP(() => {
     // Early return if required DOM elements aren't available
@@ -113,13 +126,6 @@ gsap.registerPlugin(ScrollTrigger)
     // BACKGROUND "OUTLAWED" INFINITE FLOATING ANIMATION
     // ============================================================================
     // Top moves left → infinite loop
-
-gsap.to('#marquee', {
-  x: '-90%', // move left by half of its full width
-  duration: 15, // adjust for speed
-  repeat: -1,
-  ease: 'linear',
-})
 
 
     // ============================================================================
@@ -741,17 +747,30 @@ gsap.to('#marquee', {
         ref={heroRef}
         className="hero host-grotesk relative w-screen  min-h-screen p-6 flex items-center justify-center text-[#141414] overflow-hidden"
       >
-        {/* Background giant OUTLAWED text - top */}
+        {/* Background giant OUTLAWED text */}
         <div className="absolute top-1/2 left-0 w-full overflow-hidden -translate-y-1/2 z-0">
           <div id="marquee" className="flex whitespace-nowrap">
-            {/* Repeat enough to cover full width */}
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex items-center mx-8">
-                <h1 className="text-[15rem] font-extrabold text-black opacity-10">
+            {/* Strip repeated twice for seamless loop */}
+            <div className="marquee-strip flex">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <h1
+                  key={i}
+                  className="mx-8 text-[15rem] font-extrabold text-black opacity-10"
+                >
                   OUTLAWED
                 </h1>
-              </div>
-            ))}
+              ))}
+            </div>
+            <div className="marquee-strip flex">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <h1
+                  key={i}
+                  className="mx-8 text-[15rem] font-extrabold text-black opacity-10"
+                >
+                  OUTLAWED
+                </h1>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -824,7 +843,7 @@ gsap.to('#marquee', {
               textSegmentRefs.current[0] = el
             }}
           >
-            Think beyond boundaries.
+            Try OUTLAWED for your clat Journey.
           </span>
           <div
             className="placeholder-icon"
@@ -838,7 +857,7 @@ gsap.to('#marquee', {
               textSegmentRefs.current[1] = el
             }}
           >
-            Create. Collaborate. Conquer.{' '}
+            Learn and Take Exam {' '}
           </span>
           <span
             className="text-segment text-2xl md:text-4xl lg:text-6xl"
@@ -846,7 +865,7 @@ gsap.to('#marquee', {
               textSegmentRefs.current[2] = el
             }}
           >
-            Code with your crew.
+            Free and Paid Tests
           </span>
           <div
             className="placeholder-icon"
@@ -874,7 +893,7 @@ gsap.to('#marquee', {
               textSegmentRefs.current[4] = el
             }}
           >
-            Join the wave that moves tech forward.
+            Join the wave that moves you forward.
           </span>
           <div
             className="placeholder-icon"
@@ -888,8 +907,8 @@ gsap.to('#marquee', {
               textSegmentRefs.current[5] = el
             }}
           >
-            This is Hack
-            <span className="text-pink-300">wave.</span>
+            This is Out
+            <span className="text-pink-300">lawed.</span>
           </span>
         </h1>
 

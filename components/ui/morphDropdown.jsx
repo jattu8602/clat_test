@@ -8,37 +8,41 @@ import gsap from "gsap";
 import { Instagram, Linkedin, Mail } from "lucide-react";
 import { Button } from "./button";
 import Link from "next/link";
-
+import { useSession, signIn, signOut } from 'next-auth/react'
 export const PillMenu= () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const timelineRef = useRef(null);
-  const containerRef = useRef(null);
-  const hamburgerRef = useRef(null);
-  const menuRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const timelineRef = useRef(null)
+  const containerRef = useRef(null)
+  const hamburgerRef = useRef(null)
+  const menuRef = useRef(null)
+  const { data: session, status } = useSession() // check login status
+
+  // if status === "loading", you can show skeleton or nothing
+  const isLoggedIn = !!session
 
   // useEffect to set up the animation timeline
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current) return
 
-    const items = gsap.utils.toArray<HTMLElement>(".menu-item");
+    const items = gsap.utils.toArray < HTMLElement > '.menu-item'
 
     // Create a paused timeline with improved easing
     timelineRef.current = gsap.timeline({
       paused: true,
       onUpdate: function () {
         // Track progress (0 to 1)
-        setProgress(this.progress());
+        setProgress(this.progress())
       },
-    });
+    })
 
     // Enhanced animation sequence with pulling down effect
     timelineRef.current
       .to(containerRef.current, {
-        height: "520px", // Dynamic height based on content
-        width: "14rem", // w-56 equivalent
+        height: '520px', // Dynamic height based on content
+        width: '14rem', // w-56 equivalent
         duration: 0.6,
-        ease: "power3.out",
+        ease: 'power3.out',
       })
       .to(
         items,
@@ -47,59 +51,59 @@ export const PillMenu= () => {
           y: 0,
           stagger: 0.08, // Slower stagger for fewer items
           duration: 0.5,
-          ease: "power2.out",
+          ease: 'power2.out',
         },
-        "-=0.3"
-      );
+        '-=0.3'
+      )
 
     return () => {
-      timelineRef.current?.kill();
-    };
-  }, []);
+      timelineRef.current?.kill()
+    }
+  }, [])
 
   // useEffect to control the animation based on the `isOpen` state
   useEffect(() => {
     if (isOpen) {
-      timelineRef.current?.play();
+      timelineRef.current?.play()
     } else {
-      timelineRef.current?.reverse();
+      timelineRef.current?.reverse()
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Click outside to close menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
-    };
+    }
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside)
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
 
   // Calculate opacity based on progress
   const getItemOpacity = (index) => {
-    const baseProgress = progress;
-    const itemDelay = index * 0.08; // Same as stagger timing
+    const baseProgress = progress
+    const itemDelay = index * 0.08 // Same as stagger timing
     const itemProgress = Math.max(
       0,
       Math.min(1, (baseProgress - itemDelay) / 0.3)
-    );
+    )
 
     // For reverse animation (closing), all items fade out together in sync
     if (!isOpen && progress < 1) {
       // Use the same progress for all items during closing
-      return Math.max(0, Math.min(1, progress));
+      return Math.max(0, Math.min(1, progress))
     }
 
-    return itemProgress;
-  };
+    return itemProgress
+  }
 
   return (
     <div className="relative z-50" ref={menuRef}>
@@ -113,15 +117,22 @@ export const PillMenu= () => {
             {/* Enhanced trigger with Join Now button and hamburger menu */}
             <div className="flex items-center h-full justify-between">
               <div className="flex items-center justify-center">
-                {/* Join Now Button - Desktop Only */}
-                <Link
-                  href="https://unstop.com/o/szmvO5g?lb=2CqWo19U&utm_medium=Share&utm_source=shortUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hidden md:flex items-center justify-center px-3 py-3  text-[#e6d9cf] rounded-lg font-black text-sm hover:bg-[#feaac0] hover:text-[#141414] transition-colors duration-200 "
-                >
-                  Join Now
-                </Link>
+                {/* Desktop Button */}
+                {isLoggedIn ? (
+                  <Link
+                    href="/dashboard"
+                    className="hidden md:flex items-center justify-center px-3 py-3 text-[#e6d9cf] rounded-lg font-black text-sm hover:bg-[#feaac0] hover:text-[#141414] transition-colors duration-200"
+                  >
+                    Dashboard
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => signIn()} // next-auth login popup
+                    className="hidden md:flex items-center justify-center px-3 py-3 text-[#e6d9cf] rounded-lg font-black text-sm hover:bg-[#feaac0] hover:text-[#141414] transition-colors duration-200"
+                  >
+                    Login
+                  </button>
+                )}
               </div>
 
               {/* Hamburger Menu Icon */}
@@ -134,17 +145,17 @@ export const PillMenu= () => {
                     {/* Hamburger lines that transform to X */}
                     <div
                       className={`w-5 h-0.5 bg-current transition-all duration-300 ease-in-out ${
-                        isOpen ? "rotate-45 translate-y-1" : ""
+                        isOpen ? 'rotate-45 translate-y-1' : ''
                       }`}
                     ></div>
                     <div
                       className={`w-5 h-0.5 bg-current mt-1 transition-all duration-300 ease-in-out ${
-                        isOpen ? "opacity-0" : ""
+                        isOpen ? 'opacity-0' : ''
                       }`}
                     ></div>
                     <div
                       className={`w-5 h-0.5 bg-current mt-1 transition-all duration-300 ease-in-out ${
-                        isOpen ? "-rotate-45 -translate-y-1" : ""
+                        isOpen ? '-rotate-45 -translate-y-1' : ''
                       }`}
                     ></div>
                   </div>
@@ -163,10 +174,10 @@ export const PillMenu= () => {
                   className="md:hidden menu-item translate-y-4 flex items-center justify-center px-4 py-3 bg-[#fcf2e8] text-[#141414] rounded-xl font-black text-base hover:bg-[#e6d9cf] transition-colors duration-200"
                   style={{
                     opacity: getItemOpacity(0),
-                    transform: isOpen ? "translateY(0)" : "translateY(16px)",
+                    transform: isOpen ? 'translateY(0)' : 'translateY(16px)',
                   }}
                 >
-                  Join Now
+                  Login
                 </Link>
 
                 <a
@@ -174,7 +185,7 @@ export const PillMenu= () => {
                   className="menu-item translate-y-4 text-[#fcf2e8] flex items-center gap-3 p-3 rounded-xl hover:bg-[#222] transition-colors duration-200 group"
                   style={{
                     opacity: getItemOpacity(0),
-                    transform: isOpen ? "translateY(0)" : "translateY(16px)",
+                    transform: isOpen ? 'translateY(0)' : 'translateY(16px)',
                   }}
                 >
                   <div className="flex flex-col">
@@ -189,7 +200,7 @@ export const PillMenu= () => {
                   className="menu-item translate-y-4 text-[#fcf2e8] flex items-center gap-3 p-3 rounded-xl hover:bg-[#222] transition-colors duration-200 group"
                   style={{
                     opacity: getItemOpacity(1),
-                    transform: isOpen ? "translateY(0)" : "translateY(16px)",
+                    transform: isOpen ? 'translateY(0)' : 'translateY(16px)',
                   }}
                 >
                   <div className="flex flex-col">
@@ -219,7 +230,7 @@ export const PillMenu= () => {
                   className="menu-item translate-y-4 text-[#fcf2e8] flex items-center gap-3 p-3 rounded-xl hover:bg-[#222] transition-colors duration-200 group"
                   style={{
                     opacity: getItemOpacity(3),
-                    transform: isOpen ? "translateY(0)" : "translateY(16px)",
+                    transform: isOpen ? 'translateY(0)' : 'translateY(16px)',
                   }}
                 >
                   <div className="flex flex-col">
@@ -234,7 +245,7 @@ export const PillMenu= () => {
                   className="menu-item translate-y-4 text-[#fcf2e8] flex items-center gap-3 p-3 rounded-xl hover:bg-[#222] transition-colors duration-200 group"
                   style={{
                     opacity: getItemOpacity(2),
-                    transform: isOpen ? "translateY(0)" : "translateY(16px)",
+                    transform: isOpen ? 'translateY(0)' : 'translateY(16px)',
                   }}
                 >
                   <div className="flex flex-col">
@@ -249,7 +260,7 @@ export const PillMenu= () => {
                   className="menu-item translate-y-4 text-[#fcf2e8] flex items-center gap-3 p-3 rounded-xl hover:bg-[#222] transition-colors duration-200 group"
                   style={{
                     opacity: getItemOpacity(3),
-                    transform: isOpen ? "translateY(0)" : "translateY(16px)",
+                    transform: isOpen ? 'translateY(0)' : 'translateY(16px)',
                   }}
                 >
                   {/* <div className="flex flex-col">
@@ -304,5 +315,5 @@ export const PillMenu= () => {
         </div>
       </Collapsible.Root>
     </div>
-  );
+  )
 };

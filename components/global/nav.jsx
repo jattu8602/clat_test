@@ -24,7 +24,7 @@ const Navbar = () => {
            px-4 items-center cursor-pointer h-12 flex  overflow-hidden rounded-2xl bg-[#141414] will-change-[height,border-radius]  border border-[#333]"
             onClick={closeMenu}
           >
-            HACKWAVE
+            OUTLAWED
           </Link>
         </Copy>
 

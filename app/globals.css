@@ -714,7 +714,9 @@ html {
 }
 
 
-
+#marquee {
+  will-change: transform;
+}
 
 
 /* ... keep all .anime-text, .navbar, .hero, .animated-text,
