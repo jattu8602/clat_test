@@ -107,7 +107,7 @@ export default function Header({
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 transition-all duration-300 dark:text-white">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/90 dark:supports-[backdrop-filter]:bg-slate-900/90 transition-all duration-300 dark:text-white shadow-sm">
       <div className="flex h-16 items-center justify-between px-4 lg:px-8">
         {/* Left side - Search and breadcrumb */}
         <div className="flex items-center space-x-6">
@@ -115,7 +115,7 @@ export default function Header({
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="lg:hidden rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
             <Menu className="h-5 w-5" />
@@ -149,7 +149,7 @@ export default function Header({
         {/* Right side - Theme Toggle, Notifications and Profile */}
         <div className="flex items-center space-x-3">
           {/* Theme Toggle */}
-          <div className="rounded-xl bg-slate-100 dark:hover:bg-slate-500 dark:bg-slate-800 p-1">
+          <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
             <ThemeToggle />
           </div>
 
@@ -197,7 +197,7 @@ export default function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-500 dark:bg-slate-800 transition-all duration-200 dark:text-white"
+              className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 dark:text-white"
               onClick={() => {
                 router.push('/dashboard/notifications')
                 setSidebarOpen(false)
@@ -224,7 +224,7 @@ export default function Header({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative h-10 w-10 rounded-xl transition-all duration-200"
+                  className="relative h-10 w-10 rounded-xl transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   <Avatar className="h-9 w-9 border-2 border-slate-200 dark:border-slate-700">
                     <AvatarImage
@@ -232,7 +232,7 @@ export default function Header({
                       alt={session?.user?.name || 'User'}
                       className="object-cover"
                     />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-black dark:text-white text-sm font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-semibold">
                       {session?.user?.name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
@@ -252,7 +252,7 @@ export default function Header({
                           alt={session?.user?.name || 'User'}
                           className="object-cover"
                         />
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-black dark:text-white text-sm font-semibold">
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-semibold">
                           {session?.user?.name?.charAt(0) || 'U'}
                         </AvatarFallback>
                       </Avatar>
@@ -275,7 +275,7 @@ export default function Header({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
                 <DropdownMenuItem
-                  className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2 cursor-pointer"
+                  className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2 cursor-pointer transition-colors"
                   onClick={() => {
                     router.push('/dashboard/profile')
                     setSidebarOpen(false)
@@ -287,7 +287,7 @@ export default function Header({
                   </span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2 cursor-pointer"
+                  className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2 cursor-pointer transition-colors"
                   onClick={() => {
                     router.push('/dashboard/payment-history')
                     setSidebarOpen(false)
@@ -299,7 +299,7 @@ export default function Header({
                   </span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2 cursor-pointer"
+                  className="p-3 focus:bg-slate-50 dark:focus:bg-slate-800 rounded-lg mx-2 cursor-pointer transition-colors"
                   onClick={() => {
                     router.push('/dashboard/notifications')
                     setSidebarOpen(false)
@@ -312,7 +312,7 @@ export default function Header({
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
                 <DropdownMenuItem
-                  className="p-3 focus:bg-red-50 dark:focus:bg-red-900/20 rounded-lg mx-2 text-red-600 dark:text-red-400 cursor-pointer"
+                  className="p-3 focus:bg-red-50 dark:focus:bg-red-900/20 rounded-lg mx-2 text-red-600 dark:text-red-400 cursor-pointer transition-colors"
                   onClick={handleSignOut}
                 >
                   <LogOut className="mr-3 h-4 w-4" />

@@ -1,31 +1,85 @@
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import {
   Clock,
-  FileText,
-  Plus,
-  Minus,
   RefreshCcw,
-  History,
   Play,
-  Star,
-  Users,
-  TrendingUp,
   BookOpen,
   Edit,
   Settings,
   ToggleLeft,
   ToggleRight,
   Lock,
+  BarChart3,
+  Crown,
+  Scale,
+  Brain,
+  Calculator,
+  Globe,
+  Sparkles,
+  Target,
+  Trophy,
+  CheckCircle,
 } from 'lucide-react'
+
+const subjectIcons = {
+  ENGLISH: <BookOpen className="h-4 w-4" />,
+  GK_CA: <Globe className="h-4 w-4" />,
+  LEGAL_REASONING: <Scale className="h-4 w-4" />,
+  LOGICAL_REASONING: <Brain className="h-4 w-4" />,
+  QUANTITATIVE_TECHNIQUES: <Calculator className="h-4 w-4" />,
+}
+
+// Color schemes for different test types and statuses
+const getTestColors = (isPaid, isAttempted, isNew = false) => {
+  if (isNew) {
+    return {
+      primary: 'from-emerald-500 to-teal-600',
+      secondary: 'from-emerald-100 to-teal-200',
+      dark: 'from-emerald-900 to-teal-800',
+      accent: 'emerald',
+      border: 'border-emerald-200 dark:border-emerald-700',
+      text: 'text-emerald-700 dark:text-emerald-300',
+      bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    }
+  }
+
+  if (isPaid) {
+    return {
+      primary: 'from-amber-500 to-orange-600',
+      secondary: 'from-amber-100 to-orange-200',
+      dark: 'from-amber-900 to-orange-800',
+      accent: 'amber',
+      border: 'border-amber-200 dark:border-amber-700',
+      text: 'text-amber-700 dark:text-amber-300',
+      bg: 'bg-amber-50 dark:bg-amber-900/20',
+    }
+  }
+
+  if (isAttempted) {
+    return {
+      primary: 'from-blue-500 to-indigo-600',
+      secondary: 'from-blue-100 to-indigo-200',
+      dark: 'from-blue-900 to-indigo-800',
+      accent: 'blue',
+      border: 'border-blue-200 dark:border-blue-700',
+      text: 'text-blue-700 dark:text-blue-300',
+      bg: 'bg-blue-50 dark:bg-blue-900/20',
+    }
+  }
+
+  return {
+    primary: 'from-green-500 to-emerald-600',
+    secondary: 'from-green-100 to-emerald-200',
+    dark: 'from-green-900 to-emerald-800',
+    accent: 'green',
+    border: 'border-green-200 dark:border-green-700',
+    text: 'text-green-700 dark:text-green-300',
+    bg: 'bg-green-50 dark:bg-green-900/20',
+  }
+}
 
 export default function TestCard({
   title,
@@ -38,15 +92,16 @@ export default function TestCard({
   positiveMarks = 1,
   negativeMarks = 0.25,
   attemptCount = 0,
-  lastScore, // Add lastScore prop
-  isNew = false, // Add isNew prop
-  isAttempted = false, // Add isAttempted prop to show re-attempt button
-  attemptedAt, // Add attemptedAt prop for time display
-  attemptHistory = [], // Add attemptHistory prop for multiple attempts
+  lastScore,
+  isNew = false,
+  isAttempted = false,
+  attemptedAt,
+  attemptHistory = [],
   onAction,
-  admin = false, // Add admin prop to control admin buttons visibility
-  locked = false, // When true, show lock CTA instead of taking test
+  admin = false,
+  locked = false,
   lockLabel = 'Upgrade to Premium',
+  questions = [],
 }) {
   // Helper function to format time ago
   const getTimeAgo = (date) => {
@@ -74,304 +129,344 @@ export default function TestCard({
     return 'Just now'
   }
 
-  const defaultHighlights = [
-    `${numberOfQuestions} comprehensive questions`,
-    'Best for CLAT students',
-    'Detailed explanations included',
-    'Performance analytics',
-  ]
+  // Group questions by section to show subject breakdown
+  const getSubjectBreakdown = () => {
+    if (!questions || questions.length === 0) {
+      // Fallback to default sections if no questions data
+      return [
+        {
+          name: 'English',
+          questions: Math.ceil(numberOfQuestions * 0.2),
+          icon: subjectIcons.ENGLISH,
+          color: 'from-blue-500 to-blue-600',
+        },
+        {
+          name: 'GK & CA',
+          questions: Math.ceil(numberOfQuestions * 0.25),
+          icon: subjectIcons.GK_CA,
+          color: 'from-purple-500 to-purple-600',
+        },
+        {
+          name: 'Legal Reasoning',
+          questions: Math.ceil(numberOfQuestions * 0.25),
+          icon: subjectIcons.LEGAL_REASONING,
+          color: 'from-amber-500 to-orange-600',
+        },
+        {
+          name: 'Logical Reasoning',
+          questions: Math.ceil(numberOfQuestions * 0.2),
+          icon: subjectIcons.LOGICAL_REASONING,
+          color: 'from-emerald-500 to-teal-600',
+        },
+        {
+          name: 'Quantitative',
+          questions: Math.ceil(numberOfQuestions * 0.1),
+          icon: subjectIcons.QUANTITATIVE_TECHNIQUES,
+          color: 'from-rose-500 to-pink-600',
+        },
+      ]
+    }
 
-  const displayHighlights =
-    highlights.length > 0 ? highlights : defaultHighlights
+    const sectionCounts = {}
+    questions.forEach((q) => {
+      const sectionName = q.section.replace(/_/g, ' ')
+      if (!sectionCounts[sectionName]) {
+        sectionCounts[sectionName] = 0
+      }
+      sectionCounts[sectionName]++
+    })
 
+    const colorMap = {
+      English: 'from-blue-500 to-blue-600',
+      'GK CA': 'from-purple-500 to-purple-600',
+      'Legal Reasoning': 'from-amber-500 to-orange-600',
+      'Logical Reasoning': 'from-emerald-500 to-teal-600',
+      'Quantitative Techniques': 'from-rose-500 to-pink-600',
+    }
+
+    return Object.entries(sectionCounts).map(([name, count]) => ({
+      name,
+      questions: count,
+      icon:
+        subjectIcons[name.toUpperCase().replace(/\s+/g, '_')] ||
+        subjectIcons.ENGLISH,
+      color: colorMap[name] || 'from-gray-500 to-gray-600',
+    }))
+  }
+
+  const getStatusBadge = () => {
+    if (isAttempted) {
+      return (
+        <Badge
+          variant="secondary"
+          className={`bg-gradient-to-r ${colors.primary} text-white hover:opacity-90 border-0`}
+        >
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Completed
+        </Badge>
+      )
+    }
+    if (isNew) {
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:opacity-90 border-0"
+        >
+          <Sparkles className="h-3 w-3 mr-1" />
+          New
+        </Badge>
+      )
+    }
+    return (
+      <Badge
+        variant="outline"
+        className={`border-${colors.accent}-200 text-${colors.accent}-700 dark:border-${colors.accent}-700 dark:text-${colors.accent}-300`}
+      >
+        <Target className="h-3 w-3 mr-1" />
+        Available
+      </Badge>
+    )
+  }
+
+  const getScoreDisplay = () => {
+    if (!isAttempted) {
+      return <span className="text-muted-foreground">--/100</span>
+    }
+
+    if (lastScore !== undefined && lastScore !== null) {
+      let scoreColor = 'text-gray-600 dark:text-gray-400'
+      if (lastScore >= 80) scoreColor = 'text-emerald-600 dark:text-emerald-400'
+      else if (lastScore >= 60)
+        scoreColor = 'text-amber-600 dark:text-amber-400'
+      else if (lastScore >= 40)
+        scoreColor = 'text-orange-600 dark:text-orange-400'
+      else scoreColor = 'text-rose-600 dark:text-rose-400'
+
+      return (
+        <div className="flex items-center gap-2">
+          <div className={`text-lg font-bold ${scoreColor}`}>
+            {lastScore}/100
+          </div>
+          {lastScore >= 80 && <Trophy className="h-4 w-4 text-amber-500" />}
+        </div>
+      )
+    }
+
+    return <span className="text-muted-foreground">--/100</span>
+  }
+
+  const getActionButtons = () => {
+    if (locked) {
+      return (
+        <div className="flex items-center gap-2">
+          <Lock className="h-4 w-4 text-muted-foreground" />
+          <Button
+            variant="outline"
+            disabled
+            className="text-muted-foreground bg-transparent"
+          >
+            <Crown className="h-4 w-4 mr-2" />
+            Pro Only
+          </Button>
+        </div>
+      )
+    }
+
+    if (!isAttempted) {
+      return (
+        <Button
+          onClick={() => onAction?.('attempt')}
+          className={`bg-gradient-to-r ${colors.primary} hover:opacity-90 text-white shadow-lg hover:shadow-xl transition-all duration-300`}
+        >
+          <Play className="h-4 w-4 mr-2" />
+          Start Test
+        </Button>
+      )
+    }
+
+    return (
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onAction?.('evaluate')}
+          className={`border-${colors.accent}-200 text-${colors.accent}-700 hover:bg-${colors.accent}-50 dark:border-${colors.accent}-700 dark:text-${colors.accent}-300 dark:hover:bg-${colors.accent}-900/20`}
+        >
+          <BarChart3 className="h-4 w-4 mr-2" />
+          Analysis
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onAction?.('reattempt')}
+          className={`border-${colors.accent}-200 text-${colors.accent}-700 hover:bg-${colors.accent}-50 dark:border-${colors.accent}-700 dark:text-${colors.accent}-300 dark:hover:bg-${colors.accent}-900/20`}
+        >
+          <RefreshCcw className="h-4 w-4 mr-2" />
+          Re-attempt
+        </Button>
+      </div>
+    )
+  }
+
+  const formatTime = (minutes) => {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    if (hours > 0) {
+      return `${hours}h ${mins}m`
+    }
+    return `${mins}m`
+  }
+
+  const colors = getTestColors(isPaid, isAttempted, isNew)
+  const subjects = getSubjectBreakdown()
   const timeAgo = attemptedAt ? getTimeAgo(attemptedAt) : null
 
   return (
-    <Card className="w-full min-w-[280px] max-w-sm overflow-hidden rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-300 hover:border-gray-300 dark:hover:border-gray-600 flex flex-col h-full">
-      {/* Thumbnail */}
-      <div className="relative w-full h-48 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20">
-        <Image
-          src={thumbnailUrl || '/test-placeholder.jpg'}
-          alt={`Thumbnail for ${title}`}
-          fill
-          className="object-cover"
-          onError={(e) => {
-            e.target.style.display = 'none'
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-        {/* Badges Container */}
-        <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-          {/* Left side badges */}
-          <div className="flex flex-col gap-2">
-            {/* NEW badge */}
-            {isNew && (
-              <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 text-xs font-semibold px-2 py-1">
-                NEW
-              </Badge>
-            )}
-            {/* Score badge */}
-            {lastScore && (
-              <Badge
-                className={`text-xs font-semibold px-2 py-1 ${
-                  lastScore >= 80
-                    ? 'bg-green-500 text-white'
-                    : lastScore >= 60
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-red-500 text-white'
-                }`}
-                title={`Score: ${lastScore}% (Correct Answers ÷ Total Questions × 100)`}
-              >
-                {lastScore}%
-              </Badge>
-            )}
-            {/* Time badge */}
-            {timeAgo && (
-              <Badge className="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-xs font-medium px-2 py-1">
-                {timeAgo}
-              </Badge>
-            )}
+    <Card
+      className={`transition-all duration-300 hover:shadow-xl hover:scale-[1.02] ${colors.border} ${colors.bg} relative overflow-hidden group`}
+    >
+      {/* Decorative gradient overlay */}
+      <div
+        className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${colors.primary} opacity-5 rounded-full -mr-16 -mt-16 group-hover:opacity-10 transition-opacity duration-300`}
+      ></div>
+
+      {/* New badge overlay */}
+      {isNew && (
+        <div className="absolute top-4 right-4 z-10">
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg animate-pulse">
+            <Sparkles className="h-3 w-3 inline mr-1" />
+            New
+          </div>
+        </div>
+      )}
+      <CardHeader className="pb-4 relative z-10">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="space-y-2 flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
+              {isPaid && (
+                <Badge
+                  variant="outline"
+                  className="border-accent text-accent w-fit"
+                >
+                  <Crown className="h-3 w-3 mr-1" />
+                  Premium
+                </Badge>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1 sm:gap-2">
+              {subjects.map((subject, index) => (
+                <div
+                  key={index}
+                  className={`flex items-center gap-1 text-xs sm:text-sm bg-gradient-to-r ${subject.color} text-white px-2 py-1 rounded-md shadow-sm`}
+                >
+                  {subject.icon}
+                  <span className="hidden sm:inline">{subject.name}</span>
+                  <span className="sm:hidden">
+                    {subject.name.split(' ')[0]}
+                  </span>
+                  <span className="font-medium">({subject.questions})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-start sm:justify-end">
+            {getStatusBadge()}
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="relative z-10">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 items-start lg:items-center">
+          <div className="space-y-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Total Questions
+            </p>
+            <p className="text-xl sm:text-2xl font-bold">{numberOfQuestions}</p>
           </div>
 
-          {/* Right side badge */}
-          <Badge
-            variant={isPaid ? 'default' : 'secondary'}
-            className={`${
-              isPaid
-                ? 'bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700'
-                : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-            }`}
-          >
-            {isPaid ? 'Premium' : 'Free'}
-          </Badge>
-        </div>
-      </div>
+          <div className="space-y-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">Duration</p>
+            <div className="flex items-center gap-1">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <p className="text-lg sm:text-xl font-bold">
+                {formatTime(durationMinutes)}
+              </p>
+            </div>
+          </div>
 
-      <CardContent className="p-6 flex flex-col flex-grow">
-        {/* Main content area - grows to fill available space */}
-        <div className="space-y-4 flex-grow">
-          {/* Title & Description */}
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-1">
-              {title}
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-              {description}
+          <div className="space-y-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">Score</p>
+            {getScoreDisplay()}
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">Status</p>
+            <p className="text-sm sm:text-base font-medium capitalize">
+              {isAttempted ? 'completed' : 'not attempted'}
             </p>
           </div>
 
-          {/* Highlights */}
-          <div className="space-y-2">
-            <ul className="space-y-1.5">
-              {displayHighlights.slice(0, 4).map((item, index) => (
-                <li
-                  key={index}
-                  className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300"
-                >
-                  <div className="w-1 h-1 rounded-full bg-blue-500 dark:bg-blue-400 mt-2 flex-shrink-0" />
-                  <span className="line-clamp-1">{item}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="col-span-2 sm:col-span-2 lg:col-span-1 flex justify-start lg:justify-end">
+            {getActionButtons()}
           </div>
-
-          {/* Test Details */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
-              <Clock className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {durationMinutes}m
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
-              <FileText className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {numberOfQuestions}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Attempt History - Show if multiple attempts exist */}
-          {isAttempted && attemptHistory && attemptHistory.length > 1 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <History className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Attempt History ({attemptHistory.length} attempts)
-                </span>
-              </div>
-              <div className="space-y-1 max-h-20 overflow-y-auto">
-                {attemptHistory.slice(0, 3).map((attempt, index) => (
-                  <div
-                    key={
-                      attempt.id ||
-                      attempt._id ||
-                      `attempt-${attempt.attemptNumber}`
-                    }
-                    className="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-700 rounded px-2 py-1"
-                  >
-                    <span className="text-gray-600 dark:text-gray-400">
-                      Attempt #{attempt.attemptNumber}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          attempt.score >= 80
-                            ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                            : attempt.score >= 60
-                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
-                            : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                        }`}
-                      >
-                        {attempt.score}%
-                      </span>
-                      <span className="text-gray-500 dark:text-gray-400">
-                        {new Date(attempt.completedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                {attemptHistory.length > 3 && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    +{attemptHistory.length - 3} more attempts
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Action Buttons - Always at bottom */}
-        <div className="space-y-2 pt-4">
-          {/* Main action button */}
-          <Button
-            onClick={() =>
-              onAction?.(
-                locked ? 'upgrade' : isAttempted ? 'reattempt' : 'attempt'
-              )
-            }
-            className={`w-full ${
-              locked
-                ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                : isAttempted
-                ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                : 'bg-green-500 hover:bg-green-600 text-white'
-            }`}
-            variant="default"
-            size="default"
-          >
-            {locked ? (
-              <>
-                <Lock className="w-4 h-4 mr-2" />
-                {lockLabel}
-              </>
-            ) : isAttempted ? (
-              <>
-                <RefreshCcw className="w-4 h-4 mr-2" />
-                Re-attempt Test
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 mr-2" />
-                Take Test
-              </>
-            )}
-          </Button>
-
-          {/* Evaluate button for attempted tests */}
-          {isAttempted && (
-            <div className="space-y-2">
-              <Button
-                onClick={() => onAction?.('evaluate')}
-                variant="outline"
-                className="w-full border-purple-200 text-purple-600 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/20"
-                size="default"
-              >
-                <BookOpen className="w-4 h-4 mr-2" />
-                Evaluate Latest
-              </Button>
-
-              {/* {attemptHistory && attemptHistory.length > 1 && (
-                <div className="text-center">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Or evaluate specific attempt:
-                  </span>
-                  <div className="flex gap-1 mt-1 justify-center">
-                    {attemptHistory.slice(0, 5).map((attempt) => (
-                      <button
-                        key={
-                          attempt.id ||
-                          attempt._id ||
-                          `attempt-${attempt.attemptNumber}`
-                        }
-                        onClick={() => {
-                          console.log('Attempt clicked:', attempt)
-                          console.log('Attempt ID:', attempt.id || attempt._id)
-                          console.log('Attempt Number:', attempt.attemptNumber)
-                          onAction?.('evaluateSpecific', attempt)
-                        }}
-                        className={`px-2 py-1 text-xs rounded border ${
-                          attempt.isLatest
-                            ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700'
-                            : 'bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600'
-                        } hover:opacity-80 transition-opacity`}
-                        title={`Attempt #${attempt.attemptNumber} - ${attempt.score}%`}
-                      >
-                        #{attempt.attemptNumber}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-              )}
-
-              */}
+        {/* Progress indicator for attempted tests */}
+        {isAttempted && lastScore !== undefined && (
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Performance</span>
+              <span className="font-medium">{lastScore}%</span>
             </div>
-          )}
-
-          {/* Admin Actions */}
-          {admin && (
-            <div className="flex gap-2 mt-2">
-              <Button
-                size="sm"
-                onClick={() => onAction('continue')}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Continue
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => onAction('settings')}
-                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-              >
-                <Settings className="h-4 w-4 " />
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => onAction('toggle')}
-                className={
-                  isAttempted
-                    ? 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
-                    : 'text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300'
-                }
-              >
-                {isAttempted ? (
-                  <ToggleRight className="h-4 w-4" />
-                ) : (
-                  <ToggleLeft className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
+            <Progress
+              value={lastScore}
+              className={`h-2 bg-gray-200 dark:bg-gray-700`}
+              indicatorClassName={`bg-gradient-to-r ${colors.primary}`}
+            />
+          </div>
+        )}
       </CardContent>
+
+      {/* Admin Actions - Show below if admin */}
+      {admin && (
+        <div className="px-6 pb-6 relative z-10">
+          <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              size="sm"
+              onClick={() => onAction('continue')}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Continue
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => onAction('settings')}
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => onAction('toggle')}
+              className={
+                isAttempted
+                  ? 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
+                  : 'text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300'
+              }
+            >
+              {isAttempted ? (
+                <ToggleRight className="h-4 w-4" />
+              ) : (
+                <ToggleLeft className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }

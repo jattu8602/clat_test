@@ -35,9 +35,7 @@ export default function DashboardHome() {
     averageScore: 0,
     rank: 0,
   })
-  const [freeTests, setFreeTests] = useState([])
-  const [paidTests, setPaidTests] = useState([])
-  const [attemptedTests, setAttemptedTests] = useState([])
+  const [allTests, setAllTests] = useState([])
   const [loading, setLoading] = useState(true)
 
   const userType = session?.user?.role || 'FREE'
@@ -46,45 +44,36 @@ export default function DashboardHome() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        // Recent tests for display sections
-        const [freeRecentRes, paidRecentRes] = await Promise.all([
-          fetch('/api/tests/free?type=recent'),
-          fetch('/api/tests/premium?type=recent'),
-        ])
-        const [freeRecent, paidRecent] = await Promise.all([
-          freeRecentRes.ok ? freeRecentRes.json() : { tests: [] },
-          paidRecentRes.ok ? paidRecentRes.json() : { tests: [] },
-        ])
-        setFreeTests(freeRecent.tests || [])
-        setPaidTests(paidRecent.tests || [])
 
-        // Build recent results from attempted across all tests
-        const [freeAllRes, paidAllRes] = await Promise.all([
+        // Fetch all tests (both free and premium)
+        const [freeRes, paidRes] = await Promise.all([
           fetch('/api/tests/free?type=all'),
           fetch('/api/tests/premium?type=all'),
         ])
-        const [freeAll, paidAll] = await Promise.all([
-          freeAllRes.ok ? freeAllRes.json() : { tests: [] },
-          paidAllRes.ok ? paidAllRes.json() : { tests: [] },
+
+        const [freeData, paidData] = await Promise.all([
+          freeRes.ok ? freeRes.json() : { tests: [] },
+          paidRes.ok ? paidRes.json() : { tests: [] },
         ])
 
-        const attemptedFreeBase = (freeAll.tests || []).filter(
-          (t) => t.isAttempted
-        )
-        const attemptedPaidBase = (paidAll.tests || []).filter(
-          (t) => t.isAttempted
-        )
-        let combined = [...attemptedFreeBase, ...attemptedPaidBase]
+        let combinedTests = [
+          ...(freeData.tests || []),
+          ...(paidData.tests || []),
+        ]
 
-        // For free users, only show free results
+        // For free users, mark paid tests as locked
         if (userType === 'FREE') {
-          combined = combined.filter((t) => t.isPaid === false)
+          combinedTests = combinedTests.map((test) => ({
+            ...test,
+            locked: test.isPaid,
+          }))
         }
 
-        // Enrich attempted with marks-based score and attemptedAt
-        const enriched = await Promise.all(
-          combined.map(async (test) => {
+        // Enrich tests with attempt data and scores
+        const enrichedTests = await Promise.all(
+          combinedTests.map(async (test) => {
             if (!test.testAttemptId) return test
+
             try {
               const res = await fetch(
                 `/api/tests/${test.id}/results?attemptId=${test.testAttemptId}`
@@ -102,34 +91,42 @@ export default function DashboardHome() {
           })
         )
 
-        const sortedRecent = enriched
-          .filter((t) => !!t.attemptedAt)
-          .sort((a, b) => new Date(b.attemptedAt) - new Date(a.attemptedAt))
-          .slice(0, 6)
-        setAttemptedTests(sortedRecent)
+        // Sort tests: attempted tests first (by completion date), then unattempted
+        const sortedTests = enrichedTests.sort((a, b) => {
+          if (a.isAttempted && !b.isAttempted) return -1
+          if (!a.isAttempted && b.isAttempted) return 1
+          if (a.isAttempted && b.isAttempted) {
+            return new Date(b.attemptedAt) - new Date(a.attemptedAt)
+          }
+          return 0
+        })
 
-        // Basic stats (optional)
-        setStats((prev) => ({
-          ...prev,
-          totalTests:
-            (freeRecent.tests?.length || 0) + (paidRecent.tests?.length || 0),
-          completedTests: sortedRecent.length,
+        setAllTests(sortedTests)
+
+        // Update stats
+        setStats({
+          totalTests: combinedTests.length,
+          completedTests: combinedTests.filter((t) => t.isAttempted).length,
           averageScore:
-            sortedRecent.length > 0
+            enrichedTests.filter((t) => t.isAttempted && t.lastScore).length > 0
               ? Math.round(
-                  sortedRecent.reduce((s, t) => s + (t.lastScore || 0), 0) /
-                    sortedRecent.length
+                  enrichedTests
+                    .filter((t) => t.isAttempted && t.lastScore)
+                    .reduce((sum, t) => sum + (t.lastScore || 0), 0) /
+                    enrichedTests.filter((t) => t.isAttempted && t.lastScore)
+                      .length
                 )
               : 0,
-        }))
+          rank: 0,
+        })
       } catch (err) {
-        // Fail silently on dashboard
+        console.error('Error fetching tests:', err)
       } finally {
         setLoading(false)
       }
     }
     fetchData()
-  }, [])
+  }, [userType])
 
   const handleTestAction = (test, action, specificAttempt = null) => {
     if (action === 'upgrade') {
@@ -140,7 +137,6 @@ export default function DashboardHome() {
       router.push(`/dashboard/test/${test.id}`)
     } else if (action === 'evaluate') {
       console.log('Evaluating latest attempt for test:', test)
-      // Navigate to evaluation page with the latest attempt ID
       if (test.testAttemptId) {
         router.push(
           `/dashboard/test/${test.id}/evaluate?attemptId=${test.testAttemptId}`
@@ -150,11 +146,6 @@ export default function DashboardHome() {
       }
     } else if (action === 'evaluateSpecific') {
       console.log('Evaluating specific attempt:', specificAttempt)
-      console.log(
-        'Attempt object structure:',
-        JSON.stringify(specificAttempt, null, 2)
-      )
-      // Navigate to evaluation page with the specific attempt ID
       const attemptId = specificAttempt?.id || specificAttempt?._id
       if (attemptId) {
         console.log('Using attempt ID:', attemptId)
@@ -254,147 +245,51 @@ export default function DashboardHome() {
           })}
         </div>
 
-        {/* Free Tests Section */}
-        <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <CardHeader className="pb-3 sm:pb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Target className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white truncate">
-                    Free Practice Tests
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
-                    Start with these free practice tests to build your
-                    foundation
-                  </CardDescription>
-                </div>
-              </div>
-              <Link href="/dashboard/free-test">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1 text-gray-600 dark:text-gray-300 flex-shrink-0 px-2 sm:px-3"
-                >
-                  <span className="hidden sm:inline">View All</span>
-                  <span className="sm:hidden text-xs">All</span>
-                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            <div className="flex gap-4 sm:gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-              {freeTests.map((test) => (
-                <div key={test.id} className="flex-shrink-0 w-80 sm:w-80">
-                  <TestCard
-                    {...test}
-                    onAction={(action) => handleTestAction(test, action)}
-                  />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Premium Tests Section */}
-        <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <CardHeader className="pb-3 sm:pb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900 dark:to-amber-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white truncate">
-                    Premium Tests
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
-                    Advanced tests with detailed analytics and expert
-                    explanations
-                  </CardDescription>
-                </div>
-              </div>
-              <Link href="/dashboard/paid-test">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1 text-gray-600 dark:text-gray-300 flex-shrink-0 px-2 sm:px-3"
-                >
-                  <span className="hidden sm:inline">View All</span>
-                  <span className="sm:hidden text-xs">All</span>
-                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            <div className="flex gap-4 sm:gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-              {paidTests.map((test) => (
-                <div key={test.id} className="flex-shrink-0 w-80 sm:w-80">
-                  <TestCard
-                    {...test}
-                    locked={userType === 'FREE'}
-                    lockLabel="Upgrade to Premium"
-                    onAction={(action) => handleTestAction(test, action)}
-                  />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Test Results */}
+        {/* All Tests Section */}
         <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardHeader className="pb-3 sm:pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                  <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white truncate">
-                    Recent Results
+                    All Tests
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
-                    Your latest test performances and progress tracking
+                    Complete collection of practice tests and mock exams
                   </CardDescription>
                 </div>
               </div>
-              <Link href="/dashboard/attempted">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1 text-gray-600 dark:text-gray-300 flex-shrink-0 px-2 sm:px-3"
-                >
-                  <span className="hidden sm:inline dark:text-gray-300">
-                    View All
-                  </span>
-                  <span className="sm:hidden text-xs dark:text-gray-300">
-                    All
-                  </span>
-                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                </Button>
-              </Link>
             </div>
           </CardHeader>
           <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
-            <div className="flex gap-4 sm:gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-              {attemptedTests.map((test) => (
-                <div key={test.id} className="flex-shrink-0 w-80 sm:w-80">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-gray-500 dark:text-gray-400">
+                  Loading tests...
+                </div>
+              </div>
+            ) : allTests.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                No tests available at the moment.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {allTests.map((test) => (
                   <TestCard
+                    key={test.id}
                     {...test}
-                    isAttempted={true}
-                    attemptHistory={test.attemptHistory || []}
+                    locked={test.locked}
+                    lockLabel="Upgrade to Premium"
                     onAction={(action, specificAttempt) =>
                       handleTestAction(test, action, specificAttempt)
                     }
                   />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
