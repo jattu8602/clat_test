@@ -129,73 +129,84 @@ export default function TestCard({
     return 'Just now'
   }
 
-  // Group questions by section to show subject breakdown
+  // ✅ normalize all section names to standard labels
+  const normalizeSection = (raw) => {
+    if (!raw) return 'English'
+    const formatted = raw.replace(/_/g, ' ').trim().toLowerCase()
+
+    if (formatted.includes('gk')) return 'GK & CA'
+    if (formatted.includes('general knowledge')) return 'GK & CA'
+    if (formatted.includes('legal')) return 'Legal Reasoning'
+    if (formatted.includes('logical')) return 'Logical Reasoning'
+    if (formatted.includes('quant')) return 'Quantitative Techniques'
+    if (formatted.includes('english')) return 'English'
+
+    return formatted.replace(/\b\w/g, (c) => c.toUpperCase()) // capitalize fallback
+  }
+
   const getSubjectBreakdown = () => {
     if (!questions || questions.length === 0) {
-      // Fallback to default sections if no questions data - CLAT pattern
+      // ✅ Hardcoded fallback distribution
       return [
         {
           name: 'English',
           questions: Math.ceil(numberOfQuestions * 0.2),
           icon: subjectIcons.ENGLISH,
-          color: 'from-blue-500 to-blue-600',
+          color: 'bg-gradient-to-r from-blue-500 to-blue-600',
         },
         {
           name: 'GK & CA',
           questions: Math.ceil(numberOfQuestions * 0.26),
           icon: subjectIcons.GK_CA,
-          color: 'from-purple-500 to-purple-600',
+          color: 'bg-gradient-to-r from-purple-500 to-purple-600',
         },
         {
           name: 'Legal Reasoning',
           questions: Math.ceil(numberOfQuestions * 0.26),
           icon: subjectIcons.LEGAL_REASONING,
-          color: 'from-amber-500 to-orange-600',
+          color: 'bg-gradient-to-r from-amber-500 to-orange-600',
         },
         {
           name: 'Logical Reasoning',
           questions: Math.ceil(numberOfQuestions * 0.2),
           icon: subjectIcons.LOGICAL_REASONING,
-          color: 'from-emerald-500 to-teal-600',
+          color: 'bg-gradient-to-r from-emerald-500 to-teal-600',
         },
         {
-          name: 'Quantitative',
+          name: 'Quantitative Techniques',
           questions: Math.ceil(numberOfQuestions * 0.08),
           icon: subjectIcons.QUANTITATIVE_TECHNIQUES,
-          color: 'from-rose-500 to-pink-600',
+          color: 'bg-gradient-to-r from-rose-500 to-pink-600',
         },
       ]
     }
 
-    // Count actual questions by section from the questions data
+    // ✅ Count actual questions with normalized names
     const sectionCounts = {}
     questions.forEach((q) => {
-      const sectionName = q.section.replace(/_/g, ' ')
-      if (!sectionCounts[sectionName]) {
-        sectionCounts[sectionName] = 0
-      }
+      const sectionName = normalizeSection(q.section)
+      if (!sectionCounts[sectionName]) sectionCounts[sectionName] = 0
       sectionCounts[sectionName]++
     })
 
     const colorMap = {
-      English: 'from-blue-500 to-blue-600',
-      'GK CA': 'from-purple-500 to-purple-600',
-      'Legal Reasoning': 'from-amber-500 to-orange-600',
-      'Logical Reasoning': 'from-emerald-500 to-teal-600',
-      'Quantitative Techniques': 'from-rose-500 to-pink-600',
+      English: 'bg-gradient-to-r from-blue-500 to-blue-600',
+      'GK & CA': 'bg-gradient-to-r from-purple-500 to-purple-600',
+      'Legal Reasoning': 'bg-gradient-to-r from-amber-500 to-orange-600',
+      'Logical Reasoning': 'bg-gradient-to-r from-emerald-500 to-teal-600',
+      'Quantitative Techniques': 'bg-gradient-to-r from-rose-500 to-pink-600',
     }
 
-    // Only show sections that actually have questions
     return Object.entries(sectionCounts)
-      .filter(([name, count]) => count > 0) // Only show sections with questions
-      .sort((a, b) => b.questions - a.questions) // Sort by question count (descending)
+      .filter(([_, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1]) // largest first
       .map(([name, count]) => ({
         name,
         questions: count,
         icon:
           subjectIcons[name.toUpperCase().replace(/\s+/g, '_')] ||
           subjectIcons.ENGLISH,
-        color: colorMap[name] || 'from-gray-500 to-gray-600',
+        color: colorMap[name] || 'bg-gradient-to-r from-gray-500 to-gray-600',
       }))
   }
 
@@ -235,7 +246,7 @@ export default function TestCard({
 
   const getScoreDisplay = () => {
     if (!isAttempted) {
-      return <span className="text-muted-foreground">--/100</span>
+      return <span className="text-muted-foreground dark:text-white">--/100</span>
     }
 
     if (lastScore !== undefined && lastScore !== null) {
@@ -255,7 +266,7 @@ export default function TestCard({
       )
     }
 
-    return <span className="text-muted-foreground">--/100</span>
+    return <span className="text-muted-foreground dark:text-white">--/100</span>
   }
 
   const getActionButtons = () => {
@@ -289,27 +300,28 @@ export default function TestCard({
 
     return (
       <div className="flex gap-2">
+        {/* Analysis button with gradient (blue → indigo) */}
         <Button
-          variant="outline"
-          size="sm"
           onClick={() => onAction?.('evaluate')}
-          className={`border-${colors.accent}-200 text-${colors.accent}-700 hover:bg-${colors.accent}-50 dark:border-${colors.accent}-700 dark:text-${colors.accent}-300 dark:hover:bg-${colors.accent}-900/20`}
+          className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
         >
           <BarChart3 className="h-4 w-4 mr-2" />
           Analysis
         </Button>
+
+        {/* Reattempt button with gradient (green → emerald, same family as Start) */}
         <Button
-          variant="outline"
-          size="sm"
           onClick={() => onAction?.('reattempt')}
-          className={`border-${colors.accent}-200 text-${colors.accent}-700 hover:bg-${colors.accent}-50 dark:border-${colors.accent}-700 dark:text-${colors.accent}-300 dark:hover:bg-${colors.accent}-900/20`}
+          className="bg-gradient-to-r from-emerald-500 to-green-600 hover:opacity-90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
         >
           <RefreshCcw className="h-4 w-4 mr-2" />
-          Re-attempt
+          Reattempt
         </Button>
       </div>
     )
+
   }
+
 
   const formatTime = (minutes) => {
     const hours = Math.floor(minutes / 60)
@@ -326,7 +338,7 @@ export default function TestCard({
 
   return (
     <Card
-      className={`transition-all duration-300 hover:shadow-xl hover:scale-[1.02] ${colors.border} ${colors.bg} relative overflow-hidden group`}
+      className={`transition-all duration-300 hover:shadow-xl hover:scale-[1] ${colors.border} ${colors.bg} relative overflow-hidden group`}
     >
       {/* Decorative gradient overlay */}
       <div
@@ -346,11 +358,13 @@ export default function TestCard({
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div className="space-y-2 flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
+              <CardTitle className="text-lg sm:text-xl dark:text-white ">
+                {title}
+              </CardTitle>
               {isPaid && (
                 <Badge
                   variant="outline"
-                  className="border-accent text-accent w-fit"
+                  className="border-accent text-accent w-fit dark:text-white"
                 >
                   <Crown className="h-3 w-3 mr-1" />
                   Premium
@@ -361,7 +375,7 @@ export default function TestCard({
               {subjects.map((subject, index) => (
                 <div
                   key={index}
-                  className={`flex items-center gap-1 text-xs sm:text-sm bg-gradient-to-r ${subject.color} text-white px-2 py-1 rounded-md shadow-sm`}
+                  className={`flex items-center gap-1 text-xs sm:text-sm ${subject.color} text-white px-2 py-1 rounded-md shadow-sm`}
                 >
                   {subject.icon}
                   <span className="hidden sm:inline">{subject.name}</span>
@@ -381,36 +395,33 @@ export default function TestCard({
 
       <CardContent className="relative z-10">
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 items-start lg:items-center">
+          {/* Total Questions */}
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground dark:text-white">
               Total Questions
             </p>
-            <p className="text-xl sm:text-2xl font-bold">{numberOfQuestions}</p>
+            <p className="text-xl sm:text-2xl font-bold dark:text-white">{numberOfQuestions}</p>
           </div>
 
+          {/* Duration */}
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-muted-foreground">Duration</p>
+            <p className="text-xs sm:text-sm text-muted-foreground dark:text-white">Duration</p>
             <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <p className="text-lg sm:text-xl font-bold">
+              <Clock className="h-4 w-4 text-muted-foreground dark:text-white" />
+              <p className="text-lg sm:text-xl font-bold dark:text-white">
                 {formatTime(durationMinutes)}
               </p>
             </div>
           </div>
 
+          {/* Score */}
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-muted-foreground">Score</p>
+            <p className="text-xs sm:text-sm text-muted-foreground dark:text-white">Score</p>
             {getScoreDisplay()}
           </div>
 
-          <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-muted-foreground">Status</p>
-            <p className="text-sm sm:text-base font-medium capitalize">
-              {isAttempted ? 'completed' : 'not attempted'}
-            </p>
-          </div>
-
-          <div className="col-span-2 sm:col-span-2 lg:col-span-1 flex justify-start lg:justify-end">
+          {/* Action Buttons aligned right */}
+          <div className="col-span-2 sm:col-span-2 lg:col-span-2 flex justify-end lg:justify-end ml-auto">
             {getActionButtons()}
           </div>
         </div>
