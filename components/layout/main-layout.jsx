@@ -77,7 +77,7 @@ export default function MainLayout({ children, isAdmin = false }) {
         <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 transition-all duration-300">
           {/* Mobile: No padding, Direct content */}
           <div className="lg:p-8 lg:max-w-7xl lg:mx-auto">
-            <div className="lg:bg-white lg:dark:bg-slate-900 lg:rounded-xl lg:shadow-sm lg:border lg:border-slate-200 lg:dark:border-slate-800 lg:p-8 transition-all duration-300">
+            <div className="">
               {children}
             </div>
           </div>
