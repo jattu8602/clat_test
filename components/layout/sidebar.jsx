@@ -119,12 +119,6 @@ export default function Sidebar({
           badge: stats?.tests?.paid || '0',
         },
         {
-          name: 'Attempted Tests',
-          href: '/dashboard/attempted',
-          icon: FileText,
-          badge: null,
-        },
-        {
           name: 'Leaderboard',
           href: '/dashboard/leaderboard',
           icon: Trophy,

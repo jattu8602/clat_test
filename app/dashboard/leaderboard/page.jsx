@@ -7,12 +7,32 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Trophy, Medal, Award, Crown, Star, Users, Target } from 'lucide-react'
 
+// Cache data outside component to persist across navigations
+const leaderboardCache = {
+  leaderboardData: null,
+  currentUser: null,
+  lastFetchTime: null,
+  cacheExpiry: 5 * 60 * 1000, // 5 minutes cache
+}
+
 export default function Leaderboard() {
   const { data: session } = useSession()
-  const [leaderboardData, setLeaderboardData] = useState(null)
-  const [currentUser, setCurrentUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [leaderboardData, setLeaderboardData] = useState(
+    leaderboardCache.leaderboardData || null
+  )
+  const [currentUser, setCurrentUser] = useState(
+    leaderboardCache.currentUser || null
+  )
+  const [loading, setLoading] = useState(!leaderboardCache.leaderboardData)
   const [error, setError] = useState(null)
+
+  // Check if cache is still valid
+  const isCacheValid = () => {
+    if (!leaderboardCache.lastFetchTime) return false
+    return (
+      Date.now() - leaderboardCache.lastFetchTime < leaderboardCache.cacheExpiry
+    )
+  }
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -25,6 +45,11 @@ export default function Leaderboard() {
         const data = await response.json()
         setLeaderboardData(data.leaderboard)
         setCurrentUser(data.currentUser)
+
+        // Update cache
+        leaderboardCache.leaderboardData = data.leaderboard
+        leaderboardCache.currentUser = data.currentUser
+        leaderboardCache.lastFetchTime = Date.now()
       } catch (err) {
         setError(err.message)
       } finally {
@@ -32,7 +57,11 @@ export default function Leaderboard() {
       }
     }
 
-    fetchLeaderboard()
+    if (!leaderboardCache.leaderboardData || !isCacheValid()) {
+      fetchLeaderboard()
+    } else {
+      setLoading(false)
+    }
   }, [])
 
   const getRankIcon = (rank) => {

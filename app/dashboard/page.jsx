@@ -29,18 +29,34 @@ import {
   X,
 } from 'lucide-react'
 
+// Cache store (lives outside component so it survives navigation)
+const dataCache = {
+  tests: null,
+  stats: null,
+  lastFetchTime: null,
+  cacheExpiry: 5 * 60 * 1000, // 5 minutes
+}
+
+
 export default function DashboardHome() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [stats, setStats] = useState({
-    totalTests: 0,
-    completedTests: 0,
-    averageScore: 0,
-    rank: 0,
-  })
-  const [allTests, setAllTests] = useState([])
-  const [filteredTests, setFilteredTests] = useState([])
-  const [loading, setLoading] = useState(true)
+  const isCacheValid = () => {
+    if (!dataCache.lastFetchTime) return false
+    return Date.now() - dataCache.lastFetchTime < dataCache.cacheExpiry
+  }
+  const [stats, setStats] = useState(
+    dataCache.stats || {
+      totalTests: 0,
+      completedTests: 0,
+      averageScore: 0,
+      rank: 0,
+    }
+  )
+  const [allTests, setAllTests] = useState(dataCache.tests || [])
+  const [filteredTests, setFilteredTests] = useState(dataCache.tests || [])
+  const [loading, setLoading] = useState(!dataCache.tests) // show loader only if no cache
+
   const [activeSubject, setActiveSubject] = useState('ALL')
 
   const userType = session?.user?.role || 'FREE'
@@ -137,7 +153,7 @@ export default function DashboardHome() {
         setFilteredTests(sortedTests)
 
         // Update stats
-        setStats({
+        const statsData = {
           totalTests: combinedTests.length,
           completedTests: combinedTests.filter((t) => t.isAttempted).length,
           averageScore:
@@ -151,14 +167,26 @@ export default function DashboardHome() {
                 )
               : 0,
           rank: 0,
-        })
+        }
+
+        // ✅ Update cache here
+        dataCache.tests = sortedTests
+        dataCache.stats = statsData
+        dataCache.lastFetchTime = Date.now()
+
+        // ✅ Update state from cache
+        setAllTests(sortedTests)
+        setFilteredTests(sortedTests)
+        setStats(statsData)
       } catch (err) {
         console.error('Error fetching tests:', err)
       } finally {
         setLoading(false)
       }
     }
-    fetchData()
+    if (!dataCache.tests || !isCacheValid()) {
+      fetchData()
+    }
   }, [userType])
 
   const handleTestAction = (test, action, specificAttempt = null) => {
@@ -291,6 +319,7 @@ export default function DashboardHome() {
                   {...test}
                   locked={test.locked}
                   lockLabel="Upgrade to Premium"
+                  userType={userType}
                   onAction={(action, specificAttempt) =>
                     handleTestAction(test, action, specificAttempt)
                   }

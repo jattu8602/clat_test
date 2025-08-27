@@ -32,6 +32,8 @@ import {
   ArrowLeft,
   Zap,
   Gift,
+  Filter,
+  X,
 } from 'lucide-react'
 
 // Simple cache for free tests
@@ -64,6 +66,37 @@ export default function FreeTestsPage() {
     freeDataCache.attemptedTests || []
   )
   const [loading, setLoading] = useState(!freeDataCache.newTests)
+  const [activeSubject, setActiveSubject] = useState('ALL')
+  const [filteredTests, setFilteredTests] = useState([])
+
+  const userType = session?.user?.role || 'FREE'
+
+  // Available subjects based on schema
+  const subjects = [
+    { key: 'ALL', label: 'ALL' },
+    { key: 'ENGLISH', label: 'ENGLISH' },
+    { key: 'GK_CA', label: 'GK' },
+    { key: 'LEGAL_REASONING', label: 'LEGAL' },
+    { key: 'LOGICAL_REASONING', label: 'LOGICAL' },
+    { key: 'QUANTITATIVE_TECHNIQUES', label: 'MATHS' },
+  ]
+
+  // Filter tests based on selected subject
+  useEffect(() => {
+    if (activeSubject === 'ALL') {
+      setFilteredTests(allFreeTests)
+    } else {
+      const filtered = allFreeTests.filter((test) => {
+        if (!test.questions || test.questions.length === 0) return false
+
+        // Check if test has any questions from selected subject
+        return test.questions.some(
+          (question) => question.section === activeSubject
+        )
+      })
+      setFilteredTests(filtered)
+    }
+  }, [activeSubject, allFreeTests])
 
   const isCacheValid = () => {
     if (!freeDataCache.lastFetchTime) return false
@@ -208,13 +241,13 @@ export default function FreeTestsPage() {
   ]
 
   return (
-    <div className="min-h-screen lg:min-h-0 bg-gray-50 dark:bg-gray-900 lg:bg-transparent lg:dark:bg-transparent">
-      <div className="space-y-4 sm:space-y-6 lg:space-y-8 p-3 sm:p-4 lg:p-0">
-        {/* Header Section */}
-        <div className="space-y-2 sm:space-y-3">
+    <div className="min-h-screen bg-gray-50 p-2 md:p-4">
+      <div className="mx-auto max-w-7xl">
+        {/* Welcome Section */}
+        <div className="mb-4 md:mb-6 space-y-2 sm:space-y-3">
           <div className="flex items-start sm:items-center gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
-              <Gift className="w-4 h-4 sm:w-5 sm:w-5 lg:w-6 lg:h-6 text-white" />
+              <Gift className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-lg sm:text-xl lg:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -227,49 +260,58 @@ export default function FreeTestsPage() {
           </div>
         </div>
 
-        {/* All Free Tests Section */}
-        <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <CardHeader className="pb-3 sm:pb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white truncate">
-                    All Free Tests
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
-                    Complete collection of free practice tests
-                  </CardDescription>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pb-4 sm:pb-6 px-4 sm:px-6">
+        {/* Subject Navigation */}
+        <div className="mb-4 md:mb-6 flex flex-wrap gap-2 rounded-lg border border-gray-300 bg-white p-2">
+          {subjects.map((subject) => (
+            <button
+              key={subject.key}
+              onClick={() => setActiveSubject(subject.key)}
+              className={`rounded-lg px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm font-semibold transition-colors ${
+                activeSubject === subject.key
+                  ? 'bg-black text-white'
+                  : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {subject.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Main Content */}
+        <div className="rounded-lg border border-gray-300 bg-white overflow-hidden">
+          <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1.5fr] border-b border-gray-300 bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-700">
+            <div>NAME</div>
+            <div>TYPE</div>
+            <div>STATUS</div>
+            <div>SCORE</div>
+            <div>TAKE ACTION</div>
+          </div>
+
+          <div className="divide-y divide-gray-200">
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-gray-500 dark:text-gray-400">
-                  Loading tests...
-                </div>
+              <div className="p-8 text-center text-gray-500">
+                Loading tests...
               </div>
-            ) : allFreeTests.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                No free tests available at the moment.
+            ) : filteredTests.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                {activeSubject !== 'ALL'
+                  ? `No tests found for ${
+                      subjects.find((s) => s.key === activeSubject)?.label
+                    }. Try selecting a different subject.`
+                  : 'No free tests available at the moment.'}
               </div>
             ) : (
-              <div className="space-y-4">
-                {allFreeTests.map((test) => (
-                  <TestCard
-                    key={test.id}
-                    {...test}
-                    onAction={(action) => handleTestAction(test, action)}
-                  />
-                ))}
-              </div>
+              filteredTests.map((test) => (
+                <TestCard
+                  key={test.id}
+                  {...test}
+                  userType={userType}
+                  onAction={(action) => handleTestAction(test, action)}
+                />
+              ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

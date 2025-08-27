@@ -14,22 +14,51 @@ import {
 } from '@/components/ui/dialog'
 import toast from 'react-hot-toast'
 
+// Cache data outside component to persist across navigations
+const paymentHistoryCache = {
+  plans: null,
+  userPayments: null,
+  currentPlan: null,
+  userStatus: null,
+  lastFetchTime: null,
+  cacheExpiry: 5 * 60 * 1000, // 5 minutes cache
+}
+
 export default function UserPaymentHistory() {
   const { data: session } = useSession()
-  const [plans, setPlans] = useState([])
-  const [userPayments, setUserPayments] = useState([])
-  const [currentPlan, setCurrentPlan] = useState(null)
+  const [plans, setPlans] = useState(paymentHistoryCache.plans || [])
+  const [userPayments, setUserPayments] = useState(
+    paymentHistoryCache.userPayments || []
+  )
+  const [currentPlan, setCurrentPlan] = useState(
+    paymentHistoryCache.currentPlan || null
+  )
   const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!paymentHistoryCache.plans)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [razorpayKey, setRazorpayKey] = useState(null)
   const [razorpayLoaded, setRazorpayLoaded] = useState(false)
-  const [userStatus, setUserStatus] = useState(null)
+  const [userStatus, setUserStatus] = useState(
+    paymentHistoryCache.userStatus || null
+  )
+
+  // Check if cache is still valid
+  const isCacheValid = () => {
+    if (!paymentHistoryCache.lastFetchTime) return false
+    return (
+      Date.now() - paymentHistoryCache.lastFetchTime <
+      paymentHistoryCache.cacheExpiry
+    )
+  }
 
   useEffect(() => {
     if (session) {
-      fetchData()
+      if (!paymentHistoryCache.plans || !isCacheValid()) {
+        fetchData()
+      } else {
+        setLoading(false)
+      }
       fetchRazorpayKey()
       loadRazorpayScript()
     }
@@ -340,6 +369,8 @@ export default function UserPaymentHistory() {
       if (plansResponse.ok) {
         const plansData = await plansResponse.json()
         setPlans(plansData.filter((plan) => plan.isActive))
+        paymentHistoryCache.plans = plansData.filter((plan) => plan.isActive)
+        paymentHistoryCache.lastFetchTime = Date.now()
       }
 
       // Fetch user's payment history
@@ -347,6 +378,8 @@ export default function UserPaymentHistory() {
       if (paymentsResponse.ok) {
         const paymentsData = await paymentsResponse.json()
         setUserPayments(paymentsData)
+        paymentHistoryCache.userPayments = paymentsData
+        paymentHistoryCache.lastFetchTime = Date.now()
       }
 
       // Fetch current user status
@@ -354,6 +387,8 @@ export default function UserPaymentHistory() {
       if (statusResponse.ok) {
         const statusData = await statusResponse.json()
         setUserStatus(statusData.user)
+        paymentHistoryCache.userStatus = statusData.user
+        paymentHistoryCache.lastFetchTime = Date.now()
 
         // Set current plan if user is paid
         if (statusData.user.isCurrentlyPaid && statusData.user.currentPlan) {
@@ -366,6 +401,7 @@ export default function UserPaymentHistory() {
 
           if (activePayment) {
             setCurrentPlan(activePayment)
+            paymentHistoryCache.currentPlan = activePayment
           }
         }
       }

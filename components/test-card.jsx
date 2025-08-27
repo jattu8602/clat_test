@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BarChart3, RotateCcw, Edit, Crown, Lock } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function TestCard({
   title,
@@ -23,7 +24,10 @@ export default function TestCard({
   locked = false,
   lockLabel = 'Upgrade to Premium',
   questions = [],
+  userType = 'FREE', // Add userType prop
 }) {
+  const router = useRouter()
+
   const getTestType = () => {
     if (locked || isPaid) return 'PRO'
     return 'FREE'
@@ -46,6 +50,98 @@ export default function TestCard({
     const score = getTestScore()
     const scoreValue = parseInt(score.split('/')[0])
     return scoreValue
+  }
+
+  const handleUpgrade = () => {
+    router.push('/dashboard/payment-history')
+  }
+
+  const renderActionButton = () => {
+    // If test is locked for free user, show upgrade button
+    if (locked && userType === 'FREE') {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-purple-600 hover:text-purple-700 text-xs"
+          onClick={handleUpgrade}
+        >
+          <Crown className="mr-1 h-3 w-3" />
+          Upgrade
+        </Button>
+      )
+    }
+
+    // Regular action buttons
+    if (getTestStatus() === 'Completed') {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-700 text-xs"
+          onClick={() => onAction?.('reattempt')}
+        >
+          <RotateCcw className="mr-1 h-3 w-3" />
+          Re-attempt
+        </Button>
+      )
+    } else {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-700 text-xs"
+          onClick={() => onAction?.('attempt')}
+        >
+          <Edit className="mr-1 h-3 w-3" />
+          Attempt
+        </Button>
+      )
+    }
+  }
+
+  const renderDesktopActionButton = () => {
+    // If test is locked for free user, show upgrade button
+    if (locked && userType === 'FREE') {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-purple-600 hover:text-purple-700"
+          onClick={handleUpgrade}
+        >
+          <Crown className="mr-1 h-3 w-3" />
+          Upgrade
+        </Button>
+      )
+    }
+
+    // Regular action buttons
+    if (getTestStatus() === 'Completed') {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-700"
+          onClick={() => onAction?.('reattempt')}
+        >
+          <RotateCcw className="mr-1 h-3 w-3" />
+          Re-attempt
+        </Button>
+      )
+    } else {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-700"
+          onClick={() => onAction?.('attempt')}
+        >
+          <Edit className="mr-1 h-3 w-3" />
+          Attempt
+        </Button>
+      )
+    }
   }
 
   return (
@@ -104,27 +200,7 @@ export default function TestCard({
             </Button>
           )}
 
-          {getTestStatus() === 'Completed' ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-blue-600 hover:text-blue-700 text-xs"
-              onClick={() => onAction?.('reattempt')}
-            >
-              <RotateCcw className="mr-1 h-3 w-3" />
-              Re-attempt
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-blue-600 hover:text-blue-700 text-xs"
-              onClick={() => onAction?.('attempt')}
-            >
-              <Edit className="mr-1 h-3 w-3" />
-              Attempt
-            </Button>
-          )}
+          {renderActionButton()}
         </div>
       </div>
 
@@ -188,27 +264,7 @@ export default function TestCard({
             </Button>
           )}
 
-          {getTestStatus() === 'Completed' ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-blue-600 hover:text-blue-700"
-              onClick={() => onAction?.('reattempt')}
-            >
-              <RotateCcw className="mr-1 h-3 w-3" />
-              Re-attempt
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-blue-600 hover:text-blue-700"
-              onClick={() => onAction?.('attempt')}
-            >
-              <Edit className="mr-1 h-3 w-3" />
-              Attempt
-            </Button>
-          )}
+          {renderDesktopActionButton()}
         </div>
       </div>
     </div>

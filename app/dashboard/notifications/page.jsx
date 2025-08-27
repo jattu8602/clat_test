@@ -21,15 +21,37 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+// Cache data outside component to persist across navigations
+const notificationsCache = {
+  notifications: null,
+  lastFetchTime: null,
+  cacheExpiry: 5 * 60 * 1000, // 5 minutes cache
+}
+
 export default function UserNotificationsPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [notifications, setNotifications] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [notifications, setNotifications] = useState(
+    notificationsCache.notifications || []
+  )
+  const [loading, setLoading] = useState(!notificationsCache.notifications)
+
+  // Check if cache is still valid
+  const isCacheValid = () => {
+    if (!notificationsCache.lastFetchTime) return false
+    return (
+      Date.now() - notificationsCache.lastFetchTime <
+      notificationsCache.cacheExpiry
+    )
+  }
 
   useEffect(() => {
     if (session) {
-      fetchNotifications()
+      if (!notificationsCache.notifications || !isCacheValid()) {
+        fetchNotifications()
+      } else {
+        setLoading(false)
+      }
     }
   }, [session])
 
@@ -63,6 +85,10 @@ export default function UserNotificationsPage() {
 
         setNotifications(newNotifications)
 
+        // Update cache
+        notificationsCache.notifications = newNotifications
+        notificationsCache.lastFetchTime = Date.now()
+
         // Refresh header notifications to ensure count is accurate
         if (window.refreshHeaderNotifications) {
           window.refreshHeaderNotifications()
@@ -94,6 +120,13 @@ export default function UserNotificationsPage() {
               ? { ...notification, isRead: true }
               : notification
           )
+        )
+
+        // Update cache
+        notificationsCache.notifications = notifications.map((notification) =>
+          notification.id === notificationId
+            ? { ...notification, isRead: true }
+            : notification
         )
 
         // Immediately decrement header notification count for better UX
@@ -133,6 +166,14 @@ export default function UserNotificationsPage() {
         // Update local state
         setNotifications((prev) =>
           prev.map((notification) => ({ ...notification, isRead: true }))
+        )
+
+        // Update cache
+        notificationsCache.notifications = notifications.map(
+          (notification) => ({
+            ...notification,
+            isRead: true,
+          })
         )
 
         // Reset header notification count to 0
