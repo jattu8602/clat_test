@@ -1,0 +1,12 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow sensitive paths (optional, update as per your site)
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard/
+
+# Sitemap location (replace with your actual sitemap URLs)
+Sitemap: https://outlawed.in/sitemap.xml
+
