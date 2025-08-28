@@ -747,62 +747,19 @@ useEffect(() => {
         ref={heroRef}
         className="hero host-grotesk relative w-screen  min-h-screen p-6 flex items-center justify-center text-[#141414] overflow-hidden"
       >
-        {/* Background giant OUTLAWED text */}
-        <div className="absolute top-1/2 left-0 w-full overflow-hidden -translate-y-1/2 z-0">
-          <div id="marquee" className="flex whitespace-nowrap">
-            {/* Strip repeated twice for seamless loop */}
-            <div className="marquee-strip flex">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <h1
-                  key={i}
-                  className="mx-8 text-[15rem] font-extrabold text-black opacity-10"
-                >
-                  OUTLAWED
-                </h1>
-              ))}
-            </div>
-            <div className="marquee-strip flex">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <h1
-                  key={i}
-                  className="mx-8 text-[15rem] font-extrabold text-black opacity-10"
-                >
-                  OUTLAWED
-                </h1>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* ============================================================================
             HERO HEADER - Logo and Tagline
             ============================================================================ */}
         <div
           ref={heroHeaderRef}
-          className="hero-header absolute left-1/2 top-1/2 flex items-center justify-center w-full z-10"
-          style={{ transform: 'translate(-50%, -30%)' }}
+          className="hero-header absolute left-1/2 top-1/2 w-full z-10 mt-6"
+          style={{ transform: 'translateX(-50%)' }}
         >
-          <div className="flex flex-col md:flex-row items-center justify-between w-full max-w-8xl px-4 md:px-8 gap-8 md:gap-0">
-            {/* Left - Logo (25%) */}
-            <div className="flex flex-col items-center md:items-start text-center md:text-left order-1 md:order-1 w-full md:w-1/4">
-              <div className="shine-wrapper">
-                <img
-                  className="hackwave-img w-48 md:w-64 lg:w-80"
-                  src="/outlawed.png"
-                  alt="Outlawed Logo"
-                />
-              </div>
-            </div>
-
-            {/* Right - Heading (75%) */}
-            <div className="flex flex-col items-center md:items-end text-center md:text-right order-2 md:order-2 w-full md:w-3/4">
-              <div className="shine-wrapper">
-                <h1 className="font-extrabold text-black text-5xl md:text-7xl lg:text-9xl xl:text-[12rem] tracking-tight leading-none">
-                  OUTLAWED
-                </h1>
-              </div>
-            </div>
-          </div>
+          <img
+            src="/out.png"
+            alt="Hero Design"
+            className="w-full h-auto object-cover"
+          />
         </div>
 
         {/* ============================================================================
@@ -857,7 +814,7 @@ useEffect(() => {
               textSegmentRefs.current[1] = el
             }}
           >
-            Learn and Take Exam {' '}
+            Learn and Take Exam{' '}
           </span>
           <span
             className="text-segment text-2xl md:text-4xl lg:text-6xl"

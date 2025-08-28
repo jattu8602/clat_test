@@ -19,7 +19,7 @@ const Navbar = () => {
         {/* Logo - Left side */}
         <Copy animateOnScroll={false} delay={0.2}>
           <Link
-            href="/"
+            href="https://www.outlawed.in/"
             className="text-[#fcf2e8] text-xl md:text-2xl font-bold justify-center
            px-4 items-center cursor-pointer h-12 flex  overflow-hidden rounded-2xl bg-[#141414] will-change-[height,border-radius]  border border-[#333]"
             onClick={closeMenu}
