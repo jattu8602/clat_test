@@ -19,69 +19,40 @@ export const metadata = {
     template: '%s | OUTLAWED',
   },
   description:
-    'Where the boldest builders come to play. Join Hackwave, the ultimate hackathon experience for innovators, creators, and tech enthusiasts.',
+    'Outlawed.in is a smart test-prep platform designed exclusively for CLAT aspirants. Powered by Daksh Madhyam, we help law students practice through expertly curated free and premium mock tests, crafted to match the exact CLAT exam pattern. Our mission is to make CLAT preparation affordable, accessible, and exam-focused — so every aspirant can test smarter, analyze performance deeply, and improve faster. Whether you are just starting out or aiming for a top rank, Outlawed.in is your trusted practice partner on the road to NLU success.',
   keywords: [
-    'Hackwave',
-    'Hackathon',
-    'Indore',
-    'Tech Event',
-    'Developers',
-    'Innovation',
-    'Builders',
-    'Coding',
-    'Competition',
-    '2025',
+    'Outlawed',
+    'CLAT',
+    'CLAT 2026',
+    'CLAT Preparation',
+    'CLAT Mock Tests',
+    'CLAT Free Tests',
+    'CLAT Paid Tests',
+    'CLAT Online Platform',
+    'Law Entrance',
+    'NLU Preparation',
+    'Legal Aptitude',
+    'Logical Reasoning',
+    'Current Affairs',
+    'Quantitative Techniques',
+    'English for CLAT',
+    'CLAT Practice',
+    'CLAT Test Series',
+    'CLAT 2025',
+    'CLAT Coaching Alternative',
+    'Daksh Madhyam',
   ],
   metadataBase: new URL('https://outlawed.in/'),
   openGraph: {
-    title: 'Hackwave | Join the Movement',
+    title: 'Outlawed | CLAT Mock Tests & Preparation',
     description:
-      'Where the boldest builders come to play. Join Hackwave, the ultimate hackathon experience for innovators, creators, and tech enthusiasts.',
-    url: 'https://hackwave-site.vercel.app/',
-    siteName: 'Hackwave',
-    // images: [
-    //   {
-    //     url: "/assets/hackwave title.png",
-    //     width: 1200,
-    //     height: 630,
-    //     alt: "Hackwave Hackathon Banner",
-    //   },
-    // ],
+      'Outlawed.in by Daksh Madhyam — your smart CLAT preparation platform with free and paid mock tests, detailed analysis, and exam-focused practice.',
+    url: 'https://outlawed.in/',
+    siteName: 'Outlawed',
     locale: 'en_US',
     type: 'website',
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Hackwave | Join the Movement',
-    description:
-      'Where the boldest builders come to play. Join Hackwave, the ultimate hackathon experience for innovators, creators, and tech enthusiasts.',
-    images: ['/assets/hackwave title.png'],
-    site: '@hackwavein',
-    creator: '@hackwavein',
-  },
-  icons: {
-    icon: [
-      { url: '/favicon_io/favicon.ico' },
-      {
-        url: '/favicon_io/favicon-16x16.png',
-        sizes: '16x16',
-        type: 'image/png',
-      },
-      {
-        url: '/favicon_io/favicon-32x32.png',
-        sizes: '32x32',
-        type: 'image/png',
-      },
-    ],
-    apple: [
-      {
-        url: '/favicon_io/apple-touch-icon.png',
-        sizes: '180x180',
-        type: 'image/png',
-      },
-    ],
-    shortcut: [{ url: '/favicon_io/favicon.ico' }],
-  },
+
 }
 
 export default function RootLayout({ children }) {
