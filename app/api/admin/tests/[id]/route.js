@@ -92,7 +92,6 @@ export async function PUT(request, { params }) {
             title: notificationTitle,
             message: notificationMessage,
             type: 'TEST_ACTIVATION',
-            thumbnailUrl: test.thumbnailUrl || null,
             buttonText:
               test.type === 'FREE' ? 'Take Free Test' : 'Take Paid Test',
             buttonLink:
@@ -127,13 +126,9 @@ export async function PUT(request, { params }) {
       where: { id: testId },
       data: {
         title: updateData.title,
-        description: updateData.description,
+        keyTopic: updateData.keyTopic,
         type: updateData.type,
-        thumbnailUrl: updateData.thumbnailUrl,
-        highlightPoints: updateData.highlightPoints || [],
         durationInMinutes: updateData.durationInMinutes,
-        positiveMarks: updateData.positiveMarks,
-        negativeMarks: updateData.negativeMarks,
       },
     })
 

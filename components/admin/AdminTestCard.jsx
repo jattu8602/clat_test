@@ -1,0 +1,222 @@
+'use client'
+
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import {
+  BarChart3,
+  RotateCcw,
+  Edit,
+  Eye,
+  Settings,
+  Play,
+  Trash2,
+} from 'lucide-react'
+
+export default function AdminTestCard({
+  title,
+  keyTopic,
+  isPaid,
+  durationMinutes,
+  numberOfQuestions,
+  isActive = false,
+  onAction,
+  admin = false,
+  questions = [],
+}) {
+  const getTestType = () => {
+    return isPaid ? 'PAID' : 'FREE'
+  }
+
+  const getTestStatus = () => {
+    return isActive ? 'Active' : 'Draft'
+  }
+
+  const getQuestionCount = () => {
+    return numberOfQuestions || questions?.length || 0
+  }
+
+  const renderActionButton = () => {
+    if (isActive) {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-700 text-xs"
+          onClick={() => onAction?.('view')}
+        >
+          <Eye className="mr-1 h-3 w-3" />
+          View
+        </Button>
+      )
+    } else {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-700 text-xs"
+          onClick={() => onAction?.('continue')}
+        >
+          <Play className="mr-1 h-3 w-3" />
+          Continue
+        </Button>
+      )
+    }
+  }
+
+  const renderDesktopActionButton = () => {
+    if (isActive) {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-700"
+          onClick={() => onAction?.('view')}
+        >
+          <Eye className="mr-1 h-3 w-3" />
+          View
+        </Button>
+      )
+    } else {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-700"
+          onClick={() => onAction?.('continue')}
+        >
+          <Play className="mr-1 h-3 w-3" />
+          Continue
+        </Button>
+      )
+    }
+  }
+
+  return (
+    <div className="p-4">
+      {/* Mobile Layout */}
+      <div className="md:hidden space-y-3">
+        <div className="flex justify-between items-start">
+          <h3 className="font-medium text-gray-900 text-sm">{title}</h3>
+          <Badge
+            variant={getTestType() === 'PAID' ? 'default' : 'secondary'}
+            className={
+              getTestType() === 'PAID'
+                ? 'bg-purple-100 text-purple-700 hover:bg-purple-100'
+                : 'bg-green-100 text-green-700 hover:bg-green-100'
+            }
+          >
+            {getTestType()}
+          </Badge>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <Badge
+            variant={getTestStatus() === 'Active' ? 'default' : 'secondary'}
+            className={
+              getTestStatus() === 'Active'
+                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
+                : 'bg-amber-100 text-amber-700 hover:bg-amber-100'
+            }
+          >
+            {getTestStatus()}
+          </Badge>
+
+          <div className="flex items-center gap-2 text-gray-600">
+            <span className="text-xs">{getQuestionCount()} Questions</span>
+          </div>
+        </div>
+
+        <div className="flex gap-2 items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-600 hover:text-gray-700 text-xs"
+            onClick={() => onAction?.('settings')}
+          >
+            <Settings className="mr-1 h-3 w-3" />
+            Settings
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={isActive}
+              onCheckedChange={() => onAction?.('toggle')}
+              className="data-[state=checked]:bg-orange-500"
+            />
+            <span className="text-xs text-gray-600">
+              {isActive ? 'Active' : 'Draft'}
+            </span>
+          </div>
+
+          {renderActionButton()}
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1.5fr] items-center text-sm">
+        {/* Name */}
+        <div className="font-medium text-gray-900">{title}</div>
+
+        {/* Type */}
+        <div>
+          <Badge
+            variant={getTestType() === 'PAID' ? 'default' : 'secondary'}
+            className={
+              getTestType() === 'PAID'
+                ? 'bg-purple-100 text-purple-700 hover:bg-purple-100'
+                : 'bg-green-100 text-green-700 hover:bg-green-100'
+            }
+          >
+            {getTestType()}
+          </Badge>
+        </div>
+
+        {/* Status */}
+        <div>
+          <Badge
+            variant={getTestStatus() === 'Active' ? 'default' : 'secondary'}
+            className={
+              getTestStatus() === 'Active'
+                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
+                : 'bg-amber-100 text-amber-700 hover:bg-amber-100'
+            }
+          >
+            {getTestStatus()}
+          </Badge>
+        </div>
+
+        {/* Questions */}
+        <div className="text-gray-600">
+          <span className="text-sm">{getQuestionCount()} Questions</span>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-600 hover:text-gray-700"
+            onClick={() => onAction?.('settings')}
+          >
+            <Settings className="mr-1 h-3 w-3" />
+            Settings
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={isActive}
+              onCheckedChange={() => onAction?.('toggle')}
+              className="data-[state=checked]:bg-orange-500"
+            />
+            <span className="text-xs text-gray-600">
+              {isActive ? 'Active' : 'Draft'}
+            </span>
+          </div>
+
+          {renderDesktopActionButton()}
+        </div>
+      </div>
+    </div>
+  )
+}

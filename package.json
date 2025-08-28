@@ -20,6 +20,7 @@
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.2.6",
     "@tiptap/extension-bold": "^3.2.0",
     "@tiptap/extension-bullet-list": "^3.2.0",
     "@tiptap/extension-list-item": "^3.2.0",

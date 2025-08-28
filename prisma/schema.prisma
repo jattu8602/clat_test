@@ -108,13 +108,9 @@ model VerificationToken {
 model Test {
   id               String     @id @default(auto()) @map("_id") @db.ObjectId
   title            String
-  description      String?
+  keyTopic         String?    // Key topic for filtering
   type             TestType
-  thumbnailUrl     String?
-  highlightPoints  String[]   // Max 4 bullet points
   durationInMinutes Int       // Example: 180 for 3hr
-  positiveMarks    Float      @default(1.0)
-  negativeMarks    Float      @default(-0.25)
   isActive         Boolean    @default(true)
   questions        Question[]
   testAttempts     TestAttempt[]

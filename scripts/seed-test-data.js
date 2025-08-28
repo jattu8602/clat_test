@@ -10,21 +10,10 @@ async function seedTestData() {
     const tests = [
       {
         title: 'CLAT Practice Test 1 - English & Legal Reasoning',
-        description:
-          'Comprehensive practice test focusing on English and Legal Reasoning sections',
+        keyTopic: 'English & Legal Reasoning',
         type: 'PAID',
         durationInMinutes: 180,
-        positiveMarks: 1.0,
-        negativeMarks: -0.25,
         isActive: true,
-        thumbnailUrl:
-          'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&h=300&fit=crop',
-        highlightPoints: [
-          '200+ carefully curated questions',
-          'Real CLAT exam pattern',
-          'Detailed explanations',
-          'Performance analytics',
-        ],
         questions: {
           create: [
             // English Section
@@ -98,21 +87,10 @@ async function seedTestData() {
       },
       {
         title: 'CLAT Practice Test 2 - Quantitative & Logical',
-        description:
-          'Advanced practice test covering Quantitative Techniques and Logical Reasoning',
+        keyTopic: 'Quantitative & Logical Reasoning',
         type: 'PAID',
         durationInMinutes: 150,
-        positiveMarks: 1.0,
-        negativeMarks: -0.25,
         isActive: true,
-        thumbnailUrl:
-          'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=300&fit=crop',
-        highlightPoints: [
-          '150 challenging questions',
-          'Advanced problem solving',
-          'Time management focus',
-          'Section-wise breakdown',
-        ],
         questions: {
           create: [
             // Quantitative Techniques Section
@@ -173,21 +151,10 @@ async function seedTestData() {
       },
       {
         title: 'CLAT Practice Test 3 - GK & Current Affairs',
-        description:
-          'Comprehensive test covering General Knowledge and Current Affairs',
+        keyTopic: 'GK & Current Affairs',
         type: 'PAID',
         durationInMinutes: 120,
-        positiveMarks: 1.0,
-        negativeMarks: -0.25,
         isActive: true,
-        thumbnailUrl:
-          'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop',
-        highlightPoints: [
-          '100 GK questions',
-          'Latest current affairs',
-          'Indian polity focus',
-          'International relations',
-        ],
         questions: {
           create: [
             // GK & CA Section
@@ -238,21 +205,10 @@ async function seedTestData() {
       },
       {
         title: 'CLAT Practice Test 4 - Mixed Sections',
-        description:
-          'Full-length practice test covering all CLAT sections with comprehensive questions',
+        keyTopic: 'Mixed Sections',
         type: 'PAID',
         durationInMinutes: 200,
-        positiveMarks: 1.0,
-        negativeMarks: -0.25,
         isActive: true,
-        thumbnailUrl:
-          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
-        highlightPoints: [
-          '300+ comprehensive questions',
-          'All CLAT sections covered',
-          'Real exam simulation',
-          'Advanced difficulty level',
-        ],
         questions: {
           create: [
             // Comprehension Question

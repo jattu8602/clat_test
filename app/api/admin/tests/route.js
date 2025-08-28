@@ -13,16 +13,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const {
-      title,
-      description,
-      type,
-      thumbnailUrl,
-      highlightPoints,
-      durationInMinutes,
-      positiveMarks,
-      negativeMarks,
-    } = await request.json()
+    const { title, keyTopic, type, durationInMinutes } = await request.json()
 
     if (!title || !type || !durationInMinutes) {
       return NextResponse.json(
@@ -36,13 +27,9 @@ export async function POST(request) {
     const test = await prisma.test.create({
       data: {
         title,
-        description,
+        keyTopic,
         type,
-        thumbnailUrl,
-        highlightPoints: highlightPoints || [],
         durationInMinutes,
-        positiveMarks: positiveMarks || 1.0,
-        negativeMarks: negativeMarks || -0.25,
         isActive: false, // New tests are created as drafts
       },
     })
