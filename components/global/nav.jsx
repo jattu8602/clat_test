@@ -13,7 +13,7 @@ const Navbar = () => {
     'text-[#fcf2e8] text-sm md:text-base font-bold justify-center px-4 items-center cursor-pointer h-12 flex overflow-hidden rounded-2xl bg-[#141414] border border-[#333] transition-all duration-200 hover:bg-[#1c1c1c]'
 
   const buttonClassess =
-    'text-[#fcf2e8] text-sm md:text-base font-bold justify-center px-4 items-center cursor-pointer h-12 flex overflow-hidden rounded-2xl bg-[#141414] border border-[#333] transition-all duration-200 hover:bg-[#1c1c1c] hover:bg-[#e6d9cf]'
+    'text-[#fcf2e8] text-sm md:text-base font-bold justify-center px-4 items-center cursor-pointer h-12 flex overflow-hidden rounded-2xl bg-[#141414] border border-[#333] transition-all duration-200 hover:bg-[#AF4C0F] '
 
 
   return (
