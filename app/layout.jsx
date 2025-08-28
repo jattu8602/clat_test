@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: {
     default: 'OUTLAWED | CLAT Exam Tests | CLAT Exam Preparation',
-    template: '%s | Hackwave',
+    template: '%s | OUTLAWED',
   },
   description:
     'Where the boldest builders come to play. Join Hackwave, the ultimate hackathon experience for innovators, creators, and tech enthusiasts.',
@@ -32,7 +32,7 @@ export const metadata = {
     'Competition',
     '2025',
   ],
-  metadataBase: new URL('https://hackwave-site.vercel.app/'),
+  metadataBase: new URL('https://outlawed.in/'),
   openGraph: {
     title: 'Hackwave | Join the Movement',
     description:

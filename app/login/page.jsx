@@ -98,7 +98,7 @@ function LoginContent() {
             </svg>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to CLAT Prep
+            Welcome to OUTLAWED
           </h2>
           <p className="text-gray-600">Your gateway to law school success</p>
         </div>
@@ -300,7 +300,7 @@ function LoginContent() {
         {/* Footer */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            New to CLAT Prep?{' '}
+            New to OUTLAWED?{' '}
             <span className="text-indigo-600 font-medium">
               Start your journey today
             </span>

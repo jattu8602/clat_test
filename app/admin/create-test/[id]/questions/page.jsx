@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
-import { Toaster, toast } from 'sonner'
+// import { Toaster, toast } from 'sonner'
 import {
   Card,
   CardContent,
@@ -641,7 +641,7 @@ export default function CreateQuestionsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
-      <Toaster richColors />
+     
       {/* Header */}
       <div className="bg-white/80 dark:bg-slate-900/90 backdrop-blur-lg shadow-sm dark:shadow-md border-b border-slate-200/70 dark:border-slate-800/70 sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
