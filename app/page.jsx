@@ -106,7 +106,6 @@ export default function Home() {
         <Navbar />
         <ResponsiveHero />
         <InfoCard />
-        <SponsorsSection />
         <FAQSection />
         <Footer />
       </div>

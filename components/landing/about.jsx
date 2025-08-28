@@ -27,15 +27,16 @@ const TextReveal = () => {
     // TEXT PROCESSING: Split text into word elements and highlight keywords
     const animeTextParagraphs = document.querySelectorAll(".anime-text p");
     const keywords = [
-      "Daksh",
-      "developers",
-      "builders",
-      "ship",
-      "collaborative",
-      "breakthrough",
-      "solutions",
-      "leaders",
-    ];
+      'clat',
+      'aspirants',
+      'mock',
+      'tests',
+      'exam',
+      'affordable',
+      'analyze',
+      'nlu',
+    ]
+
     animeTextParagraphs.forEach((paragraph) => {
       const text = paragraph.textContent || "";
       const words = text.split(/\s+/);
@@ -207,24 +208,24 @@ const TextReveal = () => {
       >
         <div className="w-full h-full flex flex-col justify-center items-center text-center rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl border border-dashed border-[rgb(60,60,60)] p-4 sm:p-6 md:p-8">
           <h1 className="text-white mb-2 sm:mb-8 md:mb-12 lg:mb-16 font-black leading-tight px-2 text-[clamp(1.5rem,2vw,1.6rem)] sm:text-[clamp(1.2rem,1.5vw,1.8rem)] md:text-[clamp(1.3rem,2.9vw,3.5rem)]">
-            About{" "}
+            About{' '}
             <span className="inline-block px-2 sm:px-3 md:px-4 lg:px-6 bg-pink-300 rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl border-2 sm:border-3 md:border-4 lg:border-6">
               Outlawed
             </span>
           </h1>
           <div className="text-white anime-text w-full max-w-[80vw] sm:max-w-[75vw] md:max-w-[65vw] lg:max-w-[50vw] xl:max-w-[55vw] space-y-3 sm:space-y-4 md:space-y-6 text-[0.3rem] sm:text-[clamp(0.5rem,1.2vw,0.85rem)] md:text-[clamp(0.6rem,1.4vw,0.95rem)] lg:text-[clamp(0.7rem,1.6vw,1.05rem)] xl:text-[clamp(0.8rem,1.8vw,1.4rem)]">
             <p className="text-center md:text-justify font-black leading-relaxed px-2 sm:px-8 md:px-12">
-              Curated by Daksh Madhyam,  is a 36-hour
-              offline hackathon that brings the country&apos;s brightest student
-              developers under one roof. We're making a national call for
-              builders who are ready to do more than just show up—they&apos;re
-              here to ship.
+              Outlawed.in is a smart test-prep platform built exclusively for
+              CLAT aspirants. Powered by Daksh Madhyam, it helps law students
+              practice with expertly curated mock tests that match the exact
+              CLAT exam pattern.
             </p>
             <p className="text-center md:text-justify font-black leading-relaxed px-2 sm:px-8 md:px-12">
-              With a focus on real-world impact, collaborative problem-solving,
-              and breakthrough innovation, Hackwave lets you turn bold ideas
-              into living solutions that change the world. It's where the next
-              generation of tech leaders come to make their mark.
+              Our mission is to make CLAT preparation affordable, accessible,
+              and exam-focused — so every aspirant can analyze performance
+              deeply and improve faster. Whether starting out or aiming for a
+              top rank, Outlawed.in is your trusted partner on the road to NLU
+              success.
             </p>
           </div>
         </div>
@@ -232,46 +233,56 @@ const TextReveal = () => {
           ref={ctaRef}
           className="absolute cta inset-0 w-full h-full overflow-hidden flex items-center justify-center"
         >
-          <div className="w-full h-full mx-auto flex flex-col justify-center items-center text-center rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-xl bg-[#f9ffa5] p-4 sm:p-6 md:p-8 ">
-            <h1 className=" w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[90vw] text-[#141414] font-black leading-relaxed px-2 sm:px-4 mb-6 sm:mb-8 md:mb-10 lg:mb-12 text-[clamp(1.8rem,3vw,3rem)] sm:text-[clamp(1.2rem,2vw,1.6rem)] md:text-[clamp(2.5rem,4vw,4.5rem)]">
-              Playground for bold ideas and creative interfaces.
+          <div className="w-full h-full mx-auto flex flex-col justify-center items-center text-center rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-xl bg-[#f9ffa5] p-4 sm:p-6 md:p-8">
+            {/* Headline */}
+            <h1 className="w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[90vw] text-[#141414] font-black leading-relaxed px-2 sm:px-4 mb-6 sm:mb-8 md:mb-10 lg:mb-12 text-[clamp(1.8rem,3vw,3rem)] sm:text-[clamp(1.2rem,2vw,1.6rem)] md:text-[clamp(2.5rem,4vw,4.5rem)]">
+              India’s Most Affordable CLAT Test Series 🚀
             </h1>
+
+            {/* Stats Grid */}
             <div className="w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:gap-10 text-[clamp(1.8rem,2vw,4.1rem)] sm:text-[clamp(1rem,1.8vw,1.3rem)] md:text-[clamp(1rem,1.7vw,2rem)] text-[#141414] mb-6 sm:mb-8 md:mb-10 lg:mb-12">
               <div className="flex flex-col items-center">
-                <h2 className="font-black mb-2">200+</h2>
-                <p className="font-medium ">Participants</p>
+                <h2 className="font-black mb-2">5,000+</h2>
+                <p className="font-medium">Aspirants Practicing</p>
               </div>
+
               <div className="flex flex-col items-center">
-                <h2 className="font-black mb-2">36</h2>
-                <p className="font-medium">Hours</p>
+                <h2 className="font-black mb-2">50+</h2>
+                <p className="font-medium">Expertly Designed Mocks</p>
               </div>
+
               <div className="flex flex-col items-center">
-                <h2 className="font-black mb-2">100+</h2>
-                <p className="font-medium">Projects</p>
+                <h2 className="font-black mb-2">₹99</h2>
+                <p className="font-medium">Starting Price</p>
               </div>
+
               <div className="flex flex-col items-center">
-                <h2 className="font-black mb-2">30+</h2>
-                <p className="font-medium">Colleges</p>
+                <h2 className="font-black mb-2">Top 10</h2>
+                <p className="font-medium">NLU Style Pattern</p>
               </div>
+
               <div className="flex flex-col items-center">
-                <h2 className="font-black mb-2">500K+</h2>
-                <p className="font-medium">Social Impressions</p>
+                <h2 className="font-black mb-2">24/7</h2>
+                <p className="font-medium">Smart Analysis Dashboard</p>
               </div>
+
               <div className="flex flex-col items-center">
-                <h2 className="font-black mb-2">1 Lakh</h2>
-                <p className="font-medium">Prize Pool</p>
+                <h2 className="font-black mb-2">100%</h2>
+                <p className="font-medium">Affordable & Accessible</p>
               </div>
             </div>
+
+            {/* CTA Footer */}
             <div className="w-full text-center">
-              <p className="text-[#141414] font-bold text-[clamp(1.3rem,3vw,2.6rem)] sm:text-[clamp(1.1rem,3.8vw,6.3rem)] md:text-[clamp(1.4rem,3.2vw,2rem)] ">
-                August 23-25, 2025
+              <p className="text-[#141414] font-bold text-[clamp(1.3rem,3vw,2.6rem)] sm:text-[clamp(1.1rem,3.8vw,6.3rem)] md:text-[clamp(1.4rem,3.2vw,2rem)]">
+                Start Your CLAT Journey with Outlawed.in 💡
               </p>
             </div>
           </div>
         </div>
       </section>
     </>
-  );
+  )
 };
 
 export default TextReveal;

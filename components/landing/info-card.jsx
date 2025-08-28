@@ -3,14 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import gsap from "gsap";
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
-
-// ============================================================================
-// ROUND CARD COMPONENT - Individual card for each competition round
-// ============================================================================
 const RoundCard = ({
   title,
   subtitle,
@@ -357,24 +349,38 @@ export default function InfoCard() {
   // ============================================================================
   // ROUND DATA - Competition structure and content for each round
   // ============================================================================
-  const rounds = [
-    {
-      title: "Online PPT Submission",
-      subtitle: "Screening Round",
-      description:
-        "Qualify by submitting a presentation (max 10 slides) of a past project. We'll evaluate your team's technical skills. Briefly include: Team Intro & Project Overview, Tech Stack Used, Screenshots or Live Links *For screening only. Cannot be used in the finale.*",
-      icon: "💻", // Computer emoji for digital round
-      bgColor: "#f9ffa5", // Bright green background for first round
-    },
-    {
-      title: "36-Hour Offline Finale",
-      subtitle: "At CDGI Campus, Indore",
-      description:
-        "The top 50 teams are invited to our campus for the finale. You'll have 36 hours to build a new project from scratch based on surprise problem statements revealed at the event. Let the coding begin!",
-      icon: "🫶", // Location pin emoji for physical location
-      bgColor: "#fec4dc", // Pink background for second round
-    },
-  ];
+ const rounds = [
+   {
+     title: 'Free Tests',
+     subtitle: 'Get started without any cost',
+     description: `
+      • Access limited mock tests
+      • Basic performance analysis
+      • Limited question types (MCQs only)
+      • Practice mode available
+      • Community discussions unlocked
+    `,
+     icon: '🆓', // Free icon
+     bgColor: '#d4f8e8', // Soft green for free
+   },
+   {
+     title: 'Paid Tests',
+     subtitle: 'Unlock premium features',
+     description: `
+      • All Free Test features
+      • Unlimited full-length mocks
+      • Sectional & topic-wise tests
+      • Detailed performance analytics (time tracking, accuracy, percentile)
+      • Adaptive difficulty questions
+      • Priority support & doubt solving
+      • Exclusive leaderboard rankings
+      • Access to curated GK/Legal/Current Affairs material
+    `,
+     icon: '💎', // Premium diamond icon
+     bgColor: '#ffe4b5', // Warm premium orange/yellow
+   },
+ ]
+
 
   // ============================================================================
   // CLIENT-SIDE RENDERING CHECK - Return null until client is ready
@@ -393,7 +399,7 @@ export default function InfoCard() {
           ============================================================================ */}
       <div
         ref={heroRef} // GSAP ScrollTrigger target
-        className="relative w-screen h-screen p-3 sm:p-4 md:p-6 lg:p-8 overflow-hidden"
+        className="hidden md:block relative w-screen h-screen p-3 sm:p-4 md:p-6 lg:p-8 overflow-hidden"
       >
         {/* Main content container with centered layout */}
         <div className="w-full h-full flex flex-col justify-start md:justify-center items-center pt-12 md:pt-0 p-3 sm:p-4 md:p-6 lg:p-8 relative">
@@ -426,7 +432,7 @@ export default function InfoCard() {
                 <div
                   key={index}
                   ref={(el) => {
-                    cardRefs.current[index] = el; // Store reference for GSAP animation
+                    cardRefs.current[index] = el // Store reference for GSAP animation
                   }}
                   className="absolute inset-0 gap-x-5" // Full container positioning for GSAP
                 >
@@ -435,6 +441,22 @@ export default function InfoCard() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Mobile: Static stacked cards */}
+      <div className="md:hidden px-4 py-12">
+        <h1 className="text-center text-4xl font-black mb-6">How It Works</h1>
+        <p className="text-[#ccc] text-base font-medium leading-relaxed mb-8">
+          Two rounds of intense competition designed to test your skills,
+          creativity, and determination. From concept to creation, prove you
+          have what it takes to be a Hackwave champion.
+        </p>
+
+        <div className="flex flex-col gap-6">
+          {rounds.map((round, index) => (
+            <RoundCard key={index} {...round} index={index} />
+          ))}
         </div>
       </div>
 
@@ -453,7 +475,7 @@ export default function InfoCard() {
               ============================================================================ */}
           <div className="px-4 sm:px-6 md:px-8 h-screen flex flex-col justify-center items-center">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-6 sm:mt-72 md:mt-10">
-              {/* What You Will Get */}
+              {/* Heading Card */}
               <div
                 className="card relative h-[260px] text-[#141414] w-full py-8"
                 id={`card-1`}
@@ -461,100 +483,62 @@ export default function InfoCard() {
                 <div className="info-card-inner relative will-change-transform w-full h-full p-[2em] flex flex-col gap-[0.5rem]">
                   <div className="card-content flex flex-col text-left w-[80%]">
                     <h1 className="text-[3rem] font-semibold leading-none mb-[1.5em] md:mb-[1rem]">
-                      What You Will Get
+                      Why Choose Outlawed?
                     </h1>
                   </div>
                   <p className="text-[1.05rem] font-medium text-left">
-                    Discover the amazing rewards and benefits waiting for you at
-                    Hackwave.
+                    Unlock free and premium features that enhance your test prep
+                    experience.
                   </p>
                 </div>
               </div>
-              {/* <div className="relative w-full py-8">
 
-
-
-              {/* Prize Pool */}
-              <div
-                ref={(el) => {
-                  rewardsCardRefs.current[1] = el; // Store reference for rewards card animation
-                }}
-              >
+              {/* Free Feature – Learning Modules */}
+              <div ref={(el) => (rewardsCardRefs.current[1] = el)}>
                 <Card
-                  title="₹1 Lakh+ Prize Pool"
-                  copy="Compete for massive cash prizes and recognition. Win big and make your mark in the hackathon world."
+                  title="📘 Learning Modules"
+                  copy="Access structured free learning modules covering essential topics to get you started."
                   index={1}
                 />
               </div>
 
-              {/* Swags */}
-              <div
-                ref={(el) => {
-                  rewardsCardRefs.current[2] = el; // Store reference for rewards card animation
-                }}
-              >
+              {/* Free Feature – Nice Test Experience */}
+              <div ref={(el) => (rewardsCardRefs.current[2] = el)}>
                 <Card
-                  title="Exclusive Swags"
-                  copy="Get your hands on exclusive merchandise and collectibles that you won't find anywhere else."
+                  title="📝 Smooth Test Experience"
+                  copy="Take free tests with a clean and distraction-free UI designed for focus."
                   index={2}
                 />
               </div>
 
-              {/* Recognition */}
-              <div
-                ref={(el) => {
-                  rewardsCardRefs.current[3] = el; // Store reference for rewards card animation
-                }}
-              >
+              {/* Paid Feature – Advanced Profile */}
+              <div ref={(el) => (rewardsCardRefs.current[3] = el)}>
                 <Card
-                  title="National Recognition"
-                  copy="Get featured on national platforms and media. Build your reputation and showcase your skills."
+                  title="⭐ Advanced Profile"
+                  copy="Unlock detailed progress analytics, badges, and personalized recommendations."
                   index={3}
                 />
               </div>
 
-              {/* Mentorship */}
-              <div
-                ref={(el) => {
-                  rewardsCardRefs.current[4] = el; // Store reference for rewards card animation
-                }}
-              >
+              {/* Paid Feature – Notifications */}
+              <div ref={(el) => (rewardsCardRefs.current[4] = el)}>
                 <Card
-                  title="Mentorship & Networking"
-                  copy="Connect with industry experts and peers. Build valuable relationships that last beyond the hackathon."
+                  title="🔔 Smart Notifications"
+                  copy="Stay on track with reminders, new test alerts, and performance updates."
                   index={4}
                 />
               </div>
 
-              {/* Accommodation */}
-              <div
-                ref={(el) => {
-                  rewardsCardRefs.current[5] = el; // Store reference for rewards card animation
-                }}
-              >
+              {/* Paid Feature – Leaderboard */}
+              <div ref={(el) => (rewardsCardRefs.current[5] = el)}>
                 <Card
-                  title="Stay & Meals Covered"
-                  copy="Enjoy comfortable accommodation and delicious food throughout your hackathon journey."
+                  title="🏆 Leaderboard"
+                  copy="Compete with peers, climb the ranks, and showcase your preparation journey."
                   index={5}
                 />
               </div>
             </div>
           </div>
-          {/* ============================================================================
-              FINAL CTA - Call to action with decorative elements
-              ============================================================================ */}
-          {/* <div className="text-center h-screen flex flex-col items-center justify-center">
-            <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl mb-4 sm:mb-6">
-              🧑‍💻
-            </div>
-            <h3 className="font-black text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl mb-4 sm:mb-6">
-              Ready to{" "}
-              <span className="text-[#feaac0]">Claim Your Rewards</span>?
-            </h3>
-            <p className="text-sm sm:text-base md:text-lg font-medium text-[#ccc]">
-              Join the ultimate hackathon experience today!
-            </p>
-          </div> */}
         </div>
       </div>
 
@@ -563,5 +547,5 @@ export default function InfoCard() {
         <SimpleRewardsSection />
       </div>
     </div>
-  );
+  )
 }

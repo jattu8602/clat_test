@@ -556,6 +556,71 @@ section {
   margin: 0 auto;
 }
 
+
+.keyword.clat {
+  background-color: #fda4af;
+  /* pink */
+  color: #000;
+  border-radius: 0.4em;
+  padding: 0.1em 0.3em;
+}
+
+.keyword.aspirants {
+  background-color: #93c5fd;
+  /* blue */
+  color: #000;
+  border-radius: 0.4em;
+  padding: 0.1em 0.3em;
+}
+
+.keyword.mock {
+  background-color: #bbf7d0;
+  /* green */
+  color: #000;
+  border-radius: 0.4em;
+  padding: 0.1em 0.3em;
+}
+
+.keyword.tests {
+  background-color: #fde68a;
+  /* yellow */
+  color: #000;
+  border-radius: 0.4em;
+  padding: 0.1em 0.3em;
+}
+
+.keyword.exam {
+  background-color: #a5f3fc;
+  /* cyan */
+  color: #000;
+  border-radius: 0.4em;
+  padding: 0.1em 0.3em;
+}
+
+.keyword.affordable {
+  background-color: #fbcfe8;
+  /* pink-light */
+  color: #000;
+  border-radius: 0.4em;
+  padding: 0.1em 0.3em;
+}
+
+.keyword.analyze {
+  background-color: #ddd6fe;
+  /* purple-light */
+  color: #000;
+  border-radius: 0.4em;
+  padding: 0.1em 0.3em;
+}
+
+.keyword.nlu {
+  background-color: #fca5a5;
+  /* red-light */
+  color: #000;
+  border-radius: 0.4em;
+  padding: 0.1em 0.3em;
+}
+
 /* Hero heading styles scoped to hero section only */
 .hero-heading {
   position: relative;
