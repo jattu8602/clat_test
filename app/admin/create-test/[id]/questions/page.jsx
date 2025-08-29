@@ -31,6 +31,13 @@ const RichTextEditor = dynamic(
     ),
   }
 )
+
+const RichTextEditorHelp = dynamic(
+  () => import('@/components/ui/rich-text-editor-help'),
+  {
+    ssr: false,
+  }
+)
 import {
   Select,
   SelectContent,
@@ -119,6 +126,7 @@ export default function CreateQuestionsPage() {
     negativeMarks: -0.25,
     section: 'ENGLISH',
     explanation: '',
+    explanationFormat: null,
   })
 
   // Fetch test info and existing questions
@@ -167,6 +175,7 @@ export default function CreateQuestionsPage() {
       options: question.options || ['', '', '', ''],
       correctAnswers: question.correctAnswers || [],
       explanation: question.explanation || '',
+      explanationFormat: question.explanationFormat || null,
       comprehension: question.comprehension || '',
       comprehensionFormat: question.comprehensionFormat || null,
     })
@@ -220,6 +229,7 @@ export default function CreateQuestionsPage() {
       imageUrls: [],
       isComprehension: false,
       comprehension: '',
+      comprehensionFormat: null,
       isTable: false,
       tableData: {
         rows: 2,
@@ -238,6 +248,7 @@ export default function CreateQuestionsPage() {
       negativeMarks: -0.25,
       section: currentSection,
       explanation: '',
+      explanationFormat: null,
     })
   }
 
@@ -248,6 +259,15 @@ export default function CreateQuestionsPage() {
         comprehension: value.html,
         comprehensionFormat: value.json,
         isComprehension: value.html.trim() !== '',
+      }))
+      return
+    }
+
+    if (field === 'explanation') {
+      setQuestionData((prev) => ({
+        ...prev,
+        explanation: value.html,
+        explanationFormat: value.json,
       }))
       return
     }
@@ -750,12 +770,15 @@ export default function CreateQuestionsPage() {
                 <CardContent className="space-y-6">
                   {/* Comprehension Text */}
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="comprehension"
-                      className="text-sm font-medium text-slate-900 dark:text-slate-50"
-                    >
-                      Comprehension Text (Optional)
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="comprehension"
+                        className="text-sm font-medium text-slate-900 dark:text-slate-50"
+                      >
+                        Comprehension Text (Optional)
+                      </Label>
+                      <RichTextEditorHelp />
+                    </div>
                     <RichTextEditor
                       value={questionData.comprehension}
                       onChange={(value) =>
@@ -828,17 +851,17 @@ export default function CreateQuestionsPage() {
 
                   {/* Explanation */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                      Explanation
-                    </Label>
-                    <Textarea
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                        Explanation
+                      </Label>
+                      <RichTextEditorHelp />
+                    </div>
+                    <RichTextEditor
                       value={questionData.explanation}
-                      onChange={(e) =>
-                        handleInputChange('explanation', e.target.value)
+                      onChange={(value) =>
+                        handleInputChange('explanation', value)
                       }
-                      placeholder="Explain the correct answer..."
-                      rows={3}
-                      className="border-slate-200 dark:border-slate-700 resize-none text-slate-900 dark:text-slate-50"
                     />
                   </div>
                 </CardContent>
@@ -1164,18 +1187,18 @@ export default function CreateQuestionsPage() {
 
                     {/* Images */}
                     <div className="space-y-2 ">
-                    <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                      Question Images
-                    </Label>
-                    <ImageUpload
-                      onUpload={handleImageUpload}
-                      multiple={true}
-                      maxFiles={5}
-                      folder="question-images"
-                      placeholder="Upload images for this question "
-                      className="text-slate-900 dark:text-slate-50"
-                    />
-                  </div>
+                      <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                        Question Images
+                      </Label>
+                      <ImageUpload
+                        onUpload={handleImageUpload}
+                        multiple={true}
+                        maxFiles={5}
+                        folder="question-images"
+                        placeholder="Upload images for this question "
+                        className="text-slate-900 dark:text-slate-50"
+                      />
+                    </div>
 
                     {/* Table Data */}
                     <div className="space-y-4">

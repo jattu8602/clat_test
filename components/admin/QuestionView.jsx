@@ -38,11 +38,12 @@ export default function QuestionView({
             <span className="text-sm font-semibold text-slate-900 dark:text-slate-50">
               Q{question.questionNumber}
             </span>
-            <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 font-medium">
+            {/* <span className="px-1 py-0.5 rounded text-[9px] bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 font-medium">
               {getSectionName(question.section)}
-            </span>
+            </span> */}
+
             {question.optionType === 'MULTI' && (
-              <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 font-medium">
+              <span className="px-1 py-0.5 rounded text-[9px] bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 font-medium">
                 Multiple
               </span>
             )}

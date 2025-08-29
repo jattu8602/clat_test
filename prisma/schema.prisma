@@ -145,6 +145,7 @@ model Question {
 
   section         SectionType
   explanation     String?
+  explanationFormat Json?      // Store formatting data for explanation text
 
   answers         Answer[]
 }
