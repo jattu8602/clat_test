@@ -24,7 +24,7 @@ const RoundCard = ({
         {/* Round Badge - Shows "Round 1" or "Round 2" */}
         <div className="mb-3">
           <span className="inline-block bg-[#141414] text-[#fcf2e8] px-3 py-1 rounded-full text-sm font-medium">
-            Round {index + 1}
+            Feature {index + 1}
           </span>
         </div>
 
