@@ -76,7 +76,7 @@ export default function MainLayout({ children, isAdmin = false }) {
         {/* Page Content - Scrollable with responsive padding */}
         <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 transition-all duration-300">
           {/* Mobile: No padding, Direct content */}
-          <div className="lg:p-8 lg:max-w-7xl lg:mx-auto">
+          <div className="lg:p-2 lg:max-w-7xl lg:mx-auto">
             <div className="">
               {children}
             </div>

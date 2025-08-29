@@ -23,6 +23,8 @@ export default function CreateTestPage() {
   const [confirmAction, setConfirmAction] = useState(null)
   const [activeCategory, setActiveCategory] = useState('ALL')
   const [filteredTests, setFilteredTests] = useState([])
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteTestData, setDeleteTestData] = useState(null)
 
   // Fetch existing tests
   useEffect(() => {
@@ -91,31 +93,65 @@ export default function CreateTestPage() {
     }
   }
 
-  const deleteTest = async (testId) => {
-    if (
-      !confirm(
-        'Are you sure you want to delete this test? This action cannot be undone.'
-      )
-    ) {
-      return
-    }
-
+  const deleteTest = async (testId, forceDelete = false) => {
     try {
-      const response = await fetch(`/api/admin/tests/${testId}`, {
+      const url = forceDelete
+        ? `/api/admin/tests/${testId}?force=true`
+        : `/api/admin/tests/${testId}`
+
+      const response = await fetch(url, {
         method: 'DELETE',
       })
 
       if (response.ok) {
+        const result = await response.json()
         setExistingTests((prev) => prev.filter((test) => test.id !== testId))
-        alert('Test deleted successfully!')
+        alert(result.message)
+        setShowDeleteModal(false)
+        setDeleteTestData(null)
       } else {
         const error = await response.json()
-        alert(error.message || 'Error deleting test')
+
+        // Handle tests with student attempts
+        if (
+          error.error === 'Test has student attempts' ||
+          error.error === 'Active test with attempts'
+        ) {
+          setDeleteTestData({
+            testId,
+            error,
+            forceDelete: false,
+          })
+          setShowDeleteModal(true)
+        } else {
+          alert(error.message || 'Error deleting test')
+        }
       }
     } catch (error) {
       console.error('Error deleting test:', error)
       alert('Error deleting test')
     }
+  }
+
+  const handleDeleteTest = (test) => {
+    const confirmMessage = test.isActive
+      ? `Are you sure you want to delete the active test "${test.title}"? This action cannot be undone.`
+      : `Are you sure you want to delete the draft test "${test.title}"? This action cannot be undone.`
+
+    if (confirm(confirmMessage)) {
+      deleteTest(test.id)
+    }
+  }
+
+  const confirmForceDelete = () => {
+    if (deleteTestData) {
+      deleteTest(deleteTestData.testId, true)
+    }
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false)
+    setDeleteTestData(null)
   }
 
   const handleToggleStatus = (test) => {
@@ -185,6 +221,9 @@ export default function CreateTestPage() {
         break
       case 'toggle':
         handleToggleStatus(test)
+        break
+      case 'delete':
+        handleDeleteTest(test)
         break
     }
   }
@@ -258,6 +297,47 @@ export default function CreateTestPage() {
         variant={
           confirmAction?.action === 'activate' ? 'default' : 'destructive'
         }
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        onConfirm={confirmForceDelete}
+        title="⚠️ Test Has Student Attempts"
+        description={
+          deleteTestData ? (
+            <div className="space-y-3">
+              <p className="text-red-600 font-medium">
+                {deleteTestData.error.message}
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm font-medium text-red-800 mb-2">
+                  This will permanently delete:
+                </p>
+                <ul className="text-sm text-red-700 space-y-1">
+                  <li>
+                    • {deleteTestData.error.details.attemptCount} student
+                    attempt(s)
+                  </li>
+                  <li>
+                    • {deleteTestData.error.details.questionCount} question(s)
+                  </li>
+                  <li>• All related scores and progress data</li>
+                  <li>• Leaderboard rankings for this test</li>
+                </ul>
+              </div>
+              <p className="text-sm text-gray-600">
+                This action cannot be undone. Students will lose all their
+                progress and scores for this test.
+              </p>
+            </div>
+          ) : (
+            'Loading...'
+          )
+        }
+        confirmText="Delete Anyway"
+        variant="destructive"
       />
       <div className="mx-auto max-w-7xl">
         {/* Welcome Section */}

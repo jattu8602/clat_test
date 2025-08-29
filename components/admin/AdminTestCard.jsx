@@ -23,6 +23,7 @@ export default function AdminTestCard({
   onAction,
   admin = false,
   questions = [],
+  id, // Add test ID prop
 }) {
   const getTestType = () => {
     return isPaid ? 'PAID' : 'FREE'
@@ -150,6 +151,19 @@ export default function AdminTestCard({
           </div>
 
           {renderActionButton()}
+
+          {/* Delete button for draft tests */}
+          {!isActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
+              onClick={() => onAction?.('delete')}
+            >
+              <Trash2 className="mr-1 h-3 w-3" />
+              Delete
+            </Button>
+          )}
         </div>
       </div>
 
@@ -215,6 +229,19 @@ export default function AdminTestCard({
           </div>
 
           {renderDesktopActionButton()}
+
+          {/* Delete button for draft tests */}
+          {!isActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => onAction?.('delete')}
+            >
+              <Trash2 className="mr-1 h-3 w-3" />
+              Delete
+            </Button>
+          )}
         </div>
       </div>
     </div>
