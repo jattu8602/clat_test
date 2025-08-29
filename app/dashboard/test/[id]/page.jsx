@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import ConfirmModal from '@/components/ui/confirm-modal'
@@ -715,13 +716,13 @@ export default function TestTakingPage() {
             </h1>
             <Badge
               variant={test.type === 'PAID' ? 'default' : 'secondary'}
-              className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 bg-green-900"
+              className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-green-900 bg-green-200"
             >
               {test.type}
             </Badge>
             <Badge
               variant="outline"
-              className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 bg-yellow-900"
+              className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-yellow-900 bg-yellow-200"
             >
               {questions.length} Questions
             </Badge>
@@ -750,6 +751,10 @@ export default function TestTakingPage() {
                 </span>
               )}
             </div>
+            {/* Theme Toggle */}
+            <div className="rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors dark:text-white">
+              <ThemeToggle />
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -776,7 +781,7 @@ export default function TestTakingPage() {
                   </h2>
                   <Badge
                     variant="outline"
-                    className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 bg-yellow-900"
+                    className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-yellow-900 bg-yellow-200"
                   >
                     {currentQuestion.section.replace('_', ' ')}
                   </Badge>
@@ -785,7 +790,7 @@ export default function TestTakingPage() {
 
               {/* Comprehension (if exists) */}
               {currentQuestion.isComprehension && (
-                <Card className="mb-6">
+                <Card className="mb-6 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                   <CardContent className="p-4">
                     <h3 className="font-medium text-gray-900 dark:text-white mb-2">
                       Comprehension:
@@ -1162,25 +1167,13 @@ export default function TestTakingPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => router.push('/dashboard/attempted')}
+                  onClick={() => router.push('/dashboard')}
                   className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
                 </Button>
-                {attemptHistory.length > 0 && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowResults(false)
-                      setShowStartModal(true)
-                    }}
-                    className="border-2 border-blue-200 dark:border-blue-700 dark:text-blue-400"
-                  >
-                    <RefreshCcw className="w-4 h-4 mr-2" />
-                    Take Again
-                  </Button>
-                )}
+
               </div>
 
               {/* Note about detailed results */}
