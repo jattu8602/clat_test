@@ -351,7 +351,7 @@ export default function UserNotificationsPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Notifications</h1>
+        <h1 className="text-3xl font-bold mb-2 text-slate-900 dark:text-white">Notifications</h1>
         <p className="text-gray-600 dark:text-gray-300">
           Stay updated with the latest news and test activations
         </p>
@@ -422,7 +422,7 @@ export default function UserNotificationsPage() {
                           <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
                             {notification.title}
                           </h3>
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs text-slate-900 dark:text-white">
                             {getNotificationTypeLabel(notification.type)}
                           </Badge>
                           {notification.isBroadcast && (

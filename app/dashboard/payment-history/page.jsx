@@ -718,184 +718,289 @@ export default function UserPaymentHistory() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Payment History & Plans</h1>
-
-      {/* Payment System Status - Only show if there are issues */}
-      {!razorpayLoaded && (
-        <Card className="mb-6 border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-blue-800">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              <span>Initializing payment system...</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {razorpayLoaded && !razorpayKey && (
-        <Card className="mb-6 border-red-200 bg-red-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-red-800">
-              <span>
-                ⚠️ Payment system is temporarily unavailable. Please try again
-                later.
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Current Plan Status */}
-      {userStatus?.isCurrentlyPaid && userStatus?.currentPlan && (
-        <Card className="mb-8 border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span className="text-green-800">Current Active Plan</span>
-              <Badge variant="default" className="bg-green-600">
-                Active
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <span className="text-sm text-gray-600">Plan:</span>
-                <div className="font-semibold text-lg">
-                  {userStatus.currentPlan.name}
-                </div>
-              </div>
-              <div>
-                <span className="text-sm text-gray-600">Duration:</span>
-                <div className="font-semibold">
-                  {formatDuration(userStatus.currentPlan)}
-                </div>
-              </div>
-              <div>
-                <span className="text-sm text-gray-600">Days Remaining:</span>
-                <div className="font-semibold text-lg text-green-600">
-                  {userStatus.daysRemaining} days
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Available Plans for Free Users */}
-      {!userStatus?.isCurrentlyPaid && (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 md:p-6">
+      <div className="mx-auto max-w-7xl">
+        {/* Header */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Available Plans</h2>
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardHeader>
-                    <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="h-4 bg-gray-200 rounded"></div>
-                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                      <div className="h-10 bg-gray-200 rounded"></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {plans.map((plan) => (
-                <Card
-                  key={plan.id}
-                  className="relative hover:shadow-lg transition-shadow border-2 hover:border-blue-200"
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+            Payment History & Plans
+          </h1>
+          <p className="text-slate-600 dark:text-slate-300">
+            Manage your subscription and view payment history
+          </p>
+        </div>
+
+        {/* Payment System Status - Only show if there are issues */}
+        {!razorpayLoaded && (
+          <Card className="mb-6 border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                <span>Initializing payment system...</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {razorpayLoaded && !razorpayKey && (
+          <Card className="mb-6 border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
+                <span>
+                  ⚠️ Payment system is temporarily unavailable. Please try again
+                  later.
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Current Plan Status */}
+        {userStatus?.isCurrentlyPaid && userStatus?.currentPlan && (
+          <Card className="mb-8 border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
+                <span>Current Active Plan</span>
+                <Badge
+                  variant="default"
+                  className="bg-green-600 dark:bg-green-500"
                 >
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-xl">{plan.name}</CardTitle>
-                      {plan.discount && plan.discount > 0 && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-orange-100 text-orange-800"
-                        >
-                          {plan.discount}% OFF
-                        </Badge>
+                  Active
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    Plan:
+                  </span>
+                  <div className="font-semibold text-lg text-slate-900 dark:text-white">
+                    {userStatus.currentPlan.name}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    Duration:
+                  </span>
+                  <div className="font-semibold text-slate-900 dark:text-white">
+                    {formatDuration(userStatus.currentPlan)}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    Days Remaining:
+                  </span>
+                  <div className="font-semibold text-lg text-green-600 dark:text-green-400">
+                    {userStatus.daysRemaining} days
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Available Plans for Free Users */}
+        {!userStatus?.isCurrentlyPaid && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-6 text-slate-900 dark:text-white">
+              Available Plans
+            </h2>
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <Card
+                    key={i}
+                    className="animate-pulse border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <CardHeader>
+                      <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
+                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                        <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {plans.map((plan) => (
+                  <Card
+                    key={plan.id}
+                    className="relative hover:shadow-lg transition-all duration-200 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-600 bg-white dark:bg-slate-800 group"
+                  >
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-xl text-slate-900 dark:text-white">
+                          {plan.name}
+                        </CardTitle>
+                        {plan.discount && plan.discount > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200"
+                          >
+                            {plan.discount}% OFF
+                          </Badge>
+                        )}
+                      </div>
+                      {plan.thumbnailUrl && (
+                        <img
+                          src={plan.thumbnailUrl}
+                          alt={plan.name}
+                          className="w-full h-32 object-cover rounded-md mt-3"
+                        />
                       )}
-                    </div>
-                    {plan.thumbnailUrl && (
-                      <img
-                        src={plan.thumbnailUrl}
-                        alt={plan.name}
-                        className="w-full h-32 object-cover rounded-md mt-3"
-                      />
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Duration:</span>
-                        <span className="font-medium">
-                          {formatDuration(plan)}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">
-                          Original Price:
-                        </span>
-                        <span className="font-medium">₹{plan.price}</span>
-                      </div>
-
-                      {plan.discount && plan.discount > 0 && (
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">
-                            Discount:
+                          <span className="text-sm text-slate-600 dark:text-slate-400">
+                            Duration:
                           </span>
-                          <span className="font-medium text-green-600">
-                            {plan.discount}%
+                          <span className="font-medium text-slate-900 dark:text-white">
+                            {formatDuration(plan)}
                           </span>
                         </div>
-                      )}
 
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">
-                          Final Price:
-                        </span>
-                        <span className="text-lg font-bold text-blue-600">
-                          ₹
-                          {plan.discount
-                            ? (
-                                plan.price -
-                                (plan.price * plan.discount) / 100
-                              ).toFixed(2)
-                            : plan.price}
-                        </span>
-                      </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">
+                            Original Price:
+                          </span>
+                          <span className="font-medium text-slate-900 dark:text-white">
+                            ₹{plan.price}
+                          </span>
+                        </div>
 
-                      {plan.description && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          {plan.description}
-                        </p>
-                      )}
-
-                      <Button
-                        className="w-full mt-4"
-                        onClick={() => handlePurchase(plan)}
-                        disabled={!razorpayLoaded || !razorpayKey}
-                      >
-                        {!razorpayLoaded ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Loading...
-                          </>
-                        ) : !razorpayKey ? (
-                          'Unavailable'
-                        ) : (
-                          'Purchase Plan'
+                        {plan.discount && plan.discount > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">
+                              Discount:
+                            </span>
+                            <span className="font-medium text-green-600 dark:text-green-400">
+                              {plan.discount}%
+                            </span>
+                          </div>
                         )}
-                      </Button>
+
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">
+                            Final Price:
+                          </span>
+                          <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                            ₹
+                            {plan.discount
+                              ? (
+                                  plan.price -
+                                  (plan.price * plan.discount) / 100
+                                ).toFixed(2)
+                              : plan.price}
+                          </span>
+                        </div>
+
+                        {plan.description && (
+                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                            {plan.description}
+                          </p>
+                        )}
+
+                        <Button
+                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                          onClick={() => handlePurchase(plan)}
+                          disabled={!razorpayLoaded || !razorpayKey}
+                        >
+                          {!razorpayLoaded ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Loading...
+                            </>
+                          ) : !razorpayKey ? (
+                            'Unavailable'
+                          ) : (
+                            'Purchase Plan'
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Payment History */}
+        <div>
+          <h2 className="text-2xl font-semibold mb-6 text-slate-900 dark:text-white">
+            Payment History
+          </h2>
+          {userPayments.length === 0 ? (
+            <Card className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+              <CardContent className="p-6 text-center text-slate-500 dark:text-slate-400">
+                No payment history found.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {userPayments.map((payment) => (
+                <Card
+                  key={payment.id}
+                  className="hover:shadow-md transition-all duration-200 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                      <div>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          Plan:
+                        </span>
+                        <div className="font-semibold text-slate-900 dark:text-white">
+                          {payment.plan.name}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          Amount:
+                        </span>
+                        <div className="font-semibold text-slate-900 dark:text-white">
+                          ₹{payment.amount}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          Status:
+                        </span>
+                        <Badge
+                          variant={
+                            payment.status === 'SUCCESS'
+                              ? 'default'
+                              : payment.status === 'PENDING'
+                              ? 'secondary'
+                              : 'destructive'
+                          }
+                          className={
+                            payment.status === 'SUCCESS'
+                              ? 'bg-green-600 dark:bg-green-500'
+                              : payment.status === 'PENDING'
+                              ? 'bg-yellow-600 dark:bg-yellow-500'
+                              : 'bg-red-600 dark:bg-red-500'
+                          }
+                        >
+                          {payment.status}
+                        </Badge>
+                      </div>
+                      <div>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          Date:
+                        </span>
+                        <div className="font-semibold text-slate-900 dark:text-white">
+                          {new Date(payment.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -903,151 +1008,94 @@ export default function UserPaymentHistory() {
             </div>
           )}
         </div>
-      )}
 
-      {/* Payment History */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Payment History</h2>
-        {userPayments.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center text-gray-500">
-              No payment history found.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {userPayments.map((payment) => (
-              <Card
-                key={payment.id}
-                className="hover:shadow-md transition-shadow"
-              >
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                    <div>
-                      <span className="text-sm text-gray-600">Plan:</span>
-                      <div className="font-semibold">{payment.plan.name}</div>
+        {/* Purchase Dialog */}
+        <Dialog
+          open={isPurchaseDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) closePurchaseDialog()
+          }}
+        >
+          <DialogContent className="bg-white dark:bg-slate-900 max-w-md border-slate-200 dark:border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="text-slate-900 dark:text-white">
+                Confirm Purchase
+              </DialogTitle>
+            </DialogHeader>
+            {selectedPlan && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-white">
+                    {selectedPlan.name}
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400 mb-4">
+                    {selectedPlan.description}
+                  </p>
+
+                  <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg space-y-2">
+                    <div className="flex justify-between text-slate-700 dark:text-slate-300">
+                      <span>Original Price:</span>
+                      <span>₹{selectedPlan.price}</span>
                     </div>
-                    <div>
-                      <span className="text-sm text-gray-600">Amount:</span>
-                      <div className="font-semibold">₹{payment.amount}</div>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-600">Status:</span>
-                      <Badge
-                        variant={
-                          payment.status === 'SUCCESS'
-                            ? 'default'
-                            : payment.status === 'PENDING'
-                            ? 'secondary'
-                            : 'destructive'
-                        }
-                        className={
-                          payment.status === 'SUCCESS'
-                            ? 'bg-green-600'
-                            : payment.status === 'PENDING'
-                            ? 'bg-yellow-600'
-                            : 'bg-red-600'
-                        }
-                      >
-                        {payment.status}
-                      </Badge>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-600">Date:</span>
-                      <div className="font-semibold">
-                        {new Date(payment.createdAt).toLocaleDateString()}
+                    {selectedPlan.discount && selectedPlan.discount > 0 && (
+                      <div className="flex justify-between text-green-600 dark:text-green-400">
+                        <span>Discount ({selectedPlan.discount}%):</span>
+                        <span>
+                          -₹
+                          {(
+                            (selectedPlan.price * selectedPlan.discount) /
+                            100
+                          ).toFixed(2)}
+                        </span>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Purchase Dialog */}
-      <Dialog
-        open={isPurchaseDialogOpen}
-        onOpenChange={(open) => {
-          if (!open) closePurchaseDialog()
-        }}
-      >
-        <DialogContent className="bg-white dark:bg-slate-900 max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirm Purchase</DialogTitle>
-          </DialogHeader>
-          {selectedPlan && (
-            <div className="space-y-4">
-              <div className="text-center">
-                <h3 className="text-xl font-semibold mb-2">
-                  {selectedPlan.name}
-                </h3>
-                <p className="text-gray-600 mb-4">{selectedPlan.description}</p>
-
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                  <div className="flex justify-between">
-                    <span>Original Price:</span>
-                    <span>₹{selectedPlan.price}</span>
-                  </div>
-                  {selectedPlan.discount && selectedPlan.discount > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Discount ({selectedPlan.discount}%):</span>
+                    )}
+                    <div className="flex justify-between font-bold text-lg border-t border-slate-200 dark:border-slate-700 pt-2 text-slate-900 dark:text-white">
+                      <span>Final Price:</span>
                       <span>
-                        -₹
-                        {(
-                          (selectedPlan.price * selectedPlan.discount) /
-                          100
-                        ).toFixed(2)}
+                        ₹
+                        {selectedPlan.discount
+                          ? (
+                              selectedPlan.price -
+                              (selectedPlan.price * selectedPlan.discount) / 100
+                            ).toFixed(2)
+                          : selectedPlan.price}
                       </span>
                     </div>
-                  )}
-                  <div className="flex justify-between font-bold text-lg border-t pt-2">
-                    <span>Final Price:</span>
-                    <span>
-                      ₹
-                      {selectedPlan.discount
-                        ? (
-                            selectedPlan.price -
-                            (selectedPlan.price * selectedPlan.discount) / 100
-                          ).toFixed(2)
-                        : selectedPlan.price}
-                    </span>
+                  </div>
+
+                  <div className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                    Duration: {formatDuration(selectedPlan)}
                   </div>
                 </div>
 
-                <div className="text-sm text-gray-600 mt-2">
-                  Duration: {formatDuration(selectedPlan)}
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    onClick={closePurchaseDialog}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                    onClick={initiatePayment}
+                    disabled={isProcessingPayment}
+                  >
+                    {isProcessingPayment ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      'Proceed to Payment'
+                    )}
+                  </Button>
                 </div>
               </div>
-
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={closePurchaseDialog}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={initiatePayment}
-                  disabled={isProcessingPayment}
-                >
-                  {isProcessingPayment ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    'Proceed to Payment'
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   )
 }

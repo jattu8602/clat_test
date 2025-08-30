@@ -232,7 +232,7 @@ export default function TestCard({
         {/* Desktop Layout */}
         <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1.5fr] items-center text-sm">
           {/* Name */}
-          <div className="font-medium text-gray-900">{title}</div>
+          <div className="font-medium text-gray-900 dark:text-white">{title}</div>
 
           {/* Type */}
           <div>
@@ -265,7 +265,7 @@ export default function TestCard({
           </div>
 
           {/* Score */}
-          <div className="flex items-center gap-2 text-gray-600">
+          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
             <div className="h-2 w-8 rounded-full bg-gray-200">
               <div
                 className="h-2 rounded-full bg-gray-400"

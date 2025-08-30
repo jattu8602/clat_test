@@ -147,7 +147,7 @@ export default function AttemptHistoryModal({
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="hover:bg-slate-100 dark:hover:bg-slate-700"
+              className="hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-white"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -403,7 +403,7 @@ export default function AttemptHistoryModal({
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-                <Button variant="outline" onClick={onClose}>
+                <Button variant="outline" onClick={onClose} className="text-slate-900 dark:text-white">
                   Close
                 </Button>
                 {attempts.length > 1 && (
