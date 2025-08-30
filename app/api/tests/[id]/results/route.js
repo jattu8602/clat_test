@@ -138,6 +138,7 @@ export async function GET(request, { params }) {
         totalTimeSec: testAttempt.totalTimeSec,
         startedAt: testAttempt.startedAt,
         completedAt: testAttempt.completedAt,
+        attemptNumber: testAttempt.attemptNumber,
         totalMarksObtained,
         totalPossibleMarks,
       },
