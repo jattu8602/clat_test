@@ -178,6 +178,23 @@ export default function CreateQuestionsPage() {
       explanationFormat: question.explanationFormat || null,
       comprehension: question.comprehension || '',
       comprehensionFormat: question.comprehensionFormat || null,
+      isComprehension: question.comprehension
+        ? question.comprehension.trim() !== ''
+        : false,
+      isTable: question.tableData ? true : false,
+      tableData: question.tableData || {
+        rows: 2,
+        columns: 2,
+        data: [
+          ['', ''],
+          ['', ''],
+        ],
+      },
+      imageUrls: question.imageUrls || [],
+      inputAnswer:
+        question.questionType === 'INPUT'
+          ? question.correctAnswers?.[0] || ''
+          : '',
     })
     window.scrollTo(0, 0)
   }
