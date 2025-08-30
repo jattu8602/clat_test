@@ -19,7 +19,7 @@ export default function TestStatisticsSidebar({
         variant="ghost"
         size="sm"
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        className="absolute -right-0 top-4 "
+        className="absolute -right-0 top-4 dark:text-slate-300"
       >
         {sidebarCollapsed ? (
           <ChevronRight className="w-4 h-4" />

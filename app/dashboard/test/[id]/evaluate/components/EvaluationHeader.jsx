@@ -23,7 +23,7 @@ export default function EvaluationHeader({
   setShowAttemptHistory,
 }) {
   return (
-    <header className="bg-white dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 p-4">
+    <header className="bg-white dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 pt-4">
       <div className="max-w-7xl mx-auto">
         {/* Top Row: Title and Actions */}
         <div className="flex items-center justify-between mb-4">
@@ -32,12 +32,12 @@ export default function EvaluationHeader({
               variant="outline"
               size="sm"
               onClick={() => router.back()}
-              className="gap-2"
+              className="gap-2 dark:border-slate-700 dark:text-slate-300"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
-            <div>
+            <div className="flex gap-2">
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                 {test.title}
               </h1>
@@ -48,11 +48,6 @@ export default function EvaluationHeader({
                 >
                   {test.type}
                 </Badge>
-                {/* {testAttempt && (
-                  <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                    Attempt {testAttempt.attemptNumber}
-                  </Badge>
-                )} */}
               </div>
             </div>
           </div>
@@ -61,7 +56,7 @@ export default function EvaluationHeader({
               variant="ghost"
               size="sm"
               onClick={() => setShowAttemptHistory(true)}
-              className="gap-2"
+              className="gap-2 dark:text-slate-300"
             >
               <History className="w-4 h-4" />
               <span className="hidden sm:inline">All Attempts</span>
@@ -70,7 +65,7 @@ export default function EvaluationHeader({
               variant="ghost"
               size="sm"
               onClick={() => setShowExplanations(!showExplanations)}
-              className="gap-2"
+              className="gap-2 dark:text-slate-300"
             >
               {showExplanations ? (
                 <EyeOff className="w-4 h-4" />
@@ -81,7 +76,10 @@ export default function EvaluationHeader({
                 {showExplanations ? 'Hide' : 'Show'} Explanations
               </span>
             </Button>
-            <ThemeToggle />
+            {/* Theme Toggle */}
+            <div className="rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors dark:text-white">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
 
