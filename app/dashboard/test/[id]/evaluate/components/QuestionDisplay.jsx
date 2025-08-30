@@ -371,7 +371,7 @@ export default function QuestionDisplay({
                   variant="outline"
                   onClick={handlePreviousQuestion}
                   disabled={currentQuestionIndex === 0}
-                  className="gap-2 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 px-6 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"
+                  className="gap-2 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 px-6 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 dark:text-white"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Previous Question
@@ -410,7 +410,7 @@ export default function QuestionDisplay({
                   variant="outline"
                   onClick={handleNextQuestion}
                   disabled={currentQuestionIndex === questions.length - 1}
-                  className="gap-2 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 px-6 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"
+                  className="gap-2 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 px-6 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 dark:text-white"
                 >
                   Next Question
                   <ChevronRight className="w-4 h-4" />
