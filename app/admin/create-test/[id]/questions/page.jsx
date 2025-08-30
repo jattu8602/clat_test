@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
-// import { Toaster, toast } from 'sonner'
+import { Toaster, toast } from 'sonner'
 import {
   Card,
   CardContent,
@@ -73,6 +73,8 @@ import {
   Scale,
   Brain,
   Calculator,
+  Sparkles,
+  Loader2,
 } from 'lucide-react'
 
 export default function CreateQuestionsPage() {
@@ -128,6 +130,11 @@ export default function CreateQuestionsPage() {
     explanation: '',
     explanationFormat: null,
   })
+
+  // AI Analysis state
+  const [aiAnalysisText, setAiAnalysisText] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analyzedOptions, setAnalyzedOptions] = useState([])
 
   // Fetch test info and existing questions
   useEffect(() => {
@@ -676,6 +683,69 @@ export default function CreateQuestionsPage() {
     return icons[section] || FileText
   }
 
+  // AI Analysis function
+  const analyzeTextWithAI = async () => {
+    if (!aiAnalysisText.trim()) {
+      toast.error('Please enter some text to analyze')
+      return
+    }
+
+    setIsAnalyzing(true)
+    try {
+      const response = await fetch('/api/admin/analyze-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: aiAnalysisText,
+          questionText: questionData.questionText,
+          section: questionData.section,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setAnalyzedOptions(data.options || [])
+        toast.success(
+          'Text analyzed successfully! Click "Apply Options" to use them.'
+        )
+      } else {
+        const error = await response.json()
+        toast.error(error.message || 'Error analyzing text')
+      }
+    } catch (error) {
+      console.error('Error analyzing text:', error)
+      toast.error('Error analyzing text. Please try again.')
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const applyAnalyzedOptions = () => {
+    if (analyzedOptions.length === 0) {
+      toast.error('No analyzed options available')
+      return
+    }
+
+    // Take up to 6 options from the analyzed results
+    const newOptions = analyzedOptions.slice(0, 6)
+
+    // Pad with empty strings if less than 4 options
+    while (newOptions.length < 4) {
+      newOptions.push('')
+    }
+
+    setQuestionData((prev) => ({
+      ...prev,
+      options: newOptions,
+    }))
+
+    setAnalyzedOptions([])
+    setAiAnalysisText('')
+    toast.success('Options applied successfully!')
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
       {/* Header */}
@@ -883,6 +953,83 @@ export default function CreateQuestionsPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* AI Analysis Section */}
+              {questionData.questionType === 'OPTIONS' && (
+                <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
+                          <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg text-slate-900 dark:text-slate-50">
+                            AI Analysis
+                          </CardTitle>
+                          <CardDescription className="text-slate-500 dark:text-slate-400">
+                            Analyze text content to generate potential answer
+                            options.
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="aiAnalysisText"
+                        className="text-sm font-medium text-slate-900 dark:text-slate-50"
+                      >
+                        Text to Analyze
+                      </Label>
+                      <Textarea
+                        id="aiAnalysisText"
+                        value={aiAnalysisText}
+                        onChange={(e) => setAiAnalysisText(e.target.value)}
+                        placeholder="Paste text content here..."
+                        rows={4}
+                        className="resize-none border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-purple-500 text-slate-900 dark:text-slate-50"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={analyzeTextWithAI}
+                        disabled={isAnalyzing || !aiAnalysisText.trim()}
+                        className="w-full"
+                      >
+                        {isAnalyzing ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4 mr-2" />
+                        )}
+                        {isAnalyzing ? 'Analyzing...' : 'Analyze Text'}
+                      </Button>
+                      {analyzedOptions.length > 0 && (
+                        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <h4 className="text-sm font-medium text-slate-900 dark:text-slate-50 mb-2">
+                            Generated Options:
+                          </h4>
+                          <ul className="list-disc list-inside text-sm text-slate-900 dark:text-slate-50">
+                            {analyzedOptions.map((option, index) => (
+                              <li key={index}>{option}</li>
+                            ))}
+                          </ul>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={applyAnalyzedOptions}
+                            className="mt-2 text-xs text-blue-600 hover:text-blue-700 border-blue-300 hover:border-blue-400"
+                          >
+                            Apply Options
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Options Section */}
               {questionData.questionType === 'OPTIONS' && (
