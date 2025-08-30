@@ -1105,9 +1105,27 @@ export default function TestTakingPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Test Results
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Test Results
+                  </h2>
+                  {attemptHistory.length > 0 && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                        Attempt #{attemptHistory.length + 1}
+                      </Badge>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date().toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <Button variant="outline" onClick={() => setShowResults(false)}>
                   <X className="w-4 h-4" />
                 </Button>
@@ -1173,7 +1191,6 @@ export default function TestTakingPage() {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
                 </Button>
-
               </div>
 
               {/* Note about detailed results */}

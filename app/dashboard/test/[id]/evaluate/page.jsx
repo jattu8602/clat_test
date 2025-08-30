@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
+import AttemptHistoryModal from '@/components/ui/attempt-history-modal'
 import {
   ArrowLeft,
   CheckCircle,
@@ -33,6 +34,7 @@ import {
   Share2,
   Menu,
   X,
+  History,
 } from 'lucide-react'
 
 export default function TestEvaluationPage() {
@@ -51,6 +53,7 @@ export default function TestEvaluationPage() {
   const [selectedSection, setSelectedSection] = useState('ALL')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showAttemptHistory, setShowAttemptHistory] = useState(false)
 
   // Get current question
   const currentQuestion = evaluationData?.questions?.[currentQuestionIndex]
@@ -213,6 +216,19 @@ export default function TestEvaluationPage() {
     )
   }
 
+  const handleSelectAttempt = (attempt) => {
+    setShowAttemptHistory(false)
+    // Navigate to the evaluate page with the selected attempt
+    // Handle both id and _id formats for MongoDB compatibility
+    const attemptId = attempt.id || attempt._id
+    if (!attemptId) {
+      console.error('No ID found on attempt object:', attempt)
+      toast.error('Could not find a valid ID for this attempt.')
+      return
+    }
+    router.push(`/dashboard/test/${testId}/evaluate?attemptId=${attemptId}`)
+  }
+
   const filteredQuestions =
     evaluationData?.questions?.filter((question) => {
       if (selectedSection !== 'ALL' && question.section !== selectedSection)
@@ -285,10 +301,48 @@ export default function TestEvaluationPage() {
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   {test.title}
                 </p>
+                <div className="flex items-center gap-2 mt-1">
+                  {test.type && (
+                    <Badge className="bg-purple-100 text-purple-700">
+                      {test.type}
+                    </Badge>
+                  )}
+                  {test.keyTopic && (
+                    <Badge variant="outline">{test.keyTopic}</Badge>
+                  )}
+                </div>
+                {testAttempt && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      Attempt #{testAttempt.attemptNumber}
+                    </Badge>
+                    <span className="text-xs text-slate-500 dark:text-slate-500">
+                      {new Date(
+                        testAttempt.completedAt || testAttempt.startedAt
+                      ).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAttemptHistory(true)}
+                className="gap-2"
+              >
+                <History className="w-4 h-4" />
+                <span className="hidden sm:inline">View All Attempts</span>
+              </Button>
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -332,404 +386,412 @@ export default function TestEvaluationPage() {
         </div>
       </header>
 
-      {/* Enhanced Test Summary */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Card className="mb-6 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200 dark:border-slate-700 shadow-xl">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-              {/* Score */}
-              <div className="text-center lg:col-span-2">
-                <div className="relative inline-flex items-center justify-center w-24 h-24 mb-4">
-                  <svg className="w-24 h-24 transform -rotate-90">
-                    <circle
-                      cx="48"
-                      cy="48"
-                      r="40"
-                      stroke="currentColor"
-                      strokeWidth="8"
-                      fill="none"
-                      className="text-slate-200 dark:text-slate-700"
-                    />
-                    <circle
-                      cx="48"
-                      cy="48"
-                      r="40"
-                      stroke="currentColor"
-                      strokeWidth="8"
-                      fill="none"
-                      strokeLinecap="round"
-                      className="text-emerald-500"
-                      strokeDasharray={`${2 * Math.PI * 40}`}
-                      strokeDashoffset={`${
-                        2 * Math.PI * 40 * (1 - testAttempt.score / 100)
-                      }`}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-slate-900 dark:text-white">
-                      {testAttempt.score}%
-                    </span>
-                  </div>
-                </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                  Overall Score
-                </div>
-                <div className="text-xs text-slate-400 dark:text-slate-500">
-                  {testAttempt.correctAnswers} out of{' '}
-                  {testAttempt.totalQuestions} correct
-                </div>
-              </div>
+      <div className="flex h-[calc(100vh-64px)]">
+        {/* Left Sidebar - Statistics */}
+        <div className="w-80 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-r border-slate-200 dark:border-slate-700 flex-shrink-0">
+          <div className="p-4">
+            <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
+              Test Statistics
+            </h3>
 
-              {/* Stats */}
-              <div className="text-center">
-                <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {testAttempt.correctAnswers}
-                </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                  Correct
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
-                </div>
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {testAttempt.wrongAnswers}
-                </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                  Wrong
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Clock className="w-6 h-6 text-slate-600 dark:text-slate-400" />
-                </div>
-                <div className="text-2xl font-bold text-slate-600 dark:text-slate-400">
-                  {testAttempt.unattempted}
-                </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                  Unattempted
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Enhanced Side Navigation */}
-          <div
-            className={`lg:col-span-1 ${
-              sidebarOpen
-                ? 'fixed inset-y-0 left-0 z-50 lg:relative lg:inset-auto'
-                : 'hidden lg:block'
-            }`}
-          >
-            <Card className="h-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200 dark:border-slate-700 shadow-xl">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg text-slate-900 dark:text-white flex items-center gap-2">
-                    <Filter className="w-5 h-5" />
-                    Questions
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSidebarOpen(false)}
-                    className="lg:hidden"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                {/* Search */}
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search questions..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white/50 dark:bg-slate-900/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Section Filter */}
-                <select
-                  value={selectedSection}
-                  onChange={(e) => setSelectedSection(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white/50 dark:bg-slate-900/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="ALL">All Sections</option>
-                  <option value="ENGLISH">English</option>
-                  <option value="GK_CA">GK & Current Affairs</option>
-                  <option value="LEGAL_REASONING">Legal Reasoning</option>
-                  <option value="LOGICAL_REASONING">Logical Reasoning</option>
-                  <option value="QUANTITATIVE_TECHNIQUES">
-                    Quantitative Techniques
-                  </option>
-                </select>
-              </CardHeader>
-
-              <CardContent className="pt-0">
-                <div className="space-y-2 max-h-[calc(100vh-400px)] overflow-y-auto">
-                  {filteredQuestions.map((question, index) => {
-                    const originalIndex = questions.findIndex(
-                      (q) => q.id === question.id
-                    )
-                    const status = getQuestionStatus(question)
-                    const isActive = originalIndex === currentQuestionIndex
-
-                    return (
-                      <button
-                        key={question.id}
-                        onClick={() => handleQuestionNavigation(originalIndex)}
-                        className={`w-full p-3 text-left rounded-lg border-2 transition-all duration-200 hover:shadow-md ${
-                          isActive
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg'
-                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white/50 dark:bg-slate-900/20'
+            {/* Overall Score */}
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-700 mb-4">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <div className="relative inline-flex items-center justify-center w-20 h-20 mb-3">
+                    <svg className="w-20 h-20 transform -rotate-90">
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="32"
+                        stroke="currentColor"
+                        strokeWidth="6"
+                        fill="none"
+                        className="text-slate-200 dark:text-slate-700"
+                      />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="32"
+                        stroke="currentColor"
+                        strokeWidth="6"
+                        fill="none"
+                        strokeLinecap="round"
+                        className="text-emerald-500"
+                        strokeDasharray={`${2 * Math.PI * 32}`}
+                        strokeDashoffset={`${
+                          2 * Math.PI * 32 * (1 - testAttempt.score / 100)
                         }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-slate-900 dark:text-white">
-                            Q{question.questionNumber}
-                          </span>
-                          <div
-                            className={`p-1.5 rounded-full ${getQuestionStatusColor(
-                              status
-                            )}`}
-                          >
-                            {getQuestionStatusIcon(status)}
-                          </div>
-                        </div>
-
-                        <Badge
-                          className={`text-xs ${getSectionColor(
-                            question.section
-                          )}`}
-                        >
-                          {question.section.replace('_', ' ')}
-                        </Badge>
-
-                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                          <Timer className="w-3 h-3" />
-                          {Math.round(question.timeTakenSec / 60)}m{' '}
-                          {question.timeTakenSec % 60}s
-                        </div>
-                      </button>
-                    )
-                  })}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xl font-bold text-slate-900 dark:text-white">
+                        {testAttempt.score}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    Overall Score
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Question Display */}
-          <div className="lg:col-span-3">
-            {currentQuestion && (
-              <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200 dark:border-slate-700 shadow-xl">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Badge
-                        variant="outline"
-                        className="px-3 py-1 text-slate-900 dark:text-white border-2"
-                      >
-                        Question {currentQuestion.questionNumber}
-                      </Badge>
-                      <Badge
-                        className={getSectionColor(currentQuestion.section)}
-                      >
-                        {currentQuestion.section.replace('_', ' ')}
-                      </Badge>
-                      <div
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getQuestionStatusColor(
-                          getQuestionStatus(currentQuestion)
-                        )}`}
-                      >
-                        {getQuestionStatus(currentQuestion)}
-                      </div>
-                    </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">
-                      {currentQuestionIndex + 1} of {questions.length}
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg text-center">
+                <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  {testAttempt.correctAnswers}
+                </div>
+                <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                  Correct
+                </div>
+              </div>
+              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg text-center">
+                <div className="text-lg font-bold text-red-600 dark:text-red-400">
+                  {testAttempt.wrongAnswers}
+                </div>
+                <div className="text-xs text-red-600 dark:text-red-400">
+                  Wrong
+                </div>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-700 p-3 rounded-lg text-center">
+                <div className="text-lg font-bold text-slate-600 dark:text-slate-400">
+                  {testAttempt.unattempted}
+                </div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">
+                  Unattempted
+                </div>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-center">
+                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                  {testAttempt.totalQuestions}
+                </div>
+                <div className="text-xs text-blue-600 dark:text-blue-400">
+                  Total
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Bars */}
+            <div className="space-y-3 mb-4">
+              <div>
+                <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                  <span>Correct</span>
+                  <span>
+                    {testAttempt.correctAnswers}/{testAttempt.totalQuestions}
+                  </span>
+                </div>
+                <Progress
+                  value={
+                    (testAttempt.correctAnswers / testAttempt.totalQuestions) *
+                    100
+                  }
+                  className="h-2"
+                />
+              </div>
+              <div>
+                <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                  <span>Wrong</span>
+                  <span>
+                    {testAttempt.wrongAnswers}/{testAttempt.totalQuestions}
+                  </span>
+                </div>
+                <Progress
+                  value={
+                    (testAttempt.wrongAnswers / testAttempt.totalQuestions) *
+                    100
+                  }
+                  className="h-2 bg-red-200 dark:bg-red-900/30"
+                />
+              </div>
+              <div>
+                <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                  <span>Unattempted</span>
+                  <span>
+                    {testAttempt.unattempted}/{testAttempt.totalQuestions}
+                  </span>
+                </div>
+                <Progress
+                  value={
+                    (testAttempt.unattempted / testAttempt.totalQuestions) * 100
+                  }
+                  className="h-2 bg-slate-200 dark:bg-slate-700"
+                />
+              </div>
+            </div>
+
+            {/* Time Stats */}
+            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Timer className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <span className="text-sm font-medium text-slate-900 dark:text-white">
+                  Time Analysis
+                </span>
+              </div>
+              <div className="text-xs text-slate-600 dark:text-slate-400">
+                <div>
+                  Total Time: {Math.floor((testAttempt.totalTimeSec || 0) / 60)}
+                  m {(testAttempt.totalTimeSec || 0) % 60}s
+                </div>
+                <div>
+                  Avg per Question:{' '}
+                  {testAttempt.totalQuestions
+                    ? Math.floor(
+                        (testAttempt.totalTimeSec || 0) /
+                          testAttempt.totalQuestions /
+                          60
+                      )
+                    : 0}
+                  m{' '}
+                  {testAttempt.totalQuestions
+                    ? Math.floor(
+                        ((testAttempt.totalTimeSec || 0) /
+                          testAttempt.totalQuestions) %
+                          60
+                      )
+                    : 0}
+                  s
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-6 overflow-y-auto">
+          {currentQuestion && (
+            <div className="max-w-4xl mx-auto">
+              {/* Question Header */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                      Question {currentQuestion.questionNumber}
+                    </h2>
+                    <Badge
+                      variant="outline"
+                      className="text-slate-900 dark:text-white border-2"
+                    >
+                      {currentQuestion.section.replace('_', ' ')}
+                    </Badge>
+                    <div
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${getQuestionStatusColor(
+                        getQuestionStatus(currentQuestion)
+                      )}`}
+                    >
+                      {getQuestionStatus(currentQuestion)}
                     </div>
                   </div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">
+                    {currentQuestionIndex + 1} of {questions.length}
+                  </div>
+                </div>
 
-                  <Progress
-                    value={
-                      ((currentQuestionIndex + 1) / questions.length) * 100
-                    }
-                    className="h-2 mt-3"
-                  />
-                </CardHeader>
+                <Progress
+                  value={((currentQuestionIndex + 1) / questions.length) * 100}
+                  className="h-2"
+                />
+              </div>
 
-                <CardContent className="space-y-6">
+              {/* Question Content */}
+              <Card className="mb-6 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                <CardContent className="p-6">
                   {/* Question Text */}
-                  <div>
-                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 leading-relaxed">
+                  <div className="mb-6">
+                    <p className="text-lg text-slate-900 dark:text-white">
                       {currentQuestion.questionText}
-                    </h3>
+                    </p>
+                  </div>
 
-                    {/* Comprehension Text */}
-                    {currentQuestion.isComprehension &&
-                      currentQuestion.comprehension && (
-                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg mb-6 border-l-4 border-blue-500">
-                          <div className="flex items-center gap-2 mb-3">
-                            <BookOpen className="w-5 h-5 text-blue-600" />
-                            <span className="font-medium text-blue-900 dark:text-blue-100">
-                              Comprehension
-                            </span>
-                          </div>
-                          <div
-                            className="text-slate-700 dark:text-slate-300 prose dark:prose-invert max-w-none"
-                            dangerouslySetInnerHTML={{
-                              __html: currentQuestion.comprehension,
-                            }}
-                          />
+                  {/* Comprehension Text */}
+                  {currentQuestion.isComprehension &&
+                    currentQuestion.comprehension && (
+                      <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg mb-6 border-l-4 border-blue-500">
+                        <div className="flex items-center gap-2 mb-3">
+                          <BookOpen className="w-5 h-5 text-blue-600" />
+                          <span className="font-medium text-blue-900 dark:text-blue-100">
+                            Comprehension
+                          </span>
                         </div>
-                      )}
+                        <div
+                          className="text-slate-700 dark:text-slate-300 prose dark:prose-invert max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: currentQuestion.comprehension,
+                          }}
+                        />
+                      </div>
+                    )}
 
-                    {/* Table Data */}
-                    {currentQuestion.isTable &&
-                      currentQuestion.tableData &&
-                      isValidTableData(currentQuestion.tableData) && (
-                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg mb-6 overflow-x-auto">
-                          <div className="flex items-center gap-2 mb-4">
-                            <BarChart3 className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                            <span className="font-medium text-slate-900 dark:text-white">
-                              Data Table
-                            </span>
-                          </div>
-                          <table className="min-w-full border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
-                            <tbody>
-                              {formatTableData(currentQuestion.tableData).map(
-                                (row, rowIndex) => (
-                                  <tr
-                                    key={rowIndex}
-                                    className={
-                                      rowIndex % 2 === 0
-                                        ? 'bg-white dark:bg-slate-700'
-                                        : 'bg-slate-50 dark:bg-slate-800'
-                                    }
-                                  >
-                                    {row.map((cell, cellIndex) => (
-                                      <td
-                                        key={cellIndex}
-                                        className="border border-slate-300 dark:border-slate-600 px-4 py-3 text-sm text-slate-700 dark:text-slate-300"
-                                      >
-                                        {cell}
-                                      </td>
-                                    ))}
-                                  </tr>
-                                )
-                              )}
-                            </tbody>
-                          </table>
+                  {/* Table Data */}
+                  {currentQuestion.isTable &&
+                    currentQuestion.tableData &&
+                    isValidTableData(currentQuestion.tableData) && (
+                      <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg mb-6 overflow-x-auto">
+                        <div className="flex items-center gap-2 mb-4">
+                          <BarChart3 className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                          <span className="font-medium text-slate-900 dark:text-white">
+                            Data Table
+                          </span>
                         </div>
-                      )}
+                        <table className="min-w-full border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
+                          <tbody>
+                            {formatTableData(currentQuestion.tableData).map(
+                              (row, rowIndex) => (
+                                <tr
+                                  key={rowIndex}
+                                  className={
+                                    rowIndex % 2 === 0
+                                      ? 'bg-white dark:bg-slate-700'
+                                      : 'bg-slate-50 dark:bg-slate-800'
+                                  }
+                                >
+                                  {row.map((cell, cellIndex) => (
+                                    <td
+                                      key={cellIndex}
+                                      className="border border-slate-300 dark:border-slate-600 px-4 py-3 text-sm text-slate-700 dark:text-slate-300"
+                                    >
+                                      {cell}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
 
-                    {/* Image */}
-                    {currentQuestion.imageUrls &&
-                      currentQuestion.imageUrls.length > 0 && (
-                        <div className="mb-6">
+                  {/* Images */}
+                  {currentQuestion.imageUrls &&
+                    Array.isArray(currentQuestion.imageUrls) &&
+                    currentQuestion.imageUrls.length > 0 && (
+                      <div className="mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {currentQuestion.imageUrls.map((url, index) => (
-                            <div
+                            <img
                               key={index}
-                              className="relative rounded-lg overflow-hidden shadow-lg"
-                            >
-                              <img
-                                src={url}
-                                alt={`Question ${
-                                  currentQuestion.questionNumber
-                                } image ${index + 1}`}
-                                className="max-w-full h-auto rounded-lg border dark:border-slate-700"
-                              />
-                            </div>
+                              src={url}
+                              alt={`Question image ${index + 1}`}
+                              className="w-full rounded-lg border border-slate-200 dark:border-slate-700"
+                            />
                           ))}
                         </div>
-                      )}
-                  </div>
+                      </div>
+                    )}
 
                   {/* Options */}
-                  <div>
-                    <h4 className="font-semibold text-slate-900 dark:text-white mb-4 text-lg flex items-center gap-2">
-                      <Target className="w-5 h-5" />
-                      Options:
-                    </h4>
-                    <div className="space-y-3">
-                      {currentQuestion.options.map((option, optionIndex) => {
-                        const isUserAnswer =
-                          currentQuestion.userAnswer === option
-                        const isCorrectAnswer =
-                          currentQuestion.correctAnswers.includes(option)
-                        let optionStyle =
-                          'p-4 rounded-lg border-2 transition-all duration-200 hover:shadow-md'
+                  {currentQuestion.questionType === 'OPTIONS' &&
+                    Array.isArray(currentQuestion.options) && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-slate-900 dark:text-white mb-4 text-lg flex items-center gap-2">
+                          <Target className="w-5 h-5" />
+                          Options:
+                        </h4>
+                        {currentQuestion.options.map((option, optionIndex) => {
+                          const isUserAnswer =
+                            currentQuestion.userAnswer &&
+                            (Array.isArray(currentQuestion.userAnswer)
+                              ? currentQuestion.userAnswer.includes(option)
+                              : currentQuestion.userAnswer === option)
+                          const isCorrectAnswer =
+                            currentQuestion.correctAnswers.includes(option)
+                          let optionStyle =
+                            'p-4 rounded-lg border-2 transition-all duration-200'
 
-                        if (isUserAnswer && isCorrectAnswer) {
-                          optionStyle +=
-                            ' bg-emerald-50 border-emerald-300 dark:bg-emerald-900/20 dark:border-emerald-600 shadow-lg'
-                        } else if (isUserAnswer && !isCorrectAnswer) {
-                          optionStyle +=
-                            ' bg-red-50 border-red-300 dark:bg-red-900/20 dark:border-red-600 shadow-lg'
-                        } else if (isCorrectAnswer) {
-                          optionStyle +=
-                            ' bg-emerald-50 border-emerald-300 dark:bg-emerald-900/20 dark:border-emerald-600'
-                        } else {
-                          optionStyle +=
-                            ' bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'
-                        }
+                          if (isUserAnswer && isCorrectAnswer) {
+                            optionStyle +=
+                              ' bg-emerald-50 border-emerald-300 dark:bg-emerald-900/20 dark:border-emerald-600 shadow-lg'
+                          } else if (isUserAnswer && !isCorrectAnswer) {
+                            optionStyle +=
+                              ' bg-red-50 border-red-300 dark:bg-red-900/20 dark:border-red-600 shadow-lg'
+                          } else if (isCorrectAnswer) {
+                            optionStyle +=
+                              ' bg-emerald-50 border-emerald-300 dark:bg-emerald-900/20 dark:border-emerald-600'
+                          } else {
+                            optionStyle +=
+                              ' bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700'
+                          }
 
-                        return (
-                          <div
-                            key={optionIndex}
-                            className={`${optionStyle} flex items-center gap-4`}
-                          >
-                            <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 bg-white dark:bg-slate-700">
-                              {isUserAnswer && isCorrectAnswer && (
-                                <CheckCircle className="w-5 h-5 text-emerald-600" />
-                              )}
-                              {isUserAnswer && !isCorrectAnswer && (
-                                <XCircle className="w-5 h-5 text-red-600" />
-                              )}
-                              {!isUserAnswer && isCorrectAnswer && (
-                                <CheckCircle className="w-5 h-5 text-emerald-600" />
-                              )}
-                              {!isUserAnswer && !isCorrectAnswer && (
-                                <span className="text-slate-400 font-medium text-sm">
-                                  {String.fromCharCode(65 + optionIndex)}
-                                </span>
-                              )}
+                          return (
+                            <div
+                              key={optionIndex}
+                              className={`${optionStyle} flex items-center gap-4`}
+                            >
+                              <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 bg-white dark:bg-slate-700">
+                                {isUserAnswer && isCorrectAnswer && (
+                                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                                )}
+                                {isUserAnswer && !isCorrectAnswer && (
+                                  <XCircle className="w-5 h-5 text-red-600" />
+                                )}
+                                {!isUserAnswer && isCorrectAnswer && (
+                                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                                )}
+                                {!isUserAnswer && !isCorrectAnswer && (
+                                  <span className="text-slate-400 font-medium text-sm">
+                                    {String.fromCharCode(65 + optionIndex)}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-slate-900 dark:text-white flex-1">
+                                {option}
+                              </span>
+                              <div className="flex gap-2">
+                                {isUserAnswer && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                                  >
+                                    Your Answer
+                                  </Badge>
+                                )}
+                                {isCorrectAnswer && (
+                                  <Badge className="bg-emerald-500 hover:bg-emerald-600">
+                                    Correct Answer
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                            <span className="text-slate-900 dark:text-white flex-1">
-                              {option}
+                          )
+                        })}
+                      </div>
+                    )}
+
+                  {/* Input Answer */}
+                  {currentQuestion.questionType === 'INPUT' && (
+                    <div>
+                      <h4 className="font-semibold text-slate-900 dark:text-white mb-4 text-lg flex items-center gap-2">
+                        <Target className="w-5 h-5" />
+                        Your Answer:
+                      </h4>
+                      <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg border-2 border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2 mb-2">
+                          {currentQuestion.isCorrect ? (
+                            <CheckCircle className="w-5 h-5 text-emerald-600" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-600" />
+                          )}
+                          <span className="font-medium text-slate-900 dark:text-white">
+                            {currentQuestion.userAnswer || 'No answer provided'}
+                          </span>
+                        </div>
+                        {currentQuestion.correctAnswers.length > 0 && (
+                          <div className="mt-2">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">
+                              Correct answer(s):{' '}
                             </span>
-                            <div className="flex gap-2">
-                              {isUserAnswer && (
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-                                >
-                                  Your Answer
-                                </Badge>
-                              )}
-                              {isCorrectAnswer && (
-                                <Badge className="bg-emerald-500 hover:bg-emerald-600">
-                                  Correct Answer
-                                </Badge>
-                              )}
-                            </div>
+                            <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                              {currentQuestion.correctAnswers.join(', ')}
+                            </span>
                           </div>
-                        )
-                      })}
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Answer Analysis */}
-                  <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700 mt-6">
                     <h4 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                       <TrendingUp className="w-5 h-5" />
                       Answer Analysis:
@@ -740,7 +802,9 @@ export default function TestEvaluationPage() {
                           Your Answer:
                         </span>
                         <div className="font-semibold text-slate-900 dark:text-white">
-                          {currentQuestion.userAnswer || 'Not attempted'}
+                          {Array.isArray(currentQuestion.userAnswer)
+                            ? currentQuestion.userAnswer.join(', ')
+                            : currentQuestion.userAnswer || 'Not attempted'}
                         </div>
                       </div>
                       <div className="bg-white dark:bg-slate-700 p-3 rounded-lg">
@@ -775,7 +839,7 @@ export default function TestEvaluationPage() {
 
                   {/* Explanation */}
                   {showExplanations && currentQuestion.explanation && (
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-lg border-l-4 border-blue-500">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-lg border-l-4 border-blue-500 mt-6">
                       <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
                         <BookOpen className="w-5 h-5" />
                         Detailed Explanation
@@ -787,7 +851,7 @@ export default function TestEvaluationPage() {
                   )}
 
                   {/* Navigation Buttons */}
-                  <div className="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-700 mt-6">
                     <Button
                       variant="outline"
                       onClick={handlePreviousQuestion}
@@ -842,54 +906,49 @@ export default function TestEvaluationPage() {
                   </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Section Summary Cards */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {/* Right Sidebar - Question Navigation */}
+        <div className="w-80 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-l border-slate-200 dark:border-slate-700 p-4 overflow-y-auto flex-shrink-0">
+          <h3 className="font-semibold text-slate-900 dark:text-white mb-4">
+            Question Navigation
+          </h3>
+
           {Object.entries(groupedQuestions).map(
-            ([section, sectionQuestions]) => {
-              if (sectionQuestions.length === 0) return null
-
-              const correct = sectionQuestions.filter((q) => q.isCorrect).length
-              const attempted = sectionQuestions.filter(
-                (q) => q.userAnswer
-              ).length
-              const total = sectionQuestions.length
-              const accuracy =
-                attempted > 0 ? ((correct / attempted) * 100).toFixed(1) : 0
-
-              return (
-                <Card
-                  key={section}
-                  className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all duration-200"
-                >
-                  <CardContent className="p-4">
-                    <div className="text-center">
-                      <Badge className={`mb-3 ${getSectionColor(section)}`}>
-                        {section.replace('_', ' ')}
-                      </Badge>
-
-                      <div className="space-y-2">
-                        <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                          {accuracy}%
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          Accuracy
-                        </div>
-
-                        <Progress value={accuracy} className="h-2" />
-
-                        <div className="text-xs text-slate-600 dark:text-slate-400">
-                          {correct}/{attempted} correct ({total} total)
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            }
+            ([section, sectionQuestions]) => (
+              <div key={section} className="mb-6">
+                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                  {section.replace('_', ' ')} ({sectionQuestions.length})
+                </h4>
+                <div className="grid grid-cols-5 gap-2">
+                  {sectionQuestions.map(({ index }) => {
+                    const question = questions[index]
+                    const status = getQuestionStatus(question)
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => handleQuestionNavigation(index)}
+                        className={`relative w-8 h-8 rounded text-xs font-medium transition-colors ${getQuestionStatusColor(
+                          status
+                        )} ${
+                          index === currentQuestionIndex
+                            ? 'ring-2 ring-blue-500'
+                            : ''
+                        }`}
+                      >
+                        {index + 1}
+                        {question.userAnswer &&
+                          question.userAnswer.length > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full ring-1 ring-white"></span>
+                          )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )
           )}
         </div>
       </div>
@@ -901,6 +960,15 @@ export default function TestEvaluationPage() {
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
+      {/* Attempt History Modal */}
+      <AttemptHistoryModal
+        isOpen={showAttemptHistory}
+        onClose={() => setShowAttemptHistory(false)}
+        testId={testId}
+        testTitle={test?.title || 'Test'}
+        onSelectAttempt={handleSelectAttempt}
+      />
     </div>
   )
 }

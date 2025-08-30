@@ -26,21 +26,17 @@ export async function GET(request, { params }) {
     }
 
     // Fetch test attempt with user answers (same include as before)
-    const testAttempt = await prisma.testAttempt.findFirst({
+    const testAttempt = await prisma.testAttempt.findUnique({
       where: {
         id: testAttemptId,
-        userId: session.user.id,
-        testId,
-        completed: true,
       },
       include: {
         test: {
           select: {
             title: true,
-            description: true,
             durationInMinutes: true,
-            positiveMarks: true,
-            negativeMarks: true,
+            keyTopic: true,
+            type: true,
           },
         },
         answers: {
@@ -82,31 +78,41 @@ export async function GET(request, { params }) {
       )
     }
 
+    // Security and data integrity checks
+    if (testAttempt.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (testAttempt.testId !== testId) {
+      return NextResponse.json(
+        { error: 'Attempt does not belong to this test' },
+        { status: 400 }
+      )
+    }
+
     // === NEW: marks-based score calculation ===
     // total possible marks = sum of positive marks of questions in the attempt
     const totalPossibleMarks = testAttempt.answers.reduce((sum, ans) => {
-      const qPositive =
-        ans.question?.positiveMarks ?? testAttempt.test?.positiveMarks ?? 1
+      if (!ans.question) return sum // Defensively skip if question is missing
+      const qPositive = ans.question.positiveMarks ?? 1
       return sum + (qPositive || 0)
     }, 0)
 
     // total marks obtained = sum of marksObtained (if stored) otherwise infer from correctness/negative marks
     const totalMarksObtained = testAttempt.answers.reduce((sum, ans) => {
+      if (!ans.question) return sum // Defensively skip if question is missing
+
       if (typeof ans.marksObtained === 'number') {
         return sum + ans.marksObtained
       }
 
       // fallback if marksObtained not saved
       if (ans.isCorrect) {
-        return (
-          sum +
-          (ans.question?.positiveMarks ?? testAttempt.test?.positiveMarks ?? 1)
-        )
-      } else if (ans.userAnswer) {
+        return sum + (ans.question.positiveMarks ?? 1)
+      } else if (ans.selectedOption && ans.selectedOption.length > 0) {
         // wrong answer -> negative marks if configured
-        const neg =
-          ans.question?.negativeMarks ?? testAttempt.test?.negativeMarks ?? 0
-        return sum - (neg || 0)
+        const neg = ans.question.negativeMarks ?? 0
+        return sum + (neg || 0) // Add the negative value
       } else {
         // unattempted -> 0
         return sum
