@@ -216,7 +216,7 @@ const TextReveal = () => {
           <div className="text-white anime-text w-full max-w-[80vw] sm:max-w-[75vw] md:max-w-[65vw] lg:max-w-[50vw] xl:max-w-[55vw] space-y-3 sm:space-y-4 md:space-y-6 text-[0.3rem] sm:text-[clamp(0.5rem,1.2vw,0.85rem)] md:text-[clamp(0.6rem,1.4vw,0.95rem)] lg:text-[clamp(0.7rem,1.6vw,1.05rem)] xl:text-[clamp(0.8rem,1.8vw,1.4rem)]">
             <p className="text-center md:text-justify font-black leading-relaxed px-2 sm:px-8 md:px-12">
               Outlawed.in is a smart test-prep platform built exclusively for
-              CLAT aspirants. Powered by Daksh Madhyam, it helps law students
+              CLAT aspirants. Outlawed helps law students
               practice with expertly curated mock tests that match the exact
               CLAT exam pattern.
             </p>
