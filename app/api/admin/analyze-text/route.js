@@ -15,12 +15,17 @@ export async function POST(request) {
       )
     }
 
+    // Strip HTML tags from questionText for AI analysis
+    const plainQuestionText = questionText
+      ? questionText.replace(/<[^>]*>/g, '')
+      : 'Multiple choice question'
+
     // Create a prompt for the AI to analyze the text and extract options
     const prompt = `
 You are an expert at creating multiple choice questions for CLAT (Common Law Admission Test) preparation.
 
 Given the following:
-- Question: "${questionText || 'Multiple choice question'}"
+- Question: "${plainQuestionText}"
 - Section: ${section || 'General'}
 - Text content to analyze: "${text}"
 

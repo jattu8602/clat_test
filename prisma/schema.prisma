@@ -125,6 +125,7 @@ model Question {
 
   questionNumber  Int            // Auto-increment per test
   questionText    String
+  questionTextFormat Json?      // Store formatting data for questionText text
   imageUrls       String[]       // Multiple image URLs
   isComprehension Boolean        @default(false)
   comprehension   String?

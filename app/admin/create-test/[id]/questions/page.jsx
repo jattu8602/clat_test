@@ -106,6 +106,7 @@ export default function CreateQuestionsPage() {
 
   const [questionData, setQuestionData] = useState({
     questionText: '',
+    questionTextFormat: null,
     imageUrls: [],
     isComprehension: false,
     comprehension: '',
@@ -177,6 +178,8 @@ export default function CreateQuestionsPage() {
     setEditingQuestion(question)
     setQuestionData({
       ...question,
+      questionText: question.questionText || '',
+      questionTextFormat: question.questionTextFormat || null,
       positiveMarks: question.positiveMarks || 1.0,
       negativeMarks: question.negativeMarks || -0.25,
       options: question.options || ['', '', '', ''],
@@ -250,6 +253,7 @@ export default function CreateQuestionsPage() {
     setEditingQuestion(null)
     setQuestionData({
       questionText: '',
+      questionTextFormat: null,
       imageUrls: [],
       isComprehension: false,
       comprehension: '',
@@ -277,6 +281,15 @@ export default function CreateQuestionsPage() {
   }
 
   const handleInputChange = (field, value) => {
+    if (field === 'questionText') {
+      setQuestionData((prev) => ({
+        ...prev,
+        questionText: value.html,
+        questionTextFormat: value.json,
+      }))
+      return
+    }
+
     if (field === 'comprehension') {
       setQuestionData((prev) => ({
         ...prev,
@@ -490,7 +503,10 @@ export default function CreateQuestionsPage() {
 
     try {
       // Validate required fields
-      if (!questionData.questionText) {
+      if (
+        !questionData.questionText ||
+        questionData.questionText.trim() === ''
+      ) {
         toast.error('Question text is required')
         setLoading(false)
         return
@@ -601,9 +617,11 @@ export default function CreateQuestionsPage() {
         const currentSection = questionData.section
         setQuestionData({
           questionText: '',
+          questionTextFormat: null,
           imageUrls: [],
           isComprehension: false,
           comprehension: '',
+          comprehensionFormat: null,
           isTable: false,
           tableData: {
             rows: 2,
@@ -622,6 +640,7 @@ export default function CreateQuestionsPage() {
           negativeMarks: -0.25,
           section: currentSection,
           explanation: '',
+          explanationFormat: null,
         })
         setEditingQuestion(null)
 
@@ -875,22 +894,21 @@ export default function CreateQuestionsPage() {
                   </div>
                   {/* Question Text */}
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="questionText"
-                      className="text-sm font-medium text-slate-900 dark:text-slate-50"
-                    >
-                      Question Text <span className="text-red-500 pl-1">*</span>
-                    </Label>
-                    <Textarea
-                      id="questionText"
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="questionText"
+                        className="text-sm font-medium text-slate-900 dark:text-slate-50"
+                      >
+                        Question Text{' '}
+                        <span className="text-red-500 pl-1">*</span>
+                      </Label>
+                      <RichTextEditorHelp />
+                    </div>
+                    <RichTextEditor
                       value={questionData.questionText}
-                      onChange={(e) =>
-                        handleInputChange('questionText', e.target.value)
+                      onChange={(value) =>
+                        handleInputChange('questionText', value)
                       }
-                      placeholder="Enter your question here..."
-                      rows={4}
-                      className="resize-none border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 text-slate-900 dark:text-slate-50"
-                      required
                     />
                   </div>
 
@@ -1508,6 +1526,7 @@ export default function CreateQuestionsPage() {
                     disabled={
                       loading ||
                       !questionData.questionText ||
+                      questionData.questionText.trim() === '' ||
                       (isPreviousSection && !editingQuestion)
                     }
                     className="px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-slate-900 dark:text-slate-50"

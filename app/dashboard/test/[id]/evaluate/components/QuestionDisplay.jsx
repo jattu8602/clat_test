@@ -111,9 +111,12 @@ export default function QuestionDisplay({
             <CardContent className="p-6">
               {/* Question Text */}
               <div className="mb-6">
-                <p className="text-lg text-slate-900 dark:text-white">
-                  {currentQuestion.questionText}
-                </p>
+                <div
+                  className="text-lg text-slate-900 dark:text-white prose dark:prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: currentQuestion.questionText,
+                  }}
+                />
               </div>
 
               {/* Comprehension Text */}

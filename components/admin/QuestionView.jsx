@@ -48,9 +48,14 @@ export default function QuestionView({
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-            {question.questionText}
-          </p>
+          <div className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+            <div
+              className="prose prose-sm dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: question.questionText,
+              }}
+            />
+          </div>
         </div>
         <div className="flex items-center space-x-1 ml-2">
           {question.correctAnswers?.length > 0 ? (

@@ -194,11 +194,12 @@ export default function TestEvaluationPage() {
     evaluationData?.questions?.filter((question) => {
       if (selectedSection !== 'ALL' && question.section !== selectedSection)
         return false
-      if (
-        searchQuery &&
-        !question.questionText.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-        return false
+      if (searchQuery) {
+        // Strip HTML tags for search
+        const plainText = question.questionText.replace(/<[^>]*>/g, '')
+        if (!plainText.toLowerCase().includes(searchQuery.toLowerCase()))
+          return false
+      }
       return true
     }) || []
 

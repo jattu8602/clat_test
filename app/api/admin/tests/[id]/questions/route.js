@@ -118,11 +118,13 @@ export async function POST(request, { params }) {
         testId,
         questionNumber: nextQuestionNumber,
         questionText: questionData.questionText.trim(),
+        questionTextFormat: questionData.questionTextFormat || null,
         imageUrls: questionData.imageUrls?.filter((url) => url?.trim()) || [],
         isComprehension: questionData.isComprehension || false,
         comprehension: questionData.isComprehension
           ? questionData.comprehension?.trim()
           : null,
+        comprehensionFormat: questionData.comprehensionFormat || null,
         isTable: questionData.isTable || false,
         tableData: questionData.tableData,
         questionType: questionData.questionType,
@@ -140,6 +142,7 @@ export async function POST(request, { params }) {
         negativeMarks: Number(questionData.negativeMarks) || -0.25,
         section: questionData.section,
         explanation: questionData.explanation?.trim() || null,
+        explanationFormat: questionData.explanationFormat || null,
       },
     })
 
@@ -211,9 +214,11 @@ export async function PUT(request, { params }) {
     const body = await request.json()
     const {
       questionText,
+      questionTextFormat,
       imageUrls,
       isComprehension,
       comprehension,
+      comprehensionFormat,
       isTable,
       tableData,
       questionType,
@@ -224,15 +229,18 @@ export async function PUT(request, { params }) {
       negativeMarks,
       section,
       explanation,
+      explanationFormat,
     } = body
 
     const updatedQuestion = await prisma.question.update({
       where: { id: questionId },
       data: {
         questionText,
+        questionTextFormat,
         imageUrls,
         isComprehension,
         comprehension,
+        comprehensionFormat,
         isTable,
         tableData,
         questionType,
@@ -243,6 +251,7 @@ export async function PUT(request, { params }) {
         negativeMarks,
         section,
         explanation,
+        explanationFormat,
       },
     })
 

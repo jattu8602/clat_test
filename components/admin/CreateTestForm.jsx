@@ -210,7 +210,7 @@ export default function CreateTestForm({ editingTest, onCancel, onSuccess }) {
 
               {/* Key Topic Suggestions */}
               {showSuggestions && keyTopicSuggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-10 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
                   {keyTopicSuggestions.map((topic, index) => (
                     <button
                       key={index}

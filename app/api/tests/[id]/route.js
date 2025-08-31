@@ -77,9 +77,11 @@ export async function GET(request, { params }) {
       id: question.id,
       questionNumber: question.questionNumber,
       questionText: question.questionText,
+      questionTextFormat: question.questionTextFormat,
       imageUrls: question.imageUrls,
       isComprehension: question.isComprehension,
       comprehension: question.comprehension,
+      comprehensionFormat: question.comprehensionFormat,
       isTable: question.isTable,
       tableData: question.tableData,
       questionType: question.questionType,
@@ -91,6 +93,7 @@ export async function GET(request, { params }) {
       negativeMarks: question.negativeMarks,
       section: question.section,
       explanation: question.explanation,
+      explanationFormat: question.explanationFormat,
     }))
 
     return NextResponse.json({
