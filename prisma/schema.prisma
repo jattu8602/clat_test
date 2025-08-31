@@ -200,7 +200,6 @@ model PaymentPlan {
   duration      Int      // in days
   durationType  String   @default("days") // days, months, years, until_date
   untilDate     DateTime? // Only if durationType is until_date
-  thumbnailUrl  String?
   description   String?
   discount      Float?   // Discount percentage (0-100)
   isActive      Boolean  @default(true)

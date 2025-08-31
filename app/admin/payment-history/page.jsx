@@ -21,8 +21,23 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import ImageUpload from '@/components/ui/image-upload'
-import { ImageIcon } from 'lucide-react'
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Calendar,
+  Clock,
+  DollarSign,
+  Percent,
+  CheckCircle,
+  XCircle,
+  TrendingUp,
+  Users,
+  Zap,
+  Crown,
+  Star,
+  Sparkles,
+} from 'lucide-react'
 
 export default function AdminPaymentHistory() {
   const [plans, setPlans] = useState([])
@@ -33,16 +48,12 @@ export default function AdminPaymentHistory() {
     name: '',
     price: '',
     duration: '',
-    durationType: 'days', // days, months, years, until_date
+    durationType: 'days',
     untilDate: '',
-    thumbnailUrl: '',
     description: '',
     discount: '',
     isActive: true,
   })
-  const [thumbnailFile, setThumbnailFile] = useState(null)
-  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
-  const [showThumbnailSuccess, setShowThumbnailSuccess] = useState(false)
 
   useEffect(() => {
     fetchPlans()
@@ -63,7 +74,6 @@ export default function AdminPaymentHistory() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Form validation
     if (!formData.name.trim()) {
       alert('Please enter a plan name')
       return
@@ -91,8 +101,6 @@ export default function AdminPaymentHistory() {
         ? `/api/admin/payment-plans/${editingPlan.id}`
         : '/api/admin/payment-plans'
       const method = editingPlan ? 'PUT' : 'POST'
-
-      console.log('Submitting form data:', formData)
 
       const response = await fetch(url, {
         method,
@@ -129,12 +137,10 @@ export default function AdminPaymentHistory() {
       duration: plan.duration.toString(),
       durationType: plan.durationType || 'days',
       untilDate: plan.untilDate || '',
-      thumbnailUrl: plan.thumbnailUrl || '',
       description: plan.description || '',
       discount: plan.discount?.toString() || '',
       isActive: plan.isActive,
     })
-    setThumbnailFile(plan.thumbnailUrl || null)
     setIsEditDialogOpen(true)
   }
 
@@ -160,12 +166,10 @@ export default function AdminPaymentHistory() {
       duration: '',
       durationType: 'days',
       untilDate: '',
-      thumbnailUrl: '',
       description: '',
       discount: '',
       isActive: true,
     })
-    setThumbnailFile(null)
   }
 
   const calculateDiscountedPrice = () => {
@@ -177,26 +181,6 @@ export default function AdminPaymentHistory() {
     return price
   }
 
-  const handleThumbnailUpload = (imageUrl) => {
-    if (imageUrl) {
-      setIsUploadingThumbnail(true)
-      setFormData({ ...formData, thumbnailUrl: imageUrl })
-      setThumbnailFile(imageUrl)
-      // Reset loading state after a short delay
-      setTimeout(() => {
-        setIsUploadingThumbnail(false)
-        setShowThumbnailSuccess(true)
-        // Hide success message after 3 seconds
-        setTimeout(() => setShowThumbnailSuccess(false), 3000)
-      }, 1000)
-    }
-  }
-
-  const handleThumbnailRemove = () => {
-    setFormData({ ...formData, thumbnailUrl: '' })
-    setThumbnailFile(null)
-  }
-
   const formatDuration = (plan) => {
     if (plan.durationType === 'until_date' && plan.untilDate) {
       return `Until ${new Date(plan.untilDate).toLocaleDateString()}`
@@ -204,58 +188,530 @@ export default function AdminPaymentHistory() {
     return `${plan.duration} ${plan.durationType}`
   }
 
+  const getPlanIcon = (plan) => {
+    if (plan.name.toLowerCase().includes('premium')) return Crown
+    if (plan.name.toLowerCase().includes('basic')) return Star
+    if (plan.name.toLowerCase().includes('pro')) return Zap
+    return TrendingUp
+  }
+
+  const getPlanColor = (plan) => {
+    if (plan.name.toLowerCase().includes('premium'))
+      return 'from-purple-500 to-pink-500'
+    if (plan.name.toLowerCase().includes('basic'))
+      return 'from-blue-500 to-cyan-500'
+    if (plan.name.toLowerCase().includes('pro'))
+      return 'from-orange-500 to-red-500'
+    return 'from-green-500 to-emerald-500'
+  }
+
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Payment Plans Management</h1>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>Create New Plan</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+      <div className="container mx-auto p-6">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                Payment Plans
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">
+                Manage subscription plans and pricing
+              </p>
+            </div>
+            <Dialog
+              open={isCreateDialogOpen}
+              onOpenChange={setIsCreateDialogOpen}
+            >
+              <DialogTrigger asChild>
+                <Button
+                  onClick={() => resetForm()}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Plan
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-0 shadow-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white">
+                    Create New Payment Plan
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="name"
+                        className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        Plan Name <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                        required
+                        className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
+                        placeholder="e.g., Premium Plan"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="price"
+                        className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        Price (₹) <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        value={formData.price}
+                        onChange={(e) =>
+                          setFormData({ ...formData, price: e.target.value })
+                        }
+                        required
+                        className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
+                        placeholder="999"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="durationType"
+                        className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        Duration Type <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.durationType}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, durationType: value })
+                        }
+                      >
+                        <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                          <SelectItem value="days">Days</SelectItem>
+                          <SelectItem value="months">Months</SelectItem>
+                          <SelectItem value="years">Years</SelectItem>
+                          <SelectItem value="until_date">
+                            Until Specific Date
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      {formData.durationType === 'until_date' ? (
+                        <div>
+                          <Label
+                            htmlFor="untilDate"
+                            className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                          >
+                            Until Date <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="untilDate"
+                            type="date"
+                            value={formData.untilDate}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                untilDate: e.target.value,
+                              })
+                            }
+                            required
+                            className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <Label
+                            htmlFor="duration"
+                            className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                          >
+                            Duration <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="duration"
+                            type="number"
+                            value={formData.duration}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                duration: e.target.value,
+                              })
+                            }
+                            required
+                            className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
+                            min="1"
+                            placeholder="30"
+                          />
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Number of {formData.durationType}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="discount"
+                        className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        Discount (%)
+                      </Label>
+                      <Input
+                        id="discount"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.discount}
+                        onChange={(e) =>
+                          setFormData({ ...formData, discount: e.target.value })
+                        }
+                        placeholder="0"
+                        className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <div className="w-full p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                        <Label className="text-sm text-green-700 dark:text-green-300 font-medium">
+                          Final Price
+                        </Label>
+                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                          ₹{calculateDiscountedPrice().toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="description"
+                      className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                    >
+                      Description
+                    </Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
+                      rows={3}
+                      className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
+                      placeholder="Describe the plan features and benefits..."
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="isActive"
+                      checked={formData.isActive}
+                      onChange={(e) =>
+                        setFormData({ ...formData, isActive: e.target.checked })
+                      }
+                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <Label
+                      htmlFor="isActive"
+                      className="text-sm font-medium text-slate-700 dark:text-slate-300"
+                    >
+                      Active Plan
+                    </Label>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCreateDialogOpen(false)}
+                      className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                    >
+                      {editingPlan ? 'Update Plan' : 'Create Plan'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm font-medium">
+                    Total Plans
+                  </p>
+                  <p className="text-3xl font-bold">{plans.length}</p>
+                </div>
+                <TrendingUp className="w-8 h-8 text-blue-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm font-medium">
+                    Active Plans
+                  </p>
+                  <p className="text-3xl font-bold">
+                    {plans.filter((p) => p.isActive).length}
+                  </p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-green-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm font-medium">
+                    Discounted Plans
+                  </p>
+                  <p className="text-3xl font-bold">
+                    {plans.filter((p) => p.discount > 0).length}
+                  </p>
+                </div>
+                <Percent className="w-8 h-8 text-purple-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-100 text-sm font-medium">
+                    Avg Price
+                  </p>
+                  <p className="text-3xl font-bold">
+                    ₹
+                    {plans.length > 0
+                      ? Math.round(
+                          plans.reduce((sum, p) => sum + p.price, 0) /
+                            plans.length
+                        )
+                      : 0}
+                  </p>
+                </div>
+                <DollarSign className="w-8 h-8 text-orange-200" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Plans Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plans.map((plan) => {
+            const Icon = getPlanIcon(plan)
+            const gradientClass = getPlanColor(plan)
+
+            return (
+              <Card
+                key={plan.id}
+                className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-white dark:bg-slate-800"
+              >
+                {/* Gradient Header */}
+                <div className={`h-2 bg-gradient-to-r ${gradientClass}`} />
+
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className={`p-2 rounded-lg bg-gradient-to-r ${gradientClass} text-white`}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-slate-900 dark:text-white">
+                          {plan.name}
+                        </CardTitle>
+                        <Badge
+                          variant={plan.isActive ? 'default' : 'secondary'}
+                          className={`mt-1 ${
+                            plan.isActive
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                              : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          {plan.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          Duration:
+                        </span>
+                      </div>
+                      <span className="font-semibold text-slate-900 dark:text-white">
+                        {formatDuration(plan)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          Original Price:
+                        </span>
+                      </div>
+                      <span className="font-semibold text-slate-900 dark:text-white">
+                        ₹{plan.price}
+                      </span>
+                    </div>
+
+                    {plan.discount && plan.discount > 0 && (
+                      <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center space-x-2">
+                          <Percent className="w-4 h-4 text-green-600 dark:text-green-400" />
+                          <span className="text-sm text-green-700 dark:text-green-300">
+                            Discount:
+                          </span>
+                        </div>
+                        <span className="font-semibold text-green-600 dark:text-green-400">
+                          {plan.discount}%
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                        Final Price:
+                      </span>
+                      <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                        ₹
+                        {plan.discount
+                          ? (
+                              plan.price -
+                              (plan.price * plan.discount) / 100
+                            ).toFixed(2)
+                          : plan.price}
+                      </span>
+                    </div>
+                  </div>
+
+                  {plan.description && (
+                    <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {plan.description}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex space-x-2 pt-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(plan)}
+                      className="flex-1 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDelete(plan.id)}
+                      className="flex-1"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-0 shadow-2xl">
             <DialogHeader>
-              <DialogTitle>Create New Payment Plan</DialogTitle>
+              <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white">
+                Edit Payment Plan
+              </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Same form fields as create dialog */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name" className="flex items-center gap-1">
-                    Plan Name <span className="text-red-500">*</span>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="edit-name"
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    Plan Name
                   </Label>
                   <Input
-                    id="name"
+                    id="edit-name"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
                     required
-                    className="mt-1"
+                    className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="price" className="flex items-center gap-1">
-                    Price (₹) <span className="text-red-500">*</span>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="edit-price"
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    Price (₹)
                   </Label>
                   <Input
-                    id="price"
+                    id="edit-price"
                     type="number"
                     value={formData.price}
                     onChange={(e) =>
                       setFormData({ ...formData, price: e.target.value })
                     }
                     required
-                    className="mt-1"
+                    className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-2">
                   <Label
-                    htmlFor="durationType"
-                    className="flex items-center gap-1"
+                    htmlFor="edit-durationType"
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-300"
                   >
-                    Duration Type <span className="text-red-500">*</span>
+                    Duration Type
                   </Label>
                   <Select
                     value={formData.durationType}
@@ -263,10 +719,10 @@ export default function AdminPaymentHistory() {
                       setFormData({ ...formData, durationType: value })
                     }
                   >
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                       <SelectItem value="days">Days</SelectItem>
                       <SelectItem value="months">Months</SelectItem>
                       <SelectItem value="years">Years</SelectItem>
@@ -276,17 +732,17 @@ export default function AdminPaymentHistory() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="space-y-2">
                   {formData.durationType === 'until_date' ? (
                     <div>
                       <Label
-                        htmlFor="untilDate"
-                        className="flex items-center gap-1"
+                        htmlFor="edit-untilDate"
+                        className="text-sm font-semibold text-slate-700 dark:text-slate-300"
                       >
-                        Until Date <span className="text-red-500">*</span>
+                        Until Date
                       </Label>
                       <Input
-                        id="untilDate"
+                        id="edit-untilDate"
                         type="date"
                         value={formData.untilDate}
                         onChange={(e) =>
@@ -296,41 +752,42 @@ export default function AdminPaymentHistory() {
                           })
                         }
                         required
-                        className="mt-1"
+                        className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
                       />
                     </div>
                   ) : (
                     <div>
                       <Label
-                        htmlFor="duration"
-                        className="flex items-center gap-1"
+                        htmlFor="edit-duration"
+                        className="text-sm font-semibold text-slate-700 dark:text-slate-300"
                       >
-                        Duration <span className="text-red-500">*</span>
+                        Duration
                       </Label>
                       <Input
-                        id="duration"
+                        id="edit-duration"
                         type="number"
                         value={formData.duration}
                         onChange={(e) =>
                           setFormData({ ...formData, duration: e.target.value })
                         }
                         required
-                        className="mt-1"
-                        min="1"
+                        className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Enter the number of {formData.durationType}
-                      </p>
                     </div>
                   )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="discount">Discount (%)</Label>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="edit-discount"
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                  >
+                    Discount (%)
+                  </Label>
                   <Input
-                    id="discount"
+                    id="edit-discount"
                     type="number"
                     min="0"
                     max="100"
@@ -339,449 +796,77 @@ export default function AdminPaymentHistory() {
                       setFormData({ ...formData, discount: e.target.value })
                     }
                     placeholder="0"
+                    className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
                   />
-
-                  
                 </div>
                 <div className="flex items-end">
-                  <div className="w-full p-3 bg-gray-100 rounded-md">
-                    <Label className="text-sm text-gray-600">Final Price</Label>
-                    <div className="text-lg font-semibold">
+                  <div className="w-full p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <Label className="text-sm text-green-700 dark:text-green-300 font-medium">
+                      Final Price
+                    </Label>
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                       ₹{calculateDiscountedPrice().toFixed(2)}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="description">Description</Label>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="edit-description"
+                  className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Description
+                </Label>
                 <Textarea
-                  id="description"
+                  id="edit-description"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
                   rows={3}
+                  className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-800"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="thumbnailUrl">Thumbnail Image</Label>
-                <ImageUpload
-                  onUpload={handleThumbnailUpload}
-                  multiple={false}
-                  folder="payment-plans"
-                  placeholder="Click to upload thumbnail image"
-                  className="mt-2"
-                />
-                {formData.thumbnailUrl && (
-                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="relative">
-                          <img
-                            src={formData.thumbnailUrl}
-                            alt="Thumbnail preview"
-                            className="w-16 h-16 object-cover rounded-md"
-                          />
-                          {isUploadingThumbnail && (
-                            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-md flex items-center justify-center">
-                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">
-                            Current thumbnail
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formData.thumbnailUrl.length > 50
-                              ? formData.thumbnailUrl.substring(0, 50) + '...'
-                              : formData.thumbnailUrl}
-                          </p>
-                          {isUploadingThumbnail && (
-                            <p className="text-xs text-blue-600 mt-1">
-                              Uploading...
-                            </p>
-                          )}
-                          {showThumbnailSuccess && (
-                            <p className="text-xs text-green-600 mt-1">
-                              ✓ Uploaded successfully!
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleThumbnailRemove}
-                        disabled={isUploadingThumbnail}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
                 <input
                   type="checkbox"
-                  id="isActive"
+                  id="edit-isActive"
                   checked={formData.isActive}
                   onChange={(e) =>
                     setFormData({ ...formData, isActive: e.target.checked })
                   }
+                  className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                 />
-                <Label htmlFor="isActive">Active Plan</Label>
+                <Label
+                  htmlFor="edit-isActive"
+                  className="text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Active Plan
+                </Label>
               </div>
 
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end space-x-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
+                  onClick={() => setIsEditDialogOpen(false)}
+                  className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {editingPlan ? 'Update Plan' : 'Create Plan'}
+                <Button
+                  type="submit"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                >
+                  Update Plan
                 </Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {plans.map((plan) => (
-          <Card key={plan.id} className="relative">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-xl">{plan.name}</CardTitle>
-                <Badge variant={plan.isActive ? 'default' : 'secondary'}>
-                  {plan.isActive ? 'Active' : 'Inactive'}
-                </Badge>
-              </div>
-              {plan.thumbnailUrl ? (
-                <div className="relative">
-                  <img
-                    src={plan.thumbnailUrl}
-                    alt={plan.name}
-                    className="w-full h-32 object-cover rounded-md"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <Badge variant="secondary" className="text-xs">
-                      Image
-                    </Badge>
-                  </div>
-                </div>
-              ) : (
-                <div className="w-full h-32 bg-gray-100 rounded-md flex items-center justify-center">
-                  <ImageIcon className="h-12 w-12 text-gray-400" />
-                  <span className="text-xs text-gray-500 ml-2">
-                    No thumbnail
-                  </span>
-                </div>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Duration:</span>
-                  <span className="font-medium">{formatDuration(plan)}</span>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Original Price:</span>
-                  <span className="font-medium">₹{plan.price}</span>
-                </div>
-
-                {plan.discount && plan.discount > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Discount:</span>
-                    <span className="font-medium text-green-600">
-                      {plan.discount}%
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Final Price:</span>
-                  <span className="text-lg font-bold text-blue-600">
-                    ₹
-                    {plan.discount
-                      ? (
-                          plan.price -
-                          (plan.price * plan.discount) / 100
-                        ).toFixed(2)
-                      : plan.price}
-                  </span>
-                </div>
-
-                {plan.description && (
-                  <p className="text-sm text-gray-600 mt-2">
-                    {plan.description}
-                  </p>
-                )}
-
-                <div className="flex space-x-2 pt-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEdit(plan)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDelete(plan.id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-
-                {/* Quick thumbnail actions */}
-                {plan.thumbnailUrl && (
-                  <div className="pt-2 border-t">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        if (confirm('Remove thumbnail from this plan?')) {
-                          // Update plan to remove thumbnail
-                          fetch(`/api/admin/payment-plans/${plan.id}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              ...plan,
-                              thumbnailUrl: '',
-                            }),
-                          }).then(() => fetchPlans())
-                        }
-                      }}
-                      className="w-full text-xs text-gray-500 hover:text-red-500"
-                    >
-                      Remove Thumbnail
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Payment Plan</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Same form fields as create dialog */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-name">Plan Name</Label>
-                <Input
-                  id="edit-name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-price">Price (₹)</Label>
-                <Input
-                  id="edit-price"
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) =>
-                    setFormData({ ...formData, price: e.target.value })
-                  }
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-durationType">Duration Type</Label>
-                <Select
-                  value={formData.durationType}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, durationType: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="days">Days</SelectItem>
-                    <SelectItem value="months">Months</SelectItem>
-                    <SelectItem value="years">Years</SelectItem>
-                    <SelectItem value="until_date">
-                      Until Specific Date
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                {formData.durationType === 'until_date' ? (
-                  <div>
-                    <Label htmlFor="edit-untilDate">Until Date</Label>
-                    <Input
-                      id="edit-untilDate"
-                      type="date"
-                      value={formData.untilDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, untilDate: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <Label htmlFor="edit-duration">Duration</Label>
-                    <Input
-                      id="edit-duration"
-                      type="number"
-                      value={formData.duration}
-                      onChange={(e) =>
-                        setFormData({ ...formData, duration: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-discount">Discount (%)</Label>
-                <Input
-                  id="edit-discount"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.discount}
-                  onChange={(e) =>
-                    setFormData({ ...formData, discount: e.target.value })
-                  }
-                  placeholder="0"
-                />
-              </div>
-              <div className="flex items-end">
-                <div className="w-full p-3 bg-gray-100 rounded-md">
-                  <Label className="text-sm text-gray-600">Final Price</Label>
-                  <div className="text-lg font-semibold">
-                    ₹{calculateDiscountedPrice().toFixed(2)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="edit-description">Description</Label>
-              <Textarea
-                id="edit-description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="edit-thumbnailUrl">Thumbnail Image</Label>
-              <ImageUpload
-                onUpload={handleThumbnailUpload}
-                multiple={false}
-                folder="payment-plans"
-                placeholder="Click to upload thumbnail image"
-                className="mt-2"
-              />
-              {formData.thumbnailUrl && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="relative">
-                        <img
-                          src={formData.thumbnailUrl}
-                          alt="Thumbnail preview"
-                          className="w-16 h-16 object-cover rounded-md"
-                        />
-                        {isUploadingThumbnail && (
-                          <div className="absolute inset-0 bg-black bg-opacity-50 rounded-md flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Current thumbnail</p>
-                        <p className="text-xs text-gray-500">
-                          {formData.thumbnailUrl.length > 50
-                            ? formData.thumbnailUrl.substring(0, 50) + '...'
-                            : formData.thumbnailUrl}
-                        </p>
-                        {isUploadingThumbnail && (
-                          <p className="text-xs text-blue-600 mt-1">
-                            Uploading...
-                          </p>
-                        )}
-                        {showThumbnailSuccess && (
-                          <p className="text-xs text-green-600 mt-1">
-                            ✓ Uploaded successfully!
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleThumbnailRemove}
-                      disabled={isUploadingThumbnail}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="edit-isActive"
-                checked={formData.isActive}
-                onChange={(e) =>
-                  setFormData({ ...formData, isActive: e.target.checked })
-                }
-              />
-              <Label htmlFor="edit-isActive">Active Plan</Label>
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Update Plan</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

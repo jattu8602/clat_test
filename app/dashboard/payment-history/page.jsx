@@ -718,14 +718,14 @@ export default function UserPaymentHistory() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 p-4 md:p-6">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-2">
             Payment History & Plans
           </h1>
-          <p className="text-slate-600 dark:text-slate-300">
+          <p className="text-slate-600 dark:text-slate-400 text-lg">
             Manage your subscription and view payment history
           </p>
         </div>
@@ -757,41 +757,54 @@ export default function UserPaymentHistory() {
 
         {/* Current Plan Status */}
         {userStatus?.isCurrentlyPaid && userStatus?.currentPlan && (
-          <Card className="mb-8 border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
+          <Card className="mb-8 border-0 shadow-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 to-emerald-700/20"></div>
+            <CardHeader className="relative">
+              <CardTitle className="flex items-center gap-3 text-white text-2xl">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
                 <span>Current Active Plan</span>
-                <Badge
-                  variant="default"
-                  className="bg-green-600 dark:bg-green-500"
-                >
+                <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
                   Active
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    Plan:
+            <CardContent className="relative">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-4 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-green-100 text-sm font-medium">
+                    Plan
                   </span>
-                  <div className="font-semibold text-lg text-slate-900 dark:text-white">
+                  <div className="font-bold text-xl text-white mt-1">
                     {userStatus.currentPlan.name}
                   </div>
                 </div>
-                <div>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    Duration:
+                <div className="p-4 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-green-100 text-sm font-medium">
+                    Duration
                   </span>
-                  <div className="font-semibold text-slate-900 dark:text-white">
+                  <div className="font-bold text-xl text-white mt-1">
                     {formatDuration(userStatus.currentPlan)}
                   </div>
                 </div>
-                <div>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    Days Remaining:
+                <div className="p-4 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-green-100 text-sm font-medium">
+                    Days Remaining
                   </span>
-                  <div className="font-semibold text-lg text-green-600 dark:text-green-400">
+                  <div className="font-bold text-2xl text-yellow-300 mt-1">
                     {userStatus.daysRemaining} days
                   </div>
                 </div>
@@ -803,15 +816,15 @@ export default function UserPaymentHistory() {
         {/* Available Plans for Free Users */}
         {!userStatus?.isCurrentlyPaid && (
           <div className="mb-8">
-            <h2 className="text-2xl font-semibold mb-6 text-slate-900 dark:text-white">
-              Available Plans
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-6">
+              Choose Your Plan
             </h2>
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
                   <Card
                     key={i}
-                    className="animate-pulse border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    className="animate-pulse border-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm"
                   >
                     <CardHeader>
                       <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
@@ -830,87 +843,151 @@ export default function UserPaymentHistory() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {plans.map((plan) => (
-                  <Card
-                    key={plan.id}
-                    className="relative hover:shadow-lg transition-all duration-200 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-600 bg-white dark:bg-slate-800 group"
-                  >
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-xl text-slate-900 dark:text-white">
-                          {plan.name}
-                        </CardTitle>
-                        {plan.discount && plan.discount > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200"
-                          >
-                            {plan.discount}% OFF
+                {plans.map((plan, index) => {
+                  const getPlanGradient = () => {
+                    const gradients = [
+                      'from-blue-500 to-cyan-500',
+                      'from-purple-500 to-pink-500',
+                      'from-orange-500 to-red-500',
+                      'from-green-500 to-emerald-500',
+                      'from-indigo-500 to-purple-500',
+                      'from-pink-500 to-rose-500',
+                    ]
+                    return gradients[index % gradients.length]
+                  }
+
+                  return (
+                    <Card
+                      key={plan.id}
+                      className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:scale-105"
+                    >
+                      {/* Gradient Header */}
+                      <div
+                        className={`h-2 bg-gradient-to-r ${getPlanGradient()}`}
+                      />
+
+                      {/* Popular Badge */}
+                      {index === 1 && (
+                        <div className="absolute top-4 right-4 z-10">
+                          <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-0 shadow-lg">
+                            Most Popular
                           </Badge>
-                        )}
-                      </div>
-                      {plan.thumbnailUrl && (
-                        <img
-                          src={plan.thumbnailUrl}
-                          alt={plan.name}
-                          className="w-full h-32 object-cover rounded-md mt-3"
-                        />
+                        </div>
                       )}
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">
-                            Duration:
-                          </span>
-                          <span className="font-medium text-slate-900 dark:text-white">
-                            {formatDuration(plan)}
-                          </span>
-                        </div>
 
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">
-                            Original Price:
-                          </span>
-                          <span className="font-medium text-slate-900 dark:text-white">
-                            ₹{plan.price}
-                          </span>
+                      <CardHeader className="pb-4">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white">
+                            {plan.name}
+                          </CardTitle>
+                          {plan.discount && plan.discount > 0 && (
+                            <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white border-0 shadow-md">
+                              {plan.discount}% OFF
+                            </Badge>
+                          )}
                         </div>
+                      </CardHeader>
 
-                        {plan.discount && plan.discount > 0 && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-slate-600 dark:text-slate-400">
-                              Discount:
-                            </span>
-                            <span className="font-medium text-green-600 dark:text-green-400">
-                              {plan.discount}%
+                      <CardContent className="space-y-6">
+                        {/* Price Section */}
+                        <div className="text-center">
+                          <div className="flex items-baseline justify-center gap-2">
+                            {plan.discount && plan.discount > 0 && (
+                              <span className="text-2xl text-slate-400 line-through">
+                                ₹{plan.price}
+                              </span>
+                            )}
+                            <span className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                              ₹
+                              {plan.discount
+                                ? (
+                                    plan.price -
+                                    (plan.price * plan.discount) / 100
+                                  ).toFixed(0)
+                                : plan.price}
                             </span>
                           </div>
-                        )}
+                          <p className="text-slate-600 dark:text-slate-400 mt-1">
+                            {formatDuration(plan)}
+                          </p>
+                        </div>
 
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">
-                            Final Price:
-                          </span>
-                          <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                            ₹
-                            {plan.discount
-                              ? (
-                                  plan.price -
-                                  (plan.price * plan.discount) / 100
-                                ).toFixed(2)
-                              : plan.price}
-                          </span>
+                        {/* Features */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                            <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                              <svg
+                                className="w-4 h-4 text-green-600 dark:text-green-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </div>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">
+                              Access to all premium tests
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                            <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                              <svg
+                                className="w-4 h-4 text-green-600 dark:text-green-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </div>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">
+                              Detailed performance analytics
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                            <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full">
+                              <svg
+                                className="w-4 h-4 text-green-600 dark:text-green-400"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </div>
+                            <span className="text-sm text-slate-700 dark:text-slate-300">
+                              Unlimited test attempts
+                            </span>
+                          </div>
                         </div>
 
                         {plan.description && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                            {plan.description}
-                          </p>
+                          <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <p className="text-sm text-slate-700 dark:text-slate-300 text-center">
+                              {plan.description}
+                            </p>
+                          </div>
                         )}
 
                         <Button
-                          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                          className={`w-full py-3 text-lg font-semibold bg-gradient-to-r ${getPlanGradient()} hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white border-0`}
                           onClick={() => handlePurchase(plan)}
                           disabled={!razorpayLoaded || !razorpayKey}
                         >
@@ -922,13 +999,13 @@ export default function UserPaymentHistory() {
                           ) : !razorpayKey ? (
                             'Unavailable'
                           ) : (
-                            'Purchase Plan'
+                            'Get Started'
                           )}
                         </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -936,13 +1013,34 @@ export default function UserPaymentHistory() {
 
         {/* Payment History */}
         <div>
-          <h2 className="text-2xl font-semibold mb-6 text-slate-900 dark:text-white">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-6">
             Payment History
           </h2>
           {userPayments.length === 0 ? (
-            <Card className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-              <CardContent className="p-6 text-center text-slate-500 dark:text-slate-400">
-                No payment history found.
+            <Card className="border-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-lg">
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                  No Payment History
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400">
+                  You haven't made any payments yet. Choose a plan above to get
+                  started.
+                </p>
               </CardContent>
             </Card>
           ) : (
@@ -950,55 +1048,105 @@ export default function UserPaymentHistory() {
               {userPayments.map((payment) => (
                 <Card
                   key={payment.id}
-                  className="hover:shadow-md transition-all duration-200 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  className="group hover:shadow-xl transition-all duration-300 border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:scale-[1.02]"
                 >
                   <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                      <div>
-                        <span className="text-sm text-slate-600 dark:text-slate-400">
-                          Plan:
-                        </span>
-                        <div className="font-semibold text-slate-900 dark:text-white">
-                          {payment.plan.name}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`p-3 rounded-lg ${
+                            payment.status === 'SUCCESS'
+                              ? 'bg-green-100 dark:bg-green-900/30'
+                              : payment.status === 'PENDING'
+                              ? 'bg-yellow-100 dark:bg-yellow-900/30'
+                              : 'bg-red-100 dark:bg-red-900/30'
+                          }`}
+                        >
+                          <svg
+                            className={`w-6 h-6 ${
+                              payment.status === 'SUCCESS'
+                                ? 'text-green-600 dark:text-green-400'
+                                : payment.status === 'PENDING'
+                                ? 'text-yellow-600 dark:text-yellow-400'
+                                : 'text-red-600 dark:text-red-400'
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            {payment.status === 'SUCCESS' ? (
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            ) : payment.status === 'PENDING' ? (
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            ) : (
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            )}
+                          </svg>
+                        </div>
+                        <div>
+                          <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            Plan
+                          </span>
+                          <div className="font-bold text-lg text-slate-900 dark:text-white">
+                            {payment.plan.name}
+                          </div>
                         </div>
                       </div>
+
                       <div>
-                        <span className="text-sm text-slate-600 dark:text-slate-400">
-                          Amount:
+                        <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                          Amount
                         </span>
-                        <div className="font-semibold text-slate-900 dark:text-white">
+                        <div className="font-bold text-xl text-slate-900 dark:text-white">
                           ₹{payment.amount}
                         </div>
                       </div>
+
                       <div>
-                        <span className="text-sm text-slate-600 dark:text-slate-400">
-                          Status:
+                        <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                          Status
                         </span>
                         <Badge
-                          variant={
+                          className={`mt-1 ${
                             payment.status === 'SUCCESS'
-                              ? 'default'
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0'
                               : payment.status === 'PENDING'
-                              ? 'secondary'
-                              : 'destructive'
-                          }
-                          className={
-                            payment.status === 'SUCCESS'
-                              ? 'bg-green-600 dark:bg-green-500'
-                              : payment.status === 'PENDING'
-                              ? 'bg-yellow-600 dark:bg-yellow-500'
-                              : 'bg-red-600 dark:bg-red-500'
-                          }
+                              ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0'
+                              : 'bg-gradient-to-r from-red-500 to-pink-500 text-white border-0'
+                          }`}
                         >
                           {payment.status}
                         </Badge>
                       </div>
+
                       <div>
-                        <span className="text-sm text-slate-600 dark:text-slate-400">
-                          Date:
+                        <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                          Date
                         </span>
-                        <div className="font-semibold text-slate-900 dark:text-white">
-                          {new Date(payment.createdAt).toLocaleDateString()}
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          {new Date(payment.createdAt).toLocaleDateString(
+                            'en-US',
+                            {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            }
+                          )}
                         </div>
                       </div>
                     </div>
