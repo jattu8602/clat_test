@@ -32,6 +32,7 @@ import {
   Sparkles,
   BarChart3,
   BookOpen,
+  Wand2,
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -117,6 +118,12 @@ export default function Sidebar({
           href: '/dashboard/paid-test',
           icon: Crown,
           badge: stats?.tests?.paid || '0',
+        },
+        {
+          name: 'AI Test Generator',
+          href: '/dashboard/test-generator',
+          icon: Wand2,
+          badge: null,
         },
         {
           name: 'Leaderboard',

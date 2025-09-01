@@ -112,6 +112,12 @@ model Test {
   type             TestType
   durationInMinutes Int       // Example: 180 for 3hr
   isActive         Boolean    @default(true)
+  createdBy        String?    @db.ObjectId  // User who created the test
+  thumbnailUrl     String?    // URL for test thumbnail
+  highlightPoints  String[]   // Array of highlight points
+  positiveMarks    Float      @default(1.0)
+  negativeMarks    Float      @default(-0.25)
+  questionCount    Int?       // Total number of questions
   questions        Question[]
   testAttempts     TestAttempt[]
   createdAt        DateTime   @default(now())
