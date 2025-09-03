@@ -42,6 +42,12 @@ NEXT_PUBLIC_RAZORPAY_KEY_ID="rzp_test_your_test_key_id"
 # NEXT_PUBLIC_RAZORPAY_KEY_ID="rzp_live_your_live_key_id"
 ```
 
+## Gemini AI Configuration
+
+```env
+GEMINI_API_KEY="your-gemini-api-key-here"
+```
+
 ## Cloudinary (if using for image uploads)
 
 ```env
@@ -63,3 +69,4 @@ NODE_ENV="development"
 3. **Keep your secret keys secure and rotate them regularly**
 4. **The webhook secret is provided by Razorpay when you set up webhooks**
 5. **Test thoroughly with test mode before switching to live mode**
+6. **The Gemini API key is required for the AI Test Generator feature**

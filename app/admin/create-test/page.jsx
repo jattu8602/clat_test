@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import ConfirmModal from '@/components/ui/confirm-modal'
 import CreateTestForm from '@/components/admin/CreateTestForm'
+import PdfTestUpload from '@/components/admin/PdfTestUpload'
 import StatsCards from '@/components/admin/StatsCards'
 import AdminTestCard from '@/components/admin/AdminTestCard'
-import { Plus, FileText, Users, GraduationCap } from 'lucide-react'
+import { Plus, FileText, Users, GraduationCap, Upload } from 'lucide-react'
 import { Eye } from 'lucide-react'
 import { Edit } from 'lucide-react'
 
@@ -18,6 +19,7 @@ export default function CreateTestPage() {
   const [loading, setLoading] = useState(false)
   const [existingTests, setExistingTests] = useState([])
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showPdfUpload, setShowPdfUpload] = useState(false)
   const [editingTest, setEditingTest] = useState(null)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
@@ -231,6 +233,7 @@ export default function CreateTestPage() {
   const resetForm = () => {
     setEditingTest(null)
     setShowCreateForm(false)
+    setShowPdfUpload(false)
   }
 
   // Stats calculations
@@ -279,6 +282,14 @@ export default function CreateTestPage() {
         editingTest={editingTest}
         onCancel={resetForm}
         onSuccess={handleFormSuccess}
+      />
+    )
+  }
+
+  if (showPdfUpload) {
+    return (
+      <PdfTestUpload
+        onCancel={resetForm}
       />
     )
   }
@@ -354,14 +365,25 @@ export default function CreateTestPage() {
                 Create and manage your CLAT test content
               </p>
             </div>
-            <Button
-              onClick={() => setShowCreateForm(true)}
-              className="flex items-center space-x-2 flex-shrink-0 bg-black text-white hover:bg-gray-800 rounded-lg px-4 py-2"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Create New Test</span>
-              <span className="sm:hidden">New</span>
-            </Button>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button
+                onClick={() => setShowCreateForm(true)}
+                className="flex items-center space-x-2 bg-black text-white hover:bg-gray-800 rounded-lg px-4 py-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Create Test</span>
+                <span className="sm:hidden">New</span>
+              </Button>
+              <Button
+                onClick={() => setShowPdfUpload(true)}
+                variant="outline"
+                className="flex items-center space-x-2 border-gray-300 hover:bg-gray-50 rounded-lg px-4 py-2"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">From PDF</span>
+                <span className="sm:hidden">PDF</span>
+              </Button>
+            </div>
           </div>
         </div>
 
