@@ -1129,9 +1129,9 @@ export default function TestTakingPage() {
                     </div>
                   )}
                 </div>
-                <Button variant="outline" onClick={() => setShowResults(false)}>
+                {/* <Button variant="outline" onClick={() => setShowResults(false)}>
                   <X className="w-4 h-4" />
-                </Button>
+                </Button> */}
               </div>
 
               {/* Summary Stats */}
