@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import MotivationQuotes from '@/components/MotivationQuotes'
 import { Badge } from '@/components/ui/badge'
+import { Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -707,15 +709,24 @@ export default function UserPaymentHistory() {
     return `${plan.duration} ${plan.durationType}`
   }
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-lg">Loading...</div>
+if (loading) {
+  return (
+    <div className="container mx-auto p-6">
+      <div className="flex flex-col justify-center items-center h-64 space-y-4">
+        {/* Spinner */}
+        <Loader2 className="w-10 h-10 text-green-500 animate-spin" />
+
+        {/* Loading Text */}
+        <div className="text-lg font-medium text-slate-900 dark:text-white">
+          Loading...
         </div>
+
+        {/* Motivation Quote */}
+        <MotivationQuotes />
       </div>
-    )
-  }
+    </div>
+  )
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 p-4 md:p-6">
