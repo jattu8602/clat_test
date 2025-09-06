@@ -75,37 +75,49 @@ export default function Header({
       setLoading(false)
     }
   }
-  // Function to enter/exit fullscreen
+  // Check current fullscreen state
+  const checkFullscreen = () => {
+    return !!(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.msFullscreenElement
+    )
+  }
+
+  // Function to toggle fullscreen
   const toggleFullscreen = () => {
-    if (!isFullscreen) {
-      // Enter fullscreen
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen()
-      } else if (document.documentElement.webkitRequestFullscreen) {
-        // Safari
-        document.documentElement.webkitRequestFullscreen()
-      } else if (document.documentElement.msRequestFullscreen) {
-        // IE/Edge
-        document.documentElement.msRequestFullscreen()
-      }
+    if (!checkFullscreen()) {
+      const el = document.documentElement // change to your specific element
+      if (el.requestFullscreen) el.requestFullscreen()
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
+      else if (el.msRequestFullscreen) el.msRequestFullscreen()
+
+      setIsFullscreen(true) // update UI instantly
     } else {
-      // Exit fullscreen
-      if (document.exitFullscreen) {
-        document.exitFullscreen()
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen()
-      } else if (document.msExitFullscreen) {
-        document.msExitFullscreen()
-      }
+      if (document.exitFullscreen) document.exitFullscreen()
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
+      else if (document.msExitFullscreen) document.msExitFullscreen()
+
+      setIsFullscreen(false) // update UI instantly
     }
   }
 
-  // Listen for fullscreen change
-  if (typeof window !== 'undefined') {
-    document.addEventListener('fullscreenchange', () => {
-      setIsFullscreen(!!document.fullscreenElement)
-    })
-  }
+  // Sync when user presses ESC or exits fullscreen
+  useEffect(() => {
+
+    setIsFullscreen(checkFullscreen())
+    const handleChange = () => setIsFullscreen(checkFullscreen())
+
+    document.addEventListener('fullscreenchange', handleChange)
+    document.addEventListener('webkitfullscreenchange', handleChange)
+    document.addEventListener('msfullscreenchange', handleChange)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleChange)
+      document.removeEventListener('webkitfullscreenchange', handleChange)
+      document.removeEventListener('msfullscreenchange', handleChange)
+    }
+  }, [])
 
   // Function to manually decrement notification count (for immediate UI updates)
   const decrementNotificationCount = () => {
@@ -230,7 +242,6 @@ export default function Header({
               </span>
             </div>
           )}
-
 
           {/* Profile Dropdown - Desktop Only */}
           <div className="">
