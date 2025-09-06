@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  nextjs-app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - python-pdf-service
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+
+  python-pdf-service:
+    build: ./python-pdf-service
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./python-pdf-service:/app
+    command: python -c "
+import uvicorn
+from main import app
+uvicorn.run(app, host='0.0.0.0', port=8000)
+"

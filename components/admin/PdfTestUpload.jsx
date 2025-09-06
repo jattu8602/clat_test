@@ -67,8 +67,8 @@ export default function PdfTestUpload({ onCancel }) {
 
     try {
       if (useTextInput) {
-        // Process text directly
-        const response = await fetch('/api/admin/tests/process-text', {
+        // Process text using integrated API
+        const response = await fetch('/api/pdf-process/process-text', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -76,43 +76,43 @@ export default function PdfTestUpload({ onCancel }) {
           body: JSON.stringify({
             text: pdfText,
             title: formData.title,
-            keyTopic: formData.keyTopic,
-            type: formData.type,
-            durationInMinutes: formData.durationInMinutes,
+            description: formData.keyTopic || '',
+            duration: formData.durationInMinutes,
+            totalMarks: 100, // Default total marks
           }),
         })
 
         if (response.ok) {
           const result = await response.json()
-          setExtractedQuestions(result.questions || [])
+          setExtractedQuestions(result.testData.questions || [])
           setQuestionSummary(result.summary || {})
           setUploadStep('review')
         } else {
           const errorData = await response.json()
-          setError(errorData.message || 'Failed to process text')
+          setError(errorData.error || 'Failed to process text')
         }
       } else {
-        // Process PDF file
+        // Process PDF file using integrated API
         const formDataToSend = new FormData()
         formDataToSend.append('file', selectedFile)
         formDataToSend.append('title', formData.title)
-        formDataToSend.append('keyTopic', formData.keyTopic)
-        formDataToSend.append('type', formData.type)
-        formDataToSend.append('durationInMinutes', formData.durationInMinutes.toString())
+        formDataToSend.append('description', formData.keyTopic || '')
+        formDataToSend.append('duration', formData.durationInMinutes.toString())
+        formDataToSend.append('totalMarks', '100') // Default total marks
 
-        const response = await fetch('/api/admin/tests/upload-pdf', {
+        const response = await fetch('/api/pdf-process/process-pdf', {
           method: 'POST',
           body: formDataToSend,
         })
 
         if (response.ok) {
           const result = await response.json()
-          setExtractedQuestions(result.questions || [])
+          setExtractedQuestions(result.testData.questions || [])
           setQuestionSummary(result.summary || {})
           setUploadStep('review')
         } else {
           const errorData = await response.json()
-          setError(errorData.message || 'Failed to process PDF')
+          setError(errorData.error || 'Failed to process PDF')
         }
       }
     } catch (error) {

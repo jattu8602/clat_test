@@ -1,0 +1,7 @@
+﻿English Language
+
+1. What is the capital?
+(A) A
+(B) B
+(C) C
+(D) D
