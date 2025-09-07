@@ -115,15 +115,6 @@ export default function AdminTestCard({
           <Button
             variant="ghost"
             size="sm"
-            className="text-purple-600 hover:text-purple-700"
-            onClick={() => onAction?.('continue-ai')}
-          >
-            <Bot className="mr-1 h-3 w-3" />
-            AI
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             className="text-cyan-600 hover:text-cyan-700"
             onClick={() => onAction?.('analyze')}
           >

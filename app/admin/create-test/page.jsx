@@ -37,7 +37,7 @@ export default function CreateTestPage() {
   const [editingTest, setEditingTest] = useState(null)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
-  const [activeCategory, setActiveCategory] = useState('ALL')
+  const [activeCategory, setActiveCategory] = useState('DRAFT')
   const [filteredTests, setFilteredTests] = useState([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteTestData, setDeleteTestData] = useState(null)
@@ -444,25 +444,6 @@ export default function CreateTestPage() {
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <Button
-                onClick={() => {
-                  setEditingTest(null)
-                  setShowTextAnalyzer(true)
-                }}
-                className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg px-4 py-2"
-              >
-                <Brain className="h-4 w-4" />
-                <span className="hidden sm:inline">Analyze Text</span>
-                <span className="sm:hidden">Analyze</span>
-              </Button>
-              <Button
-                onClick={() => setShowManualAI(true)}
-                className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg px-4 py-2"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span className="hidden sm:inline">Create with AI</span>
-                <span className="sm:hidden">AI</span>
-              </Button>
-              <Button
                 onClick={() => setShowCreateForm(true)}
                 className="flex items-center space-x-2 bg-black text-white hover:bg-gray-800 rounded-lg px-4 py-2"
               >
@@ -481,16 +462,7 @@ export default function CreateTestPage() {
 
         {/* Test Categories Navigation */}
         <div className="mb-4 md:mb-6 flex flex-wrap gap-2 rounded-lg border border-gray-300 bg-white p-2">
-          <button
-            onClick={() => setActiveCategory('ALL')}
-            className={`rounded-lg px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm font-semibold transition-colors ${
-              activeCategory === 'ALL'
-                ? 'bg-black text-white'
-                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            ALL TESTS
-          </button>
+
           <button
             onClick={() => setActiveCategory('DRAFT')}
             className={`rounded-lg px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm font-semibold transition-colors ${
