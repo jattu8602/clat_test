@@ -42,8 +42,8 @@ export async function POST(request) {
           data: {
             testId,
             passageNumber: passageData.passageNumber,
-            content: passageData.content,
-            contentFormat: null, // We'll store as plain text for now
+            content: passageData.content || '',
+            contentFormat: passageData.contentFormat || null,
             section: section.name,
           },
         })
@@ -96,14 +96,15 @@ export async function POST(request) {
               testId,
               passageId: passage.id,
               questionNumber: nextQuestionNumber,
-              questionText: questionData.questionText,
-              questionTextFormat: null,
+              questionText: questionData.questionText || '',
+              questionTextFormat: questionData.questionTextFormat || null,
               imageUrls: [],
               isTable: false,
               tableData: null,
               questionType,
               optionType,
               options: questionData.options || [],
+              optionsFormat: questionData.optionsFormat || null,
               inputAnswer:
                 questionType === 'INPUT' ? questionData.correctAnswer : null,
               correctAnswers,
@@ -111,7 +112,7 @@ export async function POST(request) {
               negativeMarks: -0.25,
               section: section.name,
               explanation: questionData.explanation || null,
-              explanationFormat: null,
+              explanationFormat: questionData.explanationFormat || null,
             },
           })
 

@@ -209,14 +209,18 @@ export async function POST(request) {
           "passages": [
             {
               "passageNumber": 1,
-              "content": "full passage content here",
+              "content": "full passage content here with proper HTML formatting",
+              "contentFormat": "JSON format data for rich text editor",
               "questions": [
                 {
                   "questionNumber": 1,
-                  "questionText": "question text here",
+                  "questionText": "question text here with proper HTML formatting",
+                  "questionTextFormat": "JSON format data for rich text editor",
                   "options": ["option a", "option b", "option c", "option d"],
+                  "optionsFormat": ["JSON format for option 1", "JSON format for option 2", "JSON format for option 3", "JSON format for option 4"],
                   "correctAnswer": "exact option text (if provided in text, otherwise null)",
-                  "explanation": "explanation if provided, otherwise null"
+                  "explanation": "explanation if provided with proper HTML formatting, otherwise null",
+                  "explanationFormat": "JSON format data for rich text editor or null"
                 }
               ]
             }
@@ -241,10 +245,10 @@ export async function POST(request) {
           )} section. Use "${selectedSection}" as the section name.`
         : 'Identify sections based on content (English, GK/CA, Legal Reasoning, Logical Reasoning, Quantitative Techniques)'
     }
-    2. Extract passages and their content
-    3. Extract questions with options
+    2. Extract passages and their content with proper HTML formatting
+    3. Extract questions with options and format them with HTML
     4. If correct answers are provided, include the EXACT OPTION TEXT (not the letter a, b, c, d)
-    5. If explanations are provided, include them
+    5. If explanations are provided, include them with proper HTML formatting
     6. If answers/explanations are missing, set them to null
     7. Return valid JSON only, no additional text
     8. IMPORTANT: For correctAnswer, use the full option text, not option letters
@@ -255,10 +259,19 @@ export async function POST(request) {
         ? 'For Quantitative Techniques: Pay special attention to mathematical calculations, ratios, percentages, and numerical data. Ensure all mathematical expressions are properly formatted.'
         : ''
     }
+    12. RICH TEXT FORMATTING RULES:
+        - Use HTML tags for formatting: <p> for paragraphs, <strong> for bold, <em> for italic, <ul><li> for bullet lists
+        - For passages: Use <p> tags to separate paragraphs, <strong> for important terms
+        - For questions: Use <p> tags for question text, <strong> for key concepts
+        - For options: Keep simple text format, no HTML needed
+        - For explanations: Use <p> for paragraphs, <ul><li> for lists, <strong> for emphasis
+        - Generate corresponding JSON format data for TipTap editor compatibility
+        - Ensure proper spacing and line breaks using HTML tags
+        - Use <br> for line breaks within paragraphs when needed
     `
 
     const systemPrompt =
-      'You are an expert at analyzing test content and extracting structured data. Always return valid JSON. For mathematical content, ensure all numbers, ratios, and percentages are properly formatted as strings in the JSON. Do not include any text outside the JSON structure.'
+      'You are an expert at analyzing test content and extracting structured data with rich text formatting. Always return valid JSON with HTML formatted content and corresponding JSON format data for TipTap editor compatibility. For mathematical content, ensure all numbers, ratios, and percentages are properly formatted as strings in the JSON. Use proper HTML tags for formatting: <p> for paragraphs, <strong> for bold, <em> for italic, <ul><li> for bullet lists. Do not include any text outside the JSON structure.'
     const analysisResponse = await callGeminiAPI(analysisPrompt, systemPrompt)
     const analysisResult = extractJSONFromResponse(analysisResponse)
 

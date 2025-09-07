@@ -125,6 +125,7 @@ export default function CreateQuestionsPage() {
     questionType: 'OPTIONS',
     optionType: 'SINGLE',
     options: ['', '', '', ''],
+    optionsFormat: [null, null, null, null],
     inputAnswer: '',
     correctAnswers: [],
     positiveMarks: 1.0,
@@ -136,8 +137,10 @@ export default function CreateQuestionsPage() {
 
   // AI Analysis state
   const [aiAnalysisText, setAiAnalysisText] = useState('')
+  const [aiAnalysisFormat, setAiAnalysisFormat] = useState(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analyzedOptions, setAnalyzedOptions] = useState([])
+  const [analyzedOptionsFormat, setAnalyzedOptionsFormat] = useState([])
 
   // Fetch test info and existing questions
   useEffect(() => {
@@ -411,12 +414,17 @@ export default function CreateQuestionsPage() {
     }))
   }
 
-  const handleOptionChange = (index, value) => {
+  const handleOptionChange = (index, htmlValue, jsonValue) => {
     const newOptions = [...questionData.options]
-    newOptions[index] = value
+    const newOptionsFormat = [...(questionData.optionsFormat || [])]
+    
+    newOptions[index] = htmlValue
+    newOptionsFormat[index] = jsonValue
+    
     setQuestionData((prev) => ({
       ...prev,
       options: newOptions,
+      optionsFormat: newOptionsFormat,
     }))
   }
 
@@ -425,6 +433,7 @@ export default function CreateQuestionsPage() {
       setQuestionData((prev) => ({
         ...prev,
         options: [...prev.options, ''],
+        optionsFormat: [...(prev.optionsFormat || []), null],
       }))
     }
   }
@@ -432,6 +441,7 @@ export default function CreateQuestionsPage() {
   const removeOption = (index) => {
     if (questionData.options.length > 2) {
       const newOptions = questionData.options.filter((_, i) => i !== index)
+      const newOptionsFormat = (questionData.optionsFormat || []).filter((_, i) => i !== index)
       // Also remove the option from correct answers if it was selected
       const removedOption = questionData.options[index]
       const newCorrectAnswers =
@@ -441,6 +451,7 @@ export default function CreateQuestionsPage() {
       setQuestionData((prev) => ({
         ...prev,
         options: newOptions,
+        optionsFormat: newOptionsFormat,
         correctAnswers: newCorrectAnswers,
       }))
     }
@@ -823,6 +834,12 @@ export default function CreateQuestionsPage() {
     return icons[section] || FileText
   }
 
+  // Handle rich text changes for AI analysis
+  const handleAiAnalysisTextChange = (value) => {
+    setAiAnalysisText(value.html)
+    setAiAnalysisFormat(value.json)
+  }
+
   // AI Analysis function
   const analyzeTextWithAI = async () => {
     if (!aiAnalysisText.trim()) {
@@ -832,13 +849,16 @@ export default function CreateQuestionsPage() {
 
     setIsAnalyzing(true)
     try {
+      // Strip HTML tags for AI analysis
+      const plainText = aiAnalysisText.replace(/<[^>]*>/g, '').trim()
+
       const response = await fetch('/api/admin/analyze-text', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text: aiAnalysisText,
+          text: plainText,
           questionText: questionData.questionText,
           section: questionData.section,
         }),
@@ -847,6 +867,7 @@ export default function CreateQuestionsPage() {
       if (response.ok) {
         const data = await response.json()
         setAnalyzedOptions(data.options || [])
+        setAnalyzedOptionsFormat(data.optionsFormat || [])
         toast.success(
           'Text analyzed successfully! Click "Apply Options" to use them.'
         )
@@ -870,19 +891,26 @@ export default function CreateQuestionsPage() {
 
     // Take up to 6 options from the analyzed results
     const newOptions = analyzedOptions.slice(0, 6)
+    const newOptionsFormat = analyzedOptionsFormat.slice(0, 6)
 
     // Pad with empty strings if less than 4 options
     while (newOptions.length < 4) {
       newOptions.push('')
     }
+    while (newOptionsFormat.length < 4) {
+      newOptionsFormat.push(null)
+    }
 
     setQuestionData((prev) => ({
       ...prev,
       options: newOptions,
+      optionsFormat: newOptionsFormat,
     }))
 
     setAnalyzedOptions([])
+    setAnalyzedOptionsFormat([])
     setAiAnalysisText('')
+    setAiAnalysisFormat(null)
     toast.success('Options applied successfully!')
   }
 
@@ -1498,14 +1526,13 @@ export default function CreateQuestionsPage() {
                       >
                         Text to Analyze
                       </Label>
-                      <Textarea
-                        id="aiAnalysisText"
+                      <RichTextEditor
                         value={aiAnalysisText}
-                        onChange={(e) => setAiAnalysisText(e.target.value)}
-                        placeholder="Paste text content here..."
-                        rows={4}
-                        className="resize-none border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-purple-500 text-slate-900 dark:text-slate-50"
+                        onChange={handleAiAnalysisTextChange}
                       />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Use formatting tools to structure your content. Bold text, bullet points, and line breaks are supported.
+                      </p>
                       <Button
                         type="button"
                         variant="outline"
@@ -1701,13 +1728,11 @@ export default function CreateQuestionsPage() {
                               }`}
                             >
                               <div className="flex-1">
-                                <Input
+                                <RichTextEditor
                                   value={option}
-                                  onChange={(e) =>
-                                    handleOptionChange(index, e.target.value)
+                                  onChange={(value) =>
+                                    handleOptionChange(index, value.html, value.json)
                                   }
-                                  placeholder={`Option ${index + 1}`}
-                                  className="border-0 bg-transparent focus:ring-0 p-0 text-sm text-slate-900 dark:text-slate-50"
                                 />
                               </div>
                               <div className="flex items-center space-x-2">

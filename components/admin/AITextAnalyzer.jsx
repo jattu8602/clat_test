@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import RichTextEditor from '@/components/ui/rich-text-editor'
 import {
   Card,
   CardContent,
@@ -40,6 +41,7 @@ import { toast } from 'sonner'
 
 export default function AITextAnalyzer({ testId, onImportComplete }) {
   const [text, setText] = useState('')
+  const [textFormat, setTextFormat] = useState(null)
   const [selectedSection, setSelectedSection] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
@@ -73,6 +75,11 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
       'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
   }
 
+  const handleTextChange = (value) => {
+    setText(value.html)
+    setTextFormat(value.json)
+  }
+
   const handleAnalyze = async () => {
     if (!text.trim()) {
       toast.error('Please enter some text to analyze')
@@ -100,13 +107,16 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
         })
       }, 500)
 
+      // Strip HTML tags for AI analysis
+      const plainText = text.replace(/<[^>]*>/g, '').trim()
+
       const response = await fetch('/api/admin/tests/ai-analyze-text', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text: text.trim(),
+          text: plainText,
           testId,
           selectedSection,
         }),
@@ -164,6 +174,7 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
 
         // Reset form
         setText('')
+        setTextFormat(null)
         setSelectedSection('')
         setAnalysis(null)
       } else {
@@ -223,14 +234,13 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
             <Label htmlFor="test-content" className="text-sm font-medium">
               Test Content
             </Label>
-            <Textarea
-              id="test-content"
+            <RichTextEditor
               value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Paste your test content here... (passages, questions, options)"
-              rows={12}
-              className="resize-none"
+              onChange={handleTextChange}
             />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Use formatting tools to structure your content. Bold text, bullet points, and line breaks are supported.
+            </p>
           </div>
 
           <Button

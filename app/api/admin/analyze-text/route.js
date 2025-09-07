@@ -35,10 +35,15 @@ Your task is to analyze the text content and check for A , B , C , D options . T
 2. same as i pasted text content
 3. Well-formatted and clear
 
-Please return ONLY a JSON array of strings containing the options, like this:
-["Option 1", "Option 2", "Option 3", "Option 4"]
+Please return a JSON object with the following structure:
+{
+  "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+  "optionsFormat": ["JSON format for option 1", "JSON format for option 2", "JSON format for option 3", "JSON format for option 4"]
+}
 
-Do not include any explanations, just the array of options.
+The options should be plain text, but the optionsFormat should contain the corresponding JSON format data for TipTap editor compatibility. Use proper HTML formatting in the optionsFormat when needed (bold, italic, lists, etc.).
+
+Do not include any explanations, just the JSON object.
 `
 
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -83,23 +88,32 @@ Do not include any explanations, just the array of options.
 
     // Try to extract JSON from the response
     let options = []
+    let optionsFormat = []
     try {
-      // Look for JSON array in the response
-      const jsonMatch = aiResponse.match(/\[.*\]/s)
+      // Look for JSON object in the response
+      const jsonMatch = aiResponse.match(/\{.*\}/s)
       if (jsonMatch) {
-        options = JSON.parse(jsonMatch[0])
+        const parsed = JSON.parse(jsonMatch[0])
+        options = parsed.options || []
+        optionsFormat = parsed.optionsFormat || []
       } else {
-        // If no JSON found, try to extract options from text
-        const lines = aiResponse.split('\n').filter((line) => line.trim())
-        options = lines
-          .map((line) =>
-            line
-              .replace(/^\d+\.\s*/, '')
-              .replace(/^[-*]\s*/, '')
-              .trim()
-          )
-          .filter((option) => option.length > 0)
-          .slice(0, 6)
+        // Fallback: look for JSON array in the response
+        const arrayMatch = aiResponse.match(/\[.*\]/s)
+        if (arrayMatch) {
+          options = JSON.parse(arrayMatch[0])
+        } else {
+          // If no JSON found, try to extract options from text
+          const lines = aiResponse.split('\n').filter((line) => line.trim())
+          options = lines
+            .map((line) =>
+              line
+                .replace(/^\d+\.\s*/, '')
+                .replace(/^[-*]\s*/, '')
+                .trim()
+            )
+            .filter((option) => option.length > 0)
+            .slice(0, 6)
+        }
       }
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError)
@@ -119,14 +133,22 @@ Do not include any explanations, just the array of options.
     // Ensure we have at least 2 options
     if (options.length < 2) {
       options = ['Option A', 'Option B', 'Option C', 'Option D']
+      optionsFormat = [null, null, null, null]
     }
 
     // Limit to 6 options maximum
     options = options.slice(0, 6)
+    optionsFormat = optionsFormat.slice(0, 6)
+
+    // Ensure optionsFormat array matches options array length
+    while (optionsFormat.length < options.length) {
+      optionsFormat.push(null)
+    }
 
     return NextResponse.json({
       success: true,
       options: options,
+      optionsFormat: optionsFormat,
       originalResponse: aiResponse,
     })
   } catch (error) {

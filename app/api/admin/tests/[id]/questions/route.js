@@ -147,6 +147,7 @@ export async function POST(request, { params }) {
             ? questionData.optionType
             : null,
         options: questionData.options || [],
+        optionsFormat: questionData.optionsFormat || null,
         inputAnswer:
           questionData.questionType === 'INPUT'
             ? questionData.inputAnswer?.trim()

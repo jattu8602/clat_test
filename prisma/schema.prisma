@@ -112,6 +112,7 @@ model Test {
   type             TestType
   durationInMinutes Int       // Example: 180 for 3hr
   isActive         Boolean    @default(true)
+  passages         Passage[]  // Test can have multiple passages
   questions        Question[]
   testAttempts     TestAttempt[]
   createdAt        DateTime   @default(now())
@@ -155,6 +156,7 @@ model Question {
   questionType    QuestionType
   optionType      OptionType?    // Only if questionType is OPTIONS
   options         String[]       // Up to 4-6 options with all characters
+  optionsFormat   Json?          // Rich text formatting for options
 
   inputAnswer     String?        // Only if questionType is INPUT
   correctAnswers  String[]       // For both input or options, depending on type
