@@ -14,7 +14,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id: testId } = params
+    const { id: testId } = await params
     const { searchParams } = new URL(request.url)
     const testAttemptId = searchParams.get('attemptId')
 
@@ -37,6 +37,9 @@ export async function GET(request, { params }) {
             durationInMinutes: true,
             keyTopic: true,
             type: true,
+            passages: {
+              orderBy: { passageNumber: 'asc' },
+            },
           },
         },
         answers: {
@@ -48,9 +51,7 @@ export async function GET(request, { params }) {
                 questionText: true,
                 questionTextFormat: true,
                 imageUrls: true,
-                isComprehension: true,
-                comprehension: true,
-                comprehensionFormat: true,
+                  passageId: true,
                 isTable: true,
                 tableData: true,
                 questionType: true,
@@ -146,13 +147,13 @@ export async function GET(request, { params }) {
         totalPossibleMarks,
       },
       test: testAttempt.test,
+      passages: testAttempt.test.passages,
       questions: testAttempt.answers.map((answer) => ({
         id: answer.question.id,
         questionNumber: answer.question.questionNumber,
         questionText: answer.question.questionText,
         imageUrls: answer.question.imageUrls,
-        isComprehension: answer.question.isComprehension,
-        comprehension: answer.question.comprehension,
+        passageId: answer.question.passageId,
         isTable: answer.question.isTable,
         tableData: answer.question.tableData,
         questionType: answer.question.questionType,

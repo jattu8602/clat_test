@@ -11,6 +11,8 @@ import {
   Settings,
   Play,
   Trash2,
+  Bot,
+  Brain,
 } from 'lucide-react'
 
 export default function AdminTestCard({
@@ -52,15 +54,35 @@ export default function AdminTestCard({
       )
     } else {
       return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-blue-600 hover:text-blue-700 text-xs"
-          onClick={() => onAction?.('continue')}
-        >
-          <Play className="mr-1 h-3 w-3" />
-          Continue
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-blue-600 hover:text-blue-700 text-xs"
+            onClick={() => onAction?.('continue')}
+          >
+            <Play className="mr-1 h-3 w-3" />
+            Continue
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-purple-600 hover:text-purple-700 text-xs"
+            onClick={() => onAction?.('continue-ai')}
+          >
+            <Bot className="mr-1 h-3 w-3" />
+            AI
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-cyan-600 hover:text-cyan-700 text-xs"
+            onClick={() => onAction?.('analyze')}
+          >
+            <Brain className="mr-1 h-3 w-3" />
+            Analyze
+          </Button>
+        </div>
       )
     }
   }
@@ -80,15 +102,35 @@ export default function AdminTestCard({
       )
     } else {
       return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-blue-600 hover:text-blue-700"
-          onClick={() => onAction?.('continue')}
-        >
-          <Play className="mr-1 h-3 w-3" />
-          Continue
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-blue-600 hover:text-blue-700"
+            onClick={() => onAction?.('continue')}
+          >
+            <Play className="mr-1 h-3 w-3" />
+            Continue
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-purple-600 hover:text-purple-700"
+            onClick={() => onAction?.('continue-ai')}
+          >
+            <Bot className="mr-1 h-3 w-3" />
+            AI
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-cyan-600 hover:text-cyan-700"
+            onClick={() => onAction?.('analyze')}
+          >
+            <Brain className="mr-1 h-3 w-3" />
+            Analyze
+          </Button>
+        </div>
       )
     }
   }

@@ -62,6 +62,7 @@ const isValidTableData = (tableData) => {
 export default function QuestionDisplay({
   currentQuestion,
   questions,
+  passages = [],
   currentQuestionIndex,
   getQuestionStatusColor,
   getQuestionStatus,
@@ -70,6 +71,11 @@ export default function QuestionDisplay({
   handleNextQuestion,
   handleQuestionNavigation,
 }) {
+  // Helper function to get passage for a question
+  const getPassageForQuestion = (question) => {
+    if (!question?.passageId || !passages.length) return null
+    return passages.find((passage) => passage.id === question.passageId)
+  }
   return (
     <div className="flex-1 p-6 overflow-y-auto">
       {currentQuestion && (
@@ -119,24 +125,41 @@ export default function QuestionDisplay({
                 />
               </div>
 
-              {/* Comprehension Text */}
-              {currentQuestion.isComprehension &&
-                currentQuestion.comprehension && (
+              {/* Passage Text */}
+              {(() => {
+                const passage = getPassageForQuestion(currentQuestion)
+                if (!passage) return null
+
+                return (
                   <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg mb-6 border-l-4 border-blue-500">
-                    <div className="flex items-center gap-2 mb-3">
-                      <BookOpen className="w-5 h-5 text-blue-600" />
-                      <span className="font-medium text-blue-900 dark:text-blue-100">
-                        Comprehension
-                      </span>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="w-5 h-5 text-blue-600" />
+                        <span className="font-medium text-blue-900 dark:text-blue-100">
+                          Passage {passage.passageNumber}
+                        </span>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-600"
+                      >
+                        {passage.section.replace('_', ' ')}
+                      </Badge>
                     </div>
+                    {passage.title && (
+                      <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                        {passage.title}
+                      </h4>
+                    )}
                     <div
                       className="text-slate-700 dark:text-slate-300 prose dark:prose-invert max-w-none"
                       dangerouslySetInnerHTML={{
-                        __html: currentQuestion.comprehension,
+                        __html: passage.content,
                       }}
                     />
                   </div>
-                )}
+                )
+              })()}
 
               {/* Table Data */}
               {currentQuestion.isTable &&

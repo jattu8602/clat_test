@@ -13,15 +13,19 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
 
-    // Fetch test with questions
+    // Fetch test with questions and passages
     const test = await prisma.test.findUnique({
       where: { id },
       include: {
+        passages: {
+          orderBy: { passageNumber: 'asc' },
+        },
         questions: {
-          orderBy: {
-            questionNumber: 'asc',
+          orderBy: { questionNumber: 'asc' },
+          include: {
+            passage: true,
           },
         },
       },
@@ -79,9 +83,7 @@ export async function GET(request, { params }) {
       questionText: question.questionText,
       questionTextFormat: question.questionTextFormat,
       imageUrls: question.imageUrls,
-      isComprehension: question.isComprehension,
-      comprehension: question.comprehension,
-      comprehensionFormat: question.comprehensionFormat,
+      passageId: question.passageId,
       isTable: question.isTable,
       tableData: question.tableData,
       questionType: question.questionType,
@@ -108,6 +110,7 @@ export async function GET(request, { params }) {
         isActive: test.isActive,
         createdAt: test.createdAt,
       },
+      passages: test.passages,
       questions: transformedQuestions,
       totalQuestions: transformedQuestions.length,
     })

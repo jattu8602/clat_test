@@ -96,9 +96,11 @@ export default function CreateQuestionsPage() {
   const [loading, setLoading] = useState(false)
   const [testInfo, setTestInfo] = useState(null)
   const [existingQuestions, setExistingQuestions] = useState([])
+  const [existingPassages, setExistingPassages] = useState([])
   const [activeTab, setActiveTab] = useState('basic')
+  const [showPassageOptions, setShowPassageOptions] = useState(false)
   const [expandedSections, setExpandedSections] = useState({
-    comprehension: false,
+    passage: false,
     table: false,
     options: true,
     advanced: false,
@@ -108,9 +110,9 @@ export default function CreateQuestionsPage() {
     questionText: '',
     questionTextFormat: null,
     imageUrls: [],
-    isComprehension: false,
-    comprehension: '',
-    comprehensionFormat: null,
+    passageId: null, // Reference to existing passage
+    passageContent: '', // New passage content
+    passageFormat: null, // Rich text format for new passage
     isTable: false,
     tableData: {
       rows: 2,
@@ -141,6 +143,7 @@ export default function CreateQuestionsPage() {
   useEffect(() => {
     fetchTestInfo()
     fetchExistingQuestions()
+    fetchExistingPassages()
   }, [testId])
 
   useEffect(() => {
@@ -148,7 +151,40 @@ export default function CreateQuestionsPage() {
       ...prev,
       section: currentSection,
     }))
-  }, [currentSection])
+
+    // Auto-link to previous passage if available and not editing
+    if (!editingQuestion) {
+      const lastQuestionInSection = existingQuestions
+        .filter((q) => q.section === currentSection)
+        .sort((a, b) => a.questionNumber - b.questionNumber)
+        .pop()
+
+      console.log('Auto-link check:', {
+        lastQuestionInSection,
+        hasPassageId: lastQuestionInSection?.passageId,
+        existingPassages: existingPassages.length,
+      })
+
+      if (lastQuestionInSection?.passageId) {
+        const previousPassage = existingPassages.find(
+          (p) => p.id === lastQuestionInSection.passageId
+        )
+        console.log('Found previous passage:', previousPassage)
+        if (previousPassage) {
+          setQuestionData((prev) => ({
+            ...prev,
+            section: currentSection,
+            passageId: previousPassage.id,
+            passageContent: previousPassage.content,
+            passageFormat: previousPassage.contentFormat,
+          }))
+          console.log('Auto-linked to passage:', previousPassage.id)
+        }
+      } else {
+        console.log('No previous passage to link to')
+      }
+    }
+  }, [currentSection, existingQuestions, existingPassages, editingQuestion])
 
   const fetchTestInfo = async () => {
     try {
@@ -174,6 +210,21 @@ export default function CreateQuestionsPage() {
     }
   }
 
+  const fetchExistingPassages = async () => {
+    try {
+      const response = await fetch(`/api/admin/tests/${testId}/with-passages`)
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Fetched passages:', data.passages)
+        setExistingPassages(data.passages || [])
+      } else {
+        console.error('Failed to fetch passages:', response.status)
+      }
+    } catch (error) {
+      console.error('Error fetching passages:', error)
+    }
+  }
+
   const handleEditQuestion = (question) => {
     setEditingQuestion(question)
     setQuestionData({
@@ -186,11 +237,9 @@ export default function CreateQuestionsPage() {
       correctAnswers: question.correctAnswers || [],
       explanation: question.explanation || '',
       explanationFormat: question.explanationFormat || null,
-      comprehension: question.comprehension || '',
-      comprehensionFormat: question.comprehensionFormat || null,
-      isComprehension: question.comprehension
-        ? question.comprehension.trim() !== ''
-        : false,
+      passageId: question.passageId || null,
+      passageContent: '', // Don't show existing passage content in editor
+      passageFormat: null,
       isTable: question.tableData ? true : false,
       tableData: question.tableData || {
         rows: 2,
@@ -251,13 +300,35 @@ export default function CreateQuestionsPage() {
 
   const cancelEdit = () => {
     setEditingQuestion(null)
+    setShowPassageOptions(false)
+
+    // Auto-link to previous passage if available
+    const lastQuestionInSection = existingQuestions
+      .filter((q) => q.section === currentSection)
+      .sort((a, b) => a.questionNumber - b.questionNumber)
+      .pop()
+
+    let autoLinkedPassage = null
+    if (lastQuestionInSection?.passageId) {
+      const previousPassage = existingPassages.find(
+        (p) => p.id === lastQuestionInSection.passageId
+      )
+      if (previousPassage) {
+        autoLinkedPassage = {
+          passageId: previousPassage.id,
+          passageContent: previousPassage.content,
+          passageFormat: previousPassage.contentFormat,
+        }
+      }
+    }
+
     setQuestionData({
       questionText: '',
       questionTextFormat: null,
       imageUrls: [],
-      isComprehension: false,
-      comprehension: '',
-      comprehensionFormat: null,
+      passageId: autoLinkedPassage?.passageId || null,
+      passageContent: autoLinkedPassage?.passageContent || '',
+      passageFormat: autoLinkedPassage?.passageFormat || null,
       isTable: false,
       tableData: {
         rows: 2,
@@ -290,12 +361,12 @@ export default function CreateQuestionsPage() {
       return
     }
 
-    if (field === 'comprehension') {
+    if (field === 'passageContent') {
       setQuestionData((prev) => ({
         ...prev,
-        comprehension: value.html,
-        comprehensionFormat: value.json,
-        isComprehension: value.html.trim() !== '',
+        passageContent: value.html,
+        passageFormat: value.json,
+        passageId: null, // Clear any existing passage reference when adding new content
       }))
       return
     }
@@ -518,6 +589,19 @@ export default function CreateQuestionsPage() {
         return
       }
 
+      // Validate passage is required
+      if (
+        !questionData.passageId &&
+        (!questionData.passageContent ||
+          questionData.passageContent.trim() === '')
+      ) {
+        toast.error(
+          'Passage is required - either create new passage or reference existing one'
+        )
+        setLoading(false)
+        return
+      }
+
       // Validate answers based on question type
       if (questionData.questionType === 'OPTIONS') {
         const validOptions = questionData.options.filter(
@@ -591,9 +675,10 @@ export default function CreateQuestionsPage() {
         correctAnswers: questionData.correctAnswers.filter((ans) =>
           ans?.trim()
         ),
-        comprehension: questionData.isComprehension
-          ? questionData.comprehension?.trim()
-          : null,
+        // Handle passage data
+        passageId: questionData.passageId || null,
+        passageContent: questionData.passageContent?.trim() || null,
+        passageFormat: questionData.passageFormat || null,
         tableData: questionData.isTable ? questionData.tableData : null,
         positiveMarks: Number(questionData.positiveMarks),
         negativeMarks: Number(questionData.negativeMarks),
@@ -615,13 +700,51 @@ export default function CreateQuestionsPage() {
 
       if (response.ok) {
         const currentSection = questionData.section
+        setEditingQuestion(null)
+        setShowPassageOptions(false)
+
+        // Fetch updated data first
+        await fetchExistingQuestions()
+        await fetchExistingPassages()
+
+        // Auto-link to the passage from the question we just created
+        const updatedQuestions = await fetch(
+          `/api/admin/tests/${testId}/questions`
+        )
+          .then((r) => r.json())
+          .then((d) => d.questions || [])
+        const updatedPassages = await fetch(
+          `/api/admin/tests/${testId}/with-passages`
+        )
+          .then((r) => r.json())
+          .then((d) => d.passages || [])
+
+        const lastQuestionInSection = updatedQuestions
+          .filter((q) => q.section === currentSection)
+          .sort((a, b) => a.questionNumber - b.questionNumber)
+          .pop()
+
+        let autoLinkedPassage = null
+        if (lastQuestionInSection?.passageId) {
+          const previousPassage = updatedPassages.find(
+            (p) => p.id === lastQuestionInSection.passageId
+          )
+          if (previousPassage) {
+            autoLinkedPassage = {
+              passageId: previousPassage.id,
+              passageContent: previousPassage.content,
+              passageFormat: previousPassage.contentFormat,
+            }
+          }
+        }
+
         setQuestionData({
           questionText: '',
           questionTextFormat: null,
           imageUrls: [],
-          isComprehension: false,
-          comprehension: '',
-          comprehensionFormat: null,
+          passageId: autoLinkedPassage?.passageId || null,
+          passageContent: autoLinkedPassage?.passageContent || '',
+          passageFormat: autoLinkedPassage?.passageFormat || null,
           isTable: false,
           tableData: {
             rows: 2,
@@ -642,9 +765,7 @@ export default function CreateQuestionsPage() {
           explanation: '',
           explanationFormat: null,
         })
-        setEditingQuestion(null)
 
-        fetchExistingQuestions()
         toast.success(
           `Question ${editingQuestion ? 'updated' : 'added'} successfully!`
         )
@@ -765,6 +886,68 @@ export default function CreateQuestionsPage() {
     toast.success('Options applied successfully!')
   }
 
+  // Passage referencing functions
+  const handleReferencePassage = (passageId) => {
+    setQuestionData((prev) => ({
+      ...prev,
+      passageId: passageId,
+      passageContent: '', // Clear new passage content when referencing
+      passageFormat: null,
+    }))
+    setShowPassageOptions(false) // Hide passage options
+    toast.success('Question will reference the selected passage!')
+  }
+
+  const handleCreateNewPassage = () => {
+    setQuestionData((prev) => ({
+      ...prev,
+      passageId: null, // Clear passage reference
+      passageContent: '', // Allow new passage content
+      passageFormat: null,
+    }))
+    setShowPassageOptions(false) // Hide passage options
+    toast.success('Creating new passage for this question!')
+  }
+
+  const getPassageForQuestion = (question) => {
+    console.log('getPassageForQuestion called:', {
+      questionId: question?.id,
+      passageId: question?.passageId,
+      existingPassagesCount: existingPassages.length,
+      existingPassages: existingPassages.map((p) => ({
+        id: p.id,
+        passageNumber: p.passageNumber,
+      })),
+    })
+
+    if (!question?.passageId || !existingPassages.length) {
+      console.log(
+        'No passage found - missing passageId or no existing passages'
+      )
+      return null
+    }
+
+    const foundPassage = existingPassages.find(
+      (passage) => passage.id === question.passageId
+    )
+    console.log('Found passage:', foundPassage)
+    return foundPassage
+  }
+
+  // Get the last question in the current section to check if it has a passage
+  const getLastQuestionInSection = () => {
+    const questionsInSection = existingQuestions.filter(
+      (q) => q.section === currentSection
+    )
+    return questionsInSection.length > 0
+      ? questionsInSection[questionsInSection.length - 1]
+      : null
+  }
+
+  // Check if the last question in current section has a passage
+  const lastQuestionInSection = getLastQuestionInSection()
+  const hasPreviousPassage = lastQuestionInSection?.passageId
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
       {/* Header */}
@@ -874,23 +1057,337 @@ export default function CreateQuestionsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Comprehension Text */}
-                  <div className="space-y-2">
+                  {/* Passage Section */}
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Label
-                        htmlFor="comprehension"
+                        htmlFor="passage"
                         className="text-sm font-medium text-slate-900 dark:text-slate-50"
                       >
-                        Comprehension Text (Optional)
+                        Passage Required
                       </Label>
-                      <RichTextEditorHelp />
+                      <div className="flex items-center gap-2">
+                        {hasPreviousPassage && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const previousPassage = existingPassages.find(
+                                (p) => p.id === lastQuestionInSection.passageId
+                              )
+                              if (previousPassage) {
+                                setQuestionData((prev) => ({
+                                  ...prev,
+                                  passageId: previousPassage.id,
+                                  passageContent: previousPassage.content,
+                                  passageFormat: previousPassage.contentFormat,
+                                }))
+                                toast.success('Linked to previous passage!')
+                              }
+                            }}
+                            className="text-xs px-2 py-1 h-6 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                          >
+                            Link to Previous Passage
+                          </Button>
+                        )}
+                        {existingPassages.length > 0 && !hasPreviousPassage && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const lastPassage = existingPassages
+                                .filter((p) => p.section === currentSection)
+                                .sort(
+                                  (a, b) => b.passageNumber - a.passageNumber
+                                )[0]
+                              if (lastPassage) {
+                                setQuestionData((prev) => ({
+                                  ...prev,
+                                  passageContent: lastPassage.content,
+                                  passageFormat: lastPassage.contentFormat,
+                                  passageId: null,
+                                }))
+                                toast.success('Copied from previous passage!')
+                              }
+                            }}
+                            className="text-xs px-2 py-1 h-6"
+                          >
+                            Copy from Previous
+                          </Button>
+                        )}
+                        <RichTextEditorHelp />
+                      </div>
                     </div>
-                    <RichTextEditor
-                      value={questionData.comprehension}
-                      onChange={(value) =>
-                        handleInputChange('comprehension', value)
-                      }
-                    />
+
+                    {/* Passage Reference Options */}
+                    {existingPassages.length > 0 && !editingQuestion && (
+                      <div className="space-y-3">
+                        {hasPreviousPassage && (
+                          <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              <p className="text-sm text-green-800 dark:text-green-200">
+                                Previous question in this section has a passage.
+                                You can link to it or create a new one.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {!hasPreviousPassage &&
+                          existingQuestions.length > 0 && (
+                            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                <p className="text-sm text-amber-800 dark:text-amber-200">
+                                  Previous question in this section has no
+                                  passage. You need to create a new passage for
+                                  this question.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCreateNewPassage}
+                            className={`${
+                              !questionData.passageId
+                                ? 'bg-blue-100 border-blue-500 text-blue-700'
+                                : 'border-slate-200 dark:border-slate-700'
+                            }`}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Create New Passage
+                          </Button>
+                          <span className="text-sm text-slate-500 dark:text-slate-400">
+                            or reference existing:
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
+                          {existingPassages
+                            .filter(
+                              (passage) => passage.section === currentSection
+                            )
+                            .map((passage) => (
+                              <div
+                                key={passage.id}
+                                className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                                  questionData.passageId === passage.id
+                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                    : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
+                                }`}
+                                onClick={() =>
+                                  handleReferencePassage(passage.id)
+                                }
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                                      Passage {passage.passageNumber}
+                                    </div>
+                                    <div
+                                      className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2"
+                                      dangerouslySetInnerHTML={{
+                                        __html:
+                                          passage.content.substring(0, 100) +
+                                          '...',
+                                      }}
+                                    />
+                                  </div>
+                                  {questionData.passageId === passage.id && (
+                                    <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show Referenced Passage - Only when not showing content in editor */}
+                    {questionData.passageId && !questionData.passageContent && (
+                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                            Referenced Passage
+                          </h4>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowPassageOptions(true)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            Change
+                          </Button>
+                        </div>
+                        {(() => {
+                          const referencedPassage = existingPassages.find(
+                            (p) => p.id === questionData.passageId
+                          )
+                          return referencedPassage ? (
+                            <div
+                              className="text-sm text-blue-700 dark:text-blue-300 prose dark:prose-invert max-w-none"
+                              dangerouslySetInnerHTML={{
+                                __html: referencedPassage.content,
+                              }}
+                            />
+                          ) : null
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Show Passage Options when changing */}
+                    {showPassageOptions &&
+                      existingPassages.length > 0 &&
+                      !editingQuestion && (
+                        <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              Choose Passage
+                            </h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowPassageOptions(false)}
+                              className="text-gray-500 hover:text-gray-700"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleCreateNewPassage}
+                              className="border-slate-200 dark:border-slate-700"
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Create New Passage
+                            </Button>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">
+                              or reference existing:
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
+                            {existingPassages
+                              .filter(
+                                (passage) => passage.section === currentSection
+                              )
+                              .map((passage) => (
+                                <div
+                                  key={passage.id}
+                                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                                    questionData.passageId === passage.id
+                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                      : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
+                                  }`}
+                                  onClick={() =>
+                                    handleReferencePassage(passage.id)
+                                  }
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <div className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                                        Passage {passage.passageNumber}
+                                      </div>
+                                      <div
+                                        className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2"
+                                        dangerouslySetInnerHTML={{
+                                          __html:
+                                            passage.content.substring(0, 100) +
+                                            '...',
+                                        }}
+                                      />
+                                    </div>
+                                    {questionData.passageId === passage.id && (
+                                      <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Passage Content Editor */}
+                    {!questionData.passageId && (
+                      <RichTextEditor
+                        value={questionData.passageContent}
+                        onChange={(value) =>
+                          handleInputChange('passageContent', value)
+                        }
+                        placeholder="Enter passage content here..."
+                      />
+                    )}
+
+                    {/* Show linked passage content */}
+                    {questionData.passageId && questionData.passageContent && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                            Passage Content
+                          </Label>
+                          <div className="flex items-center space-x-2">
+                            <span className="px-2 py-1 bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 text-xs rounded-full">
+                              Auto-Linked
+                            </span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowPassageOptions(true)}
+                              className="text-xs px-2 py-1 h-6 text-blue-600 hover:text-blue-700 border-blue-300 hover:border-blue-400"
+                            >
+                              Change Passage
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setQuestionData((prev) => ({
+                                  ...prev,
+                                  passageId: null,
+                                  passageContent: '',
+                                  passageFormat: null,
+                                }))
+                                toast.success(
+                                  'Unlinked from passage. You can now create a new one.'
+                                )
+                              }}
+                              className="text-xs px-2 py-1 h-6 text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                            >
+                              Unlink
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <span className="text-sm text-green-800 dark:text-green-200">
+                              This question is linked to the same passage as the
+                              previous question in this section.
+                            </span>
+                          </div>
+                          <div
+                            className="prose dark:prose-invert max-w-none text-sm"
+                            dangerouslySetInnerHTML={{
+                              __html: questionData.passageContent,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                   {/* Question Text */}
                   <div className="space-y-2">
@@ -1527,6 +2024,9 @@ export default function CreateQuestionsPage() {
                       loading ||
                       !questionData.questionText ||
                       questionData.questionText.trim() === '' ||
+                      (!questionData.passageId &&
+                        (!questionData.passageContent ||
+                          questionData.passageContent.trim() === '')) ||
                       (isPreviousSection && !editingQuestion)
                     }
                     className="px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-slate-900 dark:text-slate-50"
@@ -1621,6 +2121,8 @@ export default function CreateQuestionsPage() {
                                   onEdit={handleEditQuestion}
                                   onDelete={handleDeleteQuestion}
                                   getSectionName={getSectionName}
+                                  existingPassages={existingPassages}
+                                  getPassageForQuestion={getPassageForQuestion}
                                 />
                               ))}
                           </div>
