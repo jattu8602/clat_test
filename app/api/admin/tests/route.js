@@ -10,6 +10,11 @@ export async function POST(request) {
     const session = await getServerSession(authOptions)
 
     if (!session || session.user.role !== 'ADMIN') {
+      console.log('Unauthorized access attempt:', {
+        hasSession: !!session,
+        userRole: session?.user?.role,
+        isAdmin: session?.user?.isAdmin,
+      })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -32,6 +37,11 @@ export async function POST(request) {
         durationInMinutes,
         isActive: false, // New tests are created as drafts
       },
+    })
+
+    console.log('Test created successfully:', {
+      id: test.id,
+      title: test.title,
     })
 
     return NextResponse.json({

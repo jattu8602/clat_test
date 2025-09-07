@@ -6,11 +6,23 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import ConfirmModal from '@/components/ui/confirm-modal'
 import CreateTestForm from '@/components/admin/CreateTestForm'
+import AITextAnalyzer from '@/components/admin/AITextAnalyzer'
+import AITestCreator from '@/components/admin/AITestCreator'
+import ProgressiveAITestCreator from '@/components/admin/ProgressiveAITestCreator'
+import ManualAITestCreator from '@/components/admin/ManualAITestCreator'
 import StatsCards from '@/components/admin/StatsCards'
 import AdminTestCard from '@/components/admin/AdminTestCard'
-import { Plus, FileText, Users, GraduationCap } from 'lucide-react'
+import {
+  Plus,
+  FileText,
+  Users,
+  GraduationCap,
+  Bot,
+  Sparkles,
+} from 'lucide-react'
 import { Eye } from 'lucide-react'
 import { Edit } from 'lucide-react'
+import { Brain } from 'lucide-react'
 
 export default function CreateTestPage() {
   const { data: session } = useSession()
@@ -18,10 +30,14 @@ export default function CreateTestPage() {
   const [loading, setLoading] = useState(false)
   const [existingTests, setExistingTests] = useState([])
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showAICreator, setShowAICreator] = useState(false)
+  const [showProgressiveAI, setShowProgressiveAI] = useState(false)
+  const [showManualAI, setShowManualAI] = useState(false)
+  const [showTextAnalyzer, setShowTextAnalyzer] = useState(false)
   const [editingTest, setEditingTest] = useState(null)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
-  const [activeCategory, setActiveCategory] = useState('ALL')
+  const [activeCategory, setActiveCategory] = useState('DRAFT')
   const [filteredTests, setFilteredTests] = useState([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteTestData, setDeleteTestData] = useState(null)
@@ -81,6 +97,11 @@ export default function CreateTestPage() {
   const editTest = (test) => {
     setEditingTest(test)
     setShowCreateForm(true)
+  }
+
+  const analyzeTextForTest = (test) => {
+    setEditingTest(test)
+    setShowTextAnalyzer(true)
   }
 
   const handleFormSuccess = (result) => {
@@ -212,6 +233,14 @@ export default function CreateTestPage() {
       case 'continue':
         continueTest(test.id)
         break
+      case 'continue-ai':
+        // Set the test ID for AI continuation and show manual AI creator
+        setEditingTest({ ...test, aiContinuation: true })
+        setShowManualAI(true)
+        break
+      case 'analyze':
+        analyzeTextForTest(test)
+        break
       case 'attempt':
       case 'view':
         viewTest(test.id)
@@ -231,6 +260,10 @@ export default function CreateTestPage() {
   const resetForm = () => {
     setEditingTest(null)
     setShowCreateForm(false)
+    setShowAICreator(false)
+    setShowProgressiveAI(false)
+    setShowManualAI(false)
+    setShowTextAnalyzer(false)
   }
 
   // Stats calculations
@@ -280,6 +313,61 @@ export default function CreateTestPage() {
         onCancel={resetForm}
         onSuccess={handleFormSuccess}
       />
+    )
+  }
+
+  if (showAICreator) {
+    return (
+      <AITestCreator
+        editingTest={editingTest}
+        onCancel={resetForm}
+        onSuccess={handleFormSuccess}
+      />
+    )
+  }
+
+  if (showProgressiveAI) {
+    return (
+      <ProgressiveAITestCreator
+        editingTest={editingTest}
+        onCancel={resetForm}
+        onSuccess={handleFormSuccess}
+      />
+    )
+  }
+
+  if (showManualAI) {
+    return (
+      <ManualAITestCreator
+        editingTest={editingTest}
+        onCancel={resetForm}
+        onSuccess={handleFormSuccess}
+      />
+    )
+  }
+
+  if (showTextAnalyzer) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-2 md:p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-6">
+            <Button variant="outline" onClick={resetForm} className="mb-4">
+              ← Back to Tests
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900">
+              AI Text Analyzer
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Paste your test content and let AI extract passages, questions,
+              and generate answers
+            </p>
+          </div>
+          <AITextAnalyzer
+            testId={editingTest?.id}
+            onImportComplete={handleFormSuccess}
+          />
+        </div>
+      </div>
     )
   }
 
@@ -354,14 +442,16 @@ export default function CreateTestPage() {
                 Create and manage your CLAT test content
               </p>
             </div>
-            <Button
-              onClick={() => setShowCreateForm(true)}
-              className="flex items-center space-x-2 flex-shrink-0 bg-black text-white hover:bg-gray-800 rounded-lg px-4 py-2"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Create New Test</span>
-              <span className="sm:hidden">New</span>
-            </Button>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button
+                onClick={() => setShowCreateForm(true)}
+                className="flex items-center space-x-2 bg-black text-white hover:bg-gray-800 rounded-lg px-4 py-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Create New Test</span>
+                <span className="sm:hidden">New</span>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -372,16 +462,7 @@ export default function CreateTestPage() {
 
         {/* Test Categories Navigation */}
         <div className="mb-4 md:mb-6 flex flex-wrap gap-2 rounded-lg border border-gray-300 bg-white p-2">
-          <button
-            onClick={() => setActiveCategory('ALL')}
-            className={`rounded-lg px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm font-semibold transition-colors ${
-              activeCategory === 'ALL'
-                ? 'bg-black text-white'
-                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            ALL TESTS
-          </button>
+
           <button
             onClick={() => setActiveCategory('DRAFT')}
             className={`rounded-lg px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm font-semibold transition-colors ${

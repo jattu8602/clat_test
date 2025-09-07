@@ -1,57 +1,38 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useLayout, useOptimizedSession } from '@/lib/contexts/LayoutContext'
 import Sidebar from '@/components/layout/sidebar'
 import Header from '@/components/layout/header'
+import LayoutLoader from '@/components/ui/LayoutLoader'
 
 export default function MainLayout({ children, isAdmin = false }) {
-  const { data: session, status } = useSession()
+  const { session, status, isAdmin: cachedIsAdmin } = useOptimizedSession()
+  const { sidebarOpen, setSidebarOpen, isInitialized } = useLayout()
   const router = useRouter()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    if (status === 'loading') return
+    // Only run auth checks if we're initialized and not loading
+    if (!isInitialized || status === 'loading') return
 
     if (!session) {
       router.push('/login')
       return
     }
 
-    if (isAdmin && session.user.role !== 'ADMIN') {
+    if (isAdmin && !cachedIsAdmin) {
       router.push('/dashboard')
       return
     }
-  }, [session, status, router, isAdmin])
+  }, [session, status, router, isAdmin, cachedIsAdmin, isInitialized])
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 px-4">
-        <div className="text-center space-y-6">
-          {/* Spinner Container */}
-          <div className="relative w-20 h-20 mx-auto">
-            {/* Outer muted spinner */}
-            <div className="animate-spin rounded-full h-full w-full border-4 border-slate-200 dark:border-slate-700"></div>
-            {/* Inner colored spinner */}
-            <div className="absolute top-0 left-0 animate-spin rounded-full h-full w-full border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent"></div>
-          </div>
+  // Show loading if not initialized or session is loading
+  // if (!isInitialized || status === 'loading') {
+  //   return <LayoutLoader />
+  // }
 
-          {/* Text Section */}
-          <div className="space-y-1">
-            <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-              Loading...
-            </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Please wait while we prepare your workspace
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!session || (isAdmin && session.user.role !== 'ADMIN')) {
+  if (!session || (isAdmin && !cachedIsAdmin)) {
     return null
   }
 
@@ -77,9 +58,7 @@ export default function MainLayout({ children, isAdmin = false }) {
         <main className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 transition-all duration-300">
           {/* Mobile: No padding, Direct content */}
           <div className="lg:p-2 lg:max-w-7xl lg:mx-auto">
-            <div className="">
-              {children}
-            </div>
+            <div className="">{children}</div>
           </div>
         </main>
       </div>

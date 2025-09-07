@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { Maximize, Minimize } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +38,7 @@ export default function Header({
   const [searchFocus, setSearchFocus] = useState(false)
   const [notificationCount, setNotificationCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Fetch notification count
   useEffect(() => {
@@ -73,6 +75,49 @@ export default function Header({
       setLoading(false)
     }
   }
+  // Check current fullscreen state
+  const checkFullscreen = () => {
+    return !!(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.msFullscreenElement
+    )
+  }
+
+  // Function to toggle fullscreen
+  const toggleFullscreen = () => {
+    if (!checkFullscreen()) {
+      const el = document.documentElement // change to your specific element
+      if (el.requestFullscreen) el.requestFullscreen()
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
+      else if (el.msRequestFullscreen) el.msRequestFullscreen()
+
+      setIsFullscreen(true) // update UI instantly
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen()
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
+      else if (document.msExitFullscreen) document.msExitFullscreen()
+
+      setIsFullscreen(false) // update UI instantly
+    }
+  }
+
+  // Sync when user presses ESC or exits fullscreen
+  useEffect(() => {
+
+    setIsFullscreen(checkFullscreen())
+    const handleChange = () => setIsFullscreen(checkFullscreen())
+
+    document.addEventListener('fullscreenchange', handleChange)
+    document.addEventListener('webkitfullscreenchange', handleChange)
+    document.addEventListener('msfullscreenchange', handleChange)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleChange)
+      document.removeEventListener('webkitfullscreenchange', handleChange)
+      document.removeEventListener('msfullscreenchange', handleChange)
+    }
+  }, [])
 
   // Function to manually decrement notification count (for immediate UI updates)
   const decrementNotificationCount = () => {
@@ -148,6 +193,12 @@ export default function Header({
 
         {/* Right side - Theme Toggle, Notifications and Profile */}
         <div className="flex items-center space-x-3">
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 rounded bg-slate-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 hover:bg-slate-200 transition-colors"
+          >
+            {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+          </button>
           {/* Theme Toggle */}
           <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
             <ThemeToggle />
@@ -191,32 +242,6 @@ export default function Header({
               </span>
             </div>
           )}
-
-          {/* Notifications */}
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 dark:text-white"
-              onClick={() => {
-                router.push('/dashboard/notifications')
-                setSidebarOpen(false)
-              }}
-            >
-              <Bell className="h-5 w-5" />
-              {/* {(loading || notificationCount > 0) && (
-                <span
-                  className={`absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs text-white flex items-center justify-center font-medium shadow-lg ${
-                    loading
-                      ? 'bg-gray-500'
-                      : 'bg-gradient-to-r from-red-500 to-red-600 animate-pulse'
-                  }`}
-                >
-                  {loading ? '...' : notificationCount}
-                </span>
-              )} */}
-            </Button>
-          </div>
 
           {/* Profile Dropdown - Desktop Only */}
           <div className="">

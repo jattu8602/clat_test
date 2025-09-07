@@ -50,6 +50,12 @@ CLOUDINARY_API_KEY="your_api_key"
 CLOUDINARY_API_SECRET="your_api_secret"
 ```
 
+## Gemini AI (for automated test creation)
+
+```env
+GEMINI_API_KEY="your_gemini_api_key_here"
+```
+
 ## Other Configuration
 
 ```env

@@ -22,7 +22,6 @@ export async function PUT(request, { params }) {
       duration,
       durationType,
       untilDate,
-      thumbnailUrl,
       description,
       discount,
       isActive,
@@ -80,7 +79,6 @@ export async function PUT(request, { params }) {
 
     // Add optional fields only if they exist
     if (untilDate) planData.untilDate = new Date(untilDate)
-    if (thumbnailUrl) planData.thumbnailUrl = thumbnailUrl
     if (description) planData.description = description
     if (discount) planData.discount = parseFloat(discount)
 

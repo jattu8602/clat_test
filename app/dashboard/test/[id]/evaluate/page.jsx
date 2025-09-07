@@ -51,6 +51,7 @@ export default function TestEvaluationPage() {
   const attemptId = searchParams.get('attemptId')
 
   const [evaluationData, setEvaluationData] = useState(null)
+  const [passages, setPassages] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [showExplanations, setShowExplanations] = useState(true)
@@ -81,6 +82,7 @@ export default function TestEvaluationPage() {
         const data = await response.json()
         console.log('Evaluation Data:', data)
         setEvaluationData(data)
+        setPassages(data.passages || [])
         groupQuestionsBySection(data.questions)
       } else {
         toast.error('Failed to fetch evaluation data')
@@ -259,6 +261,7 @@ export default function TestEvaluationPage() {
         <QuestionDisplay
           currentQuestion={currentQuestion}
           questions={questions}
+          passages={passages}
           currentQuestionIndex={currentQuestionIndex}
           getQuestionStatusColor={getQuestionStatusColor}
           getQuestionStatus={getQuestionStatus}

@@ -20,6 +20,8 @@ export default function QuestionView({
   onEdit,
   onDelete,
   getSectionName,
+  existingPassages = [],
+  getPassageForQuestion,
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -48,6 +50,46 @@ export default function QuestionView({
               </span>
             )}
           </div>
+          {/* Show passage info */}
+          <div className="mb-2">
+            {question.passageId ? (
+              <div>
+                <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  <FileText className="h-3 w-3 mr-1" />
+                  Passage{' '}
+                  {(() => {
+                    if (!getPassageForQuestion) return 'Unknown'
+                    const passage = getPassageForQuestion(question)
+                    return passage ? passage.passageNumber : 'Unknown'
+                  })()}
+                </div>
+                <div className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
+                  {(() => {
+                    if (!getPassageForQuestion) return 'Unknown passage'
+                    const passage = getPassageForQuestion(question)
+                    return passage ? (
+                      <div
+                        className="prose prose-xs dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{
+                          __html:
+                            passage.content.substring(0, 100) +
+                            (passage.content.length > 100 ? '...' : ''),
+                        }}
+                      />
+                    ) : (
+                      'Unknown passage'
+                    )
+                  })()}
+                </div>
+              </div>
+            ) : (
+              <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                <FileText className="h-3 w-3 mr-1" />
+                No Passage
+              </div>
+            )}
+          </div>
+
           <div className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
             <div
               className="prose prose-sm dark:prose-invert max-w-none"
@@ -105,6 +147,18 @@ export default function QuestionView({
                   <strong>Marks:</strong> +{question.positiveMarks} /{' '}
                   {question.negativeMarks}
                 </li>
+                {question.passageId && getPassageForQuestion && (
+                  <li>
+                    <strong>Passage:</strong>{' '}
+                    {(() => {
+                      if (!getPassageForQuestion) return 'Unknown Passage'
+                      const passage = getPassageForQuestion(question)
+                      return passage
+                        ? `Passage ${passage.passageNumber}`
+                        : 'Unknown Passage'
+                    })()}
+                  </li>
+                )}
               </ul>
             </div>
             {question.explanation && (

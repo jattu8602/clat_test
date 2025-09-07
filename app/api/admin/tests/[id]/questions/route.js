@@ -102,14 +102,32 @@ export async function POST(request, { params }) {
       questionData.tableData = null
     }
 
-    // Clean up comprehension text if present
-    if (questionData.isComprehension && !questionData.comprehension?.trim()) {
-      return NextResponse.json(
-        {
-          error: 'Comprehension text is required when comprehension is enabled',
+    // Handle passage creation or referencing
+    let passageId = null
+    if (questionData.passageContent?.trim()) {
+      // Create new passage
+      const lastPassage = await prisma.passage.findFirst({
+        where: { testId },
+        orderBy: { passageNumber: 'desc' },
+        select: { passageNumber: true },
+      })
+
+      const nextPassageNumber = (lastPassage?.passageNumber || 0) + 1
+
+      const newPassage = await prisma.passage.create({
+        data: {
+          testId,
+          passageNumber: nextPassageNumber,
+          content: questionData.passageContent.trim(),
+          contentFormat: questionData.passageFormat || null,
+          section: questionData.section,
         },
-        { status: 400 }
-      )
+      })
+
+      passageId = newPassage.id
+    } else if (questionData.passageId) {
+      // Reference existing passage
+      passageId = questionData.passageId
     }
 
     // Create the question with cleaned data
@@ -120,11 +138,7 @@ export async function POST(request, { params }) {
         questionText: questionData.questionText.trim(),
         questionTextFormat: questionData.questionTextFormat || null,
         imageUrls: questionData.imageUrls?.filter((url) => url?.trim()) || [],
-        isComprehension: questionData.isComprehension || false,
-        comprehension: questionData.isComprehension
-          ? questionData.comprehension?.trim()
-          : null,
-        comprehensionFormat: questionData.comprehensionFormat || null,
+        passageId: passageId, // Link to passage if exists
         isTable: questionData.isTable || false,
         tableData: questionData.tableData,
         questionType: questionData.questionType,
@@ -180,6 +194,7 @@ export async function GET(request, { params }) {
             type: true,
           },
         },
+        passage: true, // Include passage information
       },
     })
 
@@ -199,7 +214,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
-  const { testId } = params
+  const { id: testId } = await params
   const { searchParams } = new URL(request.url)
   const questionId = searchParams.get('questionId')
 
@@ -216,9 +231,9 @@ export async function PUT(request, { params }) {
       questionText,
       questionTextFormat,
       imageUrls,
-      isComprehension,
-      comprehension,
-      comprehensionFormat,
+      passageId,
+      passageContent,
+      passageFormat,
       isTable,
       tableData,
       questionType,
@@ -232,15 +247,41 @@ export async function PUT(request, { params }) {
       explanationFormat,
     } = body
 
+    // Handle passage creation or referencing for updates
+    let finalPassageId = null
+    if (passageContent?.trim()) {
+      // Create new passage
+      const lastPassage = await prisma.passage.findFirst({
+        where: { testId },
+        orderBy: { passageNumber: 'desc' },
+        select: { passageNumber: true },
+      })
+
+      const nextPassageNumber = (lastPassage?.passageNumber || 0) + 1
+
+      const newPassage = await prisma.passage.create({
+        data: {
+          testId,
+          passageNumber: nextPassageNumber,
+          content: passageContent.trim(),
+          contentFormat: passageFormat || null,
+          section: section,
+        },
+      })
+
+      finalPassageId = newPassage.id
+    } else if (passageId) {
+      // Reference existing passage
+      finalPassageId = passageId
+    }
+
     const updatedQuestion = await prisma.question.update({
       where: { id: questionId },
       data: {
         questionText,
         questionTextFormat,
         imageUrls,
-        isComprehension,
-        comprehension,
-        comprehensionFormat,
+        passageId: finalPassageId,
         isTable,
         tableData,
         questionType,
@@ -274,7 +315,7 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
-  const { testId } = params
+  const { id: testId } = await params
   const { searchParams } = new URL(request.url)
   const questionId = searchParams.get('questionId')
 

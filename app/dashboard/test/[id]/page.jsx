@@ -37,6 +37,7 @@ export default function TestTakingPage() {
   // State management
   const [test, setTest] = useState(null)
   const [questions, setQuestions] = useState([])
+  const [passages, setPassages] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState({})
   const [markedForLater, setMarkedForLater] = useState(new Set())
@@ -63,6 +64,12 @@ export default function TestTakingPage() {
 
   // Get current question
   const currentQuestion = questions[currentQuestionIndex]
+
+  // Helper function to get passage for a question
+  const getPassageForQuestion = (question) => {
+    if (!question?.passageId || !passages.length) return null
+    return passages.find((passage) => passage.id === question.passageId)
+  }
 
   // Timer effect
   useEffect(() => {
@@ -167,6 +174,7 @@ export default function TestTakingPage() {
         const data = await response.json()
         setTest(data.test)
         setQuestions(data.questions)
+        setPassages(data.passages || [])
         setTimeRemaining(data.test.durationInMinutes * 60)
       } else {
         toast.error('Failed to fetch test data')
@@ -788,22 +796,40 @@ export default function TestTakingPage() {
                 </div>
               </div>
 
-              {/* Comprehension (if exists) */}
-              {currentQuestion.isComprehension && (
-                <Card className="mb-6 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                  <CardContent className="p-4">
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-2">
-                      Comprehension:
-                    </h3>
-                    <div
-                      className="text-gray-700 dark:text-gray-300 prose dark:prose-invert"
-                      dangerouslySetInnerHTML={{
-                        __html: currentQuestion.comprehension,
-                      }}
-                    />
-                  </CardContent>
-                </Card>
-              )}
+              {/* Passage (if exists) */}
+              {(() => {
+                const passage = getPassageForQuestion(currentQuestion)
+                if (!passage) return null
+
+                return (
+                  <Card className="mb-6 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium text-gray-900 dark:text-white">
+                          Passage {passage.passageNumber}
+                        </h3>
+                        <Badge
+                          variant="outline"
+                          className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-blue-900 bg-blue-200"
+                        >
+                          {passage.section.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      {passage.title && (
+                        <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                          {passage.title}
+                        </h4>
+                      )}
+                      <div
+                        className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{
+                          __html: passage.content,
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                )
+              })()}
 
               {/* Question Content */}
               <Card className="mb-6 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
@@ -1129,9 +1155,9 @@ export default function TestTakingPage() {
                     </div>
                   )}
                 </div>
-                <Button variant="outline" onClick={() => setShowResults(false)}>
+                {/* <Button variant="outline" onClick={() => setShowResults(false)}>
                   <X className="w-4 h-4" />
-                </Button>
+                </Button> */}
               </div>
 
               {/* Summary Stats */}

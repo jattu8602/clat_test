@@ -112,16 +112,28 @@ model Test {
   type             TestType
   durationInMinutes Int       // Example: 180 for 3hr
   isActive         Boolean    @default(true)
-  createdBy        String?    @db.ObjectId  // User who created the test
-  thumbnailUrl     String?    // URL for test thumbnail
-  highlightPoints  String[]   // Array of highlight points
-  positiveMarks    Float      @default(1.0)
-  negativeMarks    Float      @default(-0.25)
-  questionCount    Int?       // Total number of questions
   questions        Question[]
   testAttempts     TestAttempt[]
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
+}
+
+model Passage {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  testId          String         @db.ObjectId
+  test            Test           @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  passageNumber   Int            // Passage number within the test (1, 2, 3, etc.)
+  content         String         // The actual passage content
+  contentFormat   Json?          // Rich text formatting for passage content
+  section         SectionType    // Which section this passage belongs to
+
+  questions       Question[]     // Questions that reference this passage
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([testId, passageNumber])
 }
 
 model Question {
@@ -129,13 +141,13 @@ model Question {
   testId          String         @db.ObjectId
   test            Test           @relation(fields: [testId], references: [id], onDelete: Cascade)
 
+  passageId       String?        @db.ObjectId  // Reference to passage (null if standalone question)
+  passage         Passage?       @relation(fields: [passageId], references: [id], onDelete: Cascade)
+
   questionNumber  Int            // Auto-increment per test
   questionText    String
   questionTextFormat Json?      // Store formatting data for questionText text
   imageUrls       String[]       // Multiple image URLs
-  isComprehension Boolean        @default(false)
-  comprehension   String?
-  comprehensionFormat Json?      // Store formatting data for comprehension text
 
   isTable         Boolean        @default(false)
   tableData       Json?          // Represent table like [["a1b1", "a1b2"], ["a2b1", "a2b2"]]
@@ -206,7 +218,6 @@ model PaymentPlan {
   duration      Int      // in days
   durationType  String   @default("days") // days, months, years, until_date
   untilDate     DateTime? // Only if durationType is until_date
-  thumbnailUrl  String?
   description   String?
   discount      Float?   // Discount percentage (0-100)
   isActive      Boolean  @default(true)
