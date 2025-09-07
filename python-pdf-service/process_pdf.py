@@ -405,7 +405,7 @@ def parse_questions_from_text(text):
     # If all questions are in one section, try to distribute them more intelligently
     summary = generate_question_summary(cleaned_questions)
     if len(summary) == 1 and len(cleaned_questions) >= 4:
-        print(f"DEBUG: All questions in one section, attempting intelligent distribution...")
+        # print(f"DEBUG: All questions in one section, attempting intelligent distribution...")
         
         # Try to find natural section boundaries by looking for question patterns
         # that might indicate section changes
@@ -424,7 +424,7 @@ def parse_questions_from_text(text):
             else:
                 question['section'] = 'QUANTITATIVE_TECHNIQUES'
             
-            print(f"DEBUG: Question {i+1} assigned to {question['section']}")
+            # print(f"DEBUG: Question {i+1} assigned to {question['section']}")
     
     return cleaned_questions
 

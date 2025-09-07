@@ -80,7 +80,7 @@ def is_section_header(line):
     for keyword in section_keywords:
         if keyword in line_lower:
             if len(line_stripped) < 50 or 'section' in line_lower:
-                print(f"DEBUG: Section header detected: '{line_stripped}'")
+                # print(f"DEBUG: Section header detected: '{line_stripped}'")
                 return True
     
     return False
@@ -326,7 +326,7 @@ def parse_questions_from_text(text):
         if line and not is_watermark_or_header(line):
             lines.append(line)
     
-    print(f"DEBUG: Processing {len(lines)} lines after watermark filtering")
+    # print(f"DEBUG: Processing {len(lines)} lines after watermark filtering")
     
     # Data structures to maintain hierarchy
     sections = []
@@ -410,7 +410,7 @@ def parse_questions_from_text(text):
                     current_section['questions'].append(current_question)
                 question_number += 1
             
-            print(f"DEBUG: Found question {question_number}: '{line[:50]}...'")
+            # print(f"DEBUG: Found question {question_number}: '{line[:50]}...'")
             
             # Start new question
             current_question = {
@@ -451,7 +451,7 @@ def parse_questions_from_text(text):
             if (re.match(r'^\d+[\.\):\-\s]*', line) and len(line) > 10 and 
                 not re.match(r'^[A-E][\)\.]\s*', line) and  # Not an option
                 not re.match(r'^[A-E]\s+', line)):  # Not an option without punctuation
-                print(f"DEBUG: Fallback question detection: '{line[:50]}...'")
+                # print(f"DEBUG: Fallback question detection: '{line[:50]}...'")
                 # This might be a question that wasn't detected properly
                 current_question = {
                     'questionNumber': question_number,
@@ -509,7 +509,7 @@ def parse_questions_from_text(text):
             # If no options found, create placeholder options
             if not question['options'] or len(question['options']) == 0:
                 question['options'] = ['Option A', 'Option B', 'Option C', 'Option D']
-                print(f"DEBUG: Added placeholder options for question: {question['questionText'][:50]}...")
+                # print(f"DEBUG: Added placeholder options for question: {question['questionText'][:50]}...")
             
         # Set first option as correct answer (placeholder)
             question['correctAnswers'] = [question['options'][0]]
@@ -522,7 +522,7 @@ def parse_questions_from_text(text):
     # If all questions are in one section, try to distribute them more intelligently
     summary = generate_question_summary(cleaned_questions)
     if len(summary) == 1 and len(cleaned_questions) >= 4:
-        print(f"DEBUG: All questions in one section, attempting intelligent distribution...")
+        # print(f"DEBUG: All questions in one section, attempting intelligent distribution...")
         
         # Try to find natural section boundaries by looking for question patterns
         # that might indicate section changes
@@ -541,10 +541,10 @@ def parse_questions_from_text(text):
             else:
                 question['section'] = 'QUANTITATIVE_TECHNIQUES'
             
-            print(f"DEBUG: Question {i+1} assigned to {question['section']}")
+            # print(f"DEBUG: Question {i+1} assigned to {question['section']}")
     
-    print(f"DEBUG: Final question count: {len(cleaned_questions)}")
-    print(f"DEBUG: Questions by section: {generate_question_summary(cleaned_questions)}")
+    # print(f"DEBUG: Final question count: {len(cleaned_questions)}")
+    # print(f"DEBUG: Questions by section: {generate_question_summary(cleaned_questions)}")
     
     return cleaned_questions
 
