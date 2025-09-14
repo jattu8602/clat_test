@@ -121,6 +121,8 @@ export async function POST(request, { params }) {
           content: questionData.passageContent.trim(),
           contentFormat: questionData.passageFormat || null,
           section: questionData.section,
+          hasImage: questionData.passageHasImage || false,
+          imageUrls: questionData.passageImageUrls || [],
         },
       })
 
@@ -266,6 +268,8 @@ export async function PUT(request, { params }) {
           content: passageContent.trim(),
           contentFormat: passageFormat || null,
           section: section,
+          hasImage: questionData.passageHasImage || false,
+          imageUrls: questionData.passageImageUrls || [],
         },
       })
 

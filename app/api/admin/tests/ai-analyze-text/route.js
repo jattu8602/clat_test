@@ -79,7 +79,12 @@ function extractJSONFromResponse(responseText) {
     const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
     if (jsonMatch) {
       try {
-        const cleanedJson = jsonMatch[1].trim()
+        const cleanedJson = jsonMatch[1]
+          .trim()
+          .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+          .replace(/\n/g, '\\n') // Escape newlines
+          .replace(/\r/g, '\\r') // Escape carriage returns
+          .replace(/\t/g, '\\t') // Escape tabs
         console.log(
           'Extracted from code block:',
           cleanedJson.substring(0, 200) + '...'
@@ -114,11 +119,16 @@ function extractJSONFromResponse(responseText) {
     const jsonArrayMatch = responseText.match(/\[[\s\S]*?\]/)
     if (jsonArrayMatch) {
       try {
+        const cleanedArray = jsonArrayMatch[0]
+          .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+          .replace(/\n/g, '\\n') // Escape newlines
+          .replace(/\r/g, '\\r') // Escape carriage returns
+          .replace(/\t/g, '\\t') // Escape tabs
         console.log(
           'Trying JSON array:',
-          jsonArrayMatch[0].substring(0, 200) + '...'
+          cleanedArray.substring(0, 200) + '...'
         )
-        return JSON.parse(jsonArrayMatch[0])
+        return JSON.parse(cleanedArray)
       } catch (parseError) {
         console.error('Failed to parse JSON array:', parseError)
       }
@@ -129,6 +139,10 @@ function extractJSONFromResponse(responseText) {
       const cleanedResponse = responseText
         .replace(/^[^{[]*/, '') // Remove text before first { or [
         .replace(/[^}\]]*$/, '') // Remove text after last } or ]
+        .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+        .replace(/\n/g, '\\n') // Escape newlines
+        .replace(/\r/g, '\\r') // Escape carriage returns
+        .replace(/\t/g, '\\t') // Escape tabs
         .trim()
 
       if (cleanedResponse) {
@@ -143,7 +157,8 @@ function extractJSONFromResponse(responseText) {
     }
 
     console.error('Raw response text:', responseText.substring(0, 1000))
-    throw new Error('No valid JSON found in response')
+    console.log('No valid JSON found in response, returning null')
+    return null
   }
 }
 
@@ -198,6 +213,11 @@ export async function POST(request) {
     Analyze the following test text and extract structured information. The text contains passages and questions.
     ${sectionContext}
 
+    IMPORTANT: Group related content together. For example:
+    - If you see "DIRECTIONS FOR QUESTIONS (Q.7 TO Q.12): Study the table given below" followed by table data and questions 7-12, put ALL of this in ONE passage
+    - Don't create separate passages for directions and data when they belong together
+    - A passage can contain description + table data + questions that reference that data
+
     Text to analyze:
     ${text}
 
@@ -210,13 +230,19 @@ export async function POST(request) {
             {
               "passageNumber": 1,
               "content": "full passage content here",
+              "hasImage": false,
+              "imageUrls": [],
+              "isTable": false,
+              "tableData": null,
               "questions": [
                 {
                   "questionNumber": 1,
                   "questionText": "question text here",
                   "options": ["option a", "option b", "option c", "option d"],
                   "correctAnswer": "exact option text (if provided in text, otherwise null)",
-                  "explanation": "explanation if provided, otherwise null"
+                  "explanation": "explanation if provided, otherwise null",
+                  "isTable": false,
+                  "tableData": null
                 }
               ]
             }
@@ -228,7 +254,8 @@ export async function POST(request) {
         "totalQuestions": 24,
         "sectionsDetected": ["ENGLISH"],
         "hasAnswers": false,
-        "hasExplanations": false
+        "hasExplanations": false,
+        "hasTables": false
       }
     }
 
@@ -241,24 +268,46 @@ export async function POST(request) {
           )} section. Use "${selectedSection}" as the section name.`
         : 'Identify sections based on content (English, GK/CA, Legal Reasoning, Logical Reasoning, Quantitative Techniques)'
     }
-    2. Extract passages and their content
-    3. Extract questions with options
-    4. If correct answers are provided, include the EXACT OPTION TEXT (not the letter a, b, c, d)
-    5. If explanations are provided, include them
-    6. If answers/explanations are missing, set them to null
-    7. Return valid JSON only, no additional text
-    8. IMPORTANT: For correctAnswer, use the full option text, not option letters
-    9. For mathematical content: ensure all ratios, percentages, and numbers are properly quoted as strings
-    10. CRITICAL: Return ONLY the JSON object, no explanatory text before or after
-    11. ${
+    2. SMART PASSAGE ORGANIZATION:
+       - Group related content together in ONE passage (directions + data + questions that reference that data)
+       - If you see "DIRECTIONS FOR QUESTIONS (Q.X TO Q.Y): Study the table given below" followed by tabular data and then questions Q.X to Q.Y, put ALL of this in ONE passage
+       - A passage can contain: description text + table data + questions that reference that data
+       - Don't create separate passages for directions and data when they belong together
+    3. Extract passages and their content
+    4. Extract questions with options
+    5. If correct answers are provided, include the EXACT OPTION TEXT (not the letter a, b, c, d)
+    6. If explanations are provided, include them
+    7. If answers/explanations are missing, set them to null
+    8. Return valid JSON only, no additional text
+    9. IMPORTANT: For correctAnswer, use the full option text, not option letters
+    10. For mathematical content: ensure all ratios, percentages, and numbers are properly quoted as strings
+    11. CRITICAL: Return ONLY the JSON object, no explanatory text before or after
+    12. IMAGE DETECTION:
+       - For PASSAGES: If a passage contains image references or mentions images:
+         * Set "hasImage": true for that passage
+         * Extract image URLs and add them to "imageUrls": ["url1", "url2"]
+         * Look for patterns like "see the image below", "refer to the figure", or image URLs
+    13. TABLE DETECTION:
+       - For PASSAGES: If a passage contains tabular data or structured information that should be displayed as a table:
+         * Set "isTable": true for that passage
+         * Extract the table data and format it as "tableData": [["row1col1", "row1col2"], ["row2col1", "row2col2"]]
+         * Look for patterns like "Study the table given below", "Based on the information in the table", or structured data with rows and columns
+         * For data tables, extract all rows and columns as arrays of strings
+         * Include ALL questions that reference this table data in the SAME passage
+       - For QUESTIONS: If a question references tabular data or contains structured data that should be displayed as a table:
+         * Set "isTable": true for that question
+         * Extract the table data and format it as "tableData": [["row1col1", "row1col2"], ["row2col1", "row2col2"]]
+         * Look for patterns like "Study the table given below", "Based on the information in the table", or structured data with rows and columns
+         * For data tables, extract all rows and columns as arrays of strings
+    14. ${
       selectedSection === 'QUANTITATIVE_TECHNIQUES'
-        ? 'For Quantitative Techniques: Pay special attention to mathematical calculations, ratios, percentages, and numerical data. Ensure all mathematical expressions are properly formatted.'
+        ? 'For Quantitative Techniques: Pay special attention to mathematical calculations, ratios, percentages, and numerical data. Ensure all mathematical expressions are properly formatted. Look for tabular data in questions about statistics, comparisons, or structured information.'
         : ''
     }
     `
 
     const systemPrompt =
-      'You are an expert at analyzing test content and extracting structured data. Always return valid JSON. For mathematical content, ensure all numbers, ratios, and percentages are properly formatted as strings in the JSON. Do not include any text outside the JSON structure.'
+      "You are an expert at analyzing test content and extracting structured data. Always return valid JSON. For mathematical content, ensure all numbers, ratios, and percentages are properly formatted as strings in the JSON. Do not include any text outside the JSON structure. IMPORTANT: Group related content together - if directions, data, and questions are related, put them in the same passage. Don't create unnecessary separate passages."
     const analysisResponse = await callGeminiAPI(analysisPrompt, systemPrompt)
     const analysisResult = extractJSONFromResponse(analysisResponse)
 
@@ -379,13 +428,21 @@ export async function POST(request) {
       const generatedExplanations = extractJSONFromResponse(explanationResponse)
 
       // Apply generated explanations back to the analysis result
-      generatedExplanations.forEach((explanation) => {
-        const questionIndex = explanation.questionIndex
-        if (questionsNeedingExplanations[questionIndex]) {
-          questionsNeedingExplanations[questionIndex].explanation =
-            explanation.explanation
-        }
-      })
+      if (Array.isArray(generatedExplanations)) {
+        generatedExplanations.forEach((explanation) => {
+          const questionIndex = explanation.questionIndex
+          if (questionsNeedingExplanations[questionIndex]) {
+            questionsNeedingExplanations[questionIndex].explanation =
+              explanation.explanation
+          }
+        })
+      } else {
+        console.log(
+          'Generated explanations is not an array:',
+          generatedExplanations
+        )
+        // If explanation generation fails, continue without explanations
+      }
     }
 
     // Update the analysis result with generated content
@@ -431,6 +488,20 @@ export async function POST(request) {
         section.passages.every((passage) =>
           passage.questions.every((question) => question.explanation)
         )
+    )
+    analysisResult.summary.hasTables = analysisResult.sections.some((section) =>
+      section.passages.some(
+        (passage) =>
+          passage.isTable ||
+          passage.questions.some((question) => question.isTable)
+      )
+    )
+    analysisResult.summary.hasImages = analysisResult.sections.some((section) =>
+      section.passages.some(
+        (passage) =>
+          passage.hasImage ||
+          passage.questions.some((question) => question.imageUrls?.length > 0)
+      )
     )
 
     return NextResponse.json({

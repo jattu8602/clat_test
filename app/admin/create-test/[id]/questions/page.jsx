@@ -113,6 +113,8 @@ export default function CreateQuestionsPage() {
     passageId: null, // Reference to existing passage
     passageContent: '', // New passage content
     passageFormat: null, // Rich text format for new passage
+    passageHasImage: false, // Whether passage has images
+    passageImageUrls: [], // Passage image URLs
     isTable: false,
     tableData: {
       rows: 2,
@@ -240,6 +242,8 @@ export default function CreateQuestionsPage() {
       passageId: question.passageId || null,
       passageContent: '', // Don't show existing passage content in editor
       passageFormat: null,
+      passageHasImage: false,
+      passageImageUrls: [],
       isTable: question.tableData ? true : false,
       tableData: question.tableData || {
         rows: 2,
@@ -329,6 +333,8 @@ export default function CreateQuestionsPage() {
       passageId: autoLinkedPassage?.passageId || null,
       passageContent: autoLinkedPassage?.passageContent || '',
       passageFormat: autoLinkedPassage?.passageFormat || null,
+      passageHasImage: false,
+      passageImageUrls: [],
       isTable: false,
       tableData: {
         rows: 2,
@@ -679,6 +685,10 @@ export default function CreateQuestionsPage() {
         passageId: questionData.passageId || null,
         passageContent: questionData.passageContent?.trim() || null,
         passageFormat: questionData.passageFormat || null,
+        passageHasImage: questionData.passageHasImage || false,
+        passageImageUrls: questionData.passageImageUrls.filter((url) =>
+          url?.trim()
+        ),
         tableData: questionData.isTable ? questionData.tableData : null,
         positiveMarks: Number(questionData.positiveMarks),
         negativeMarks: Number(questionData.negativeMarks),
@@ -745,6 +755,8 @@ export default function CreateQuestionsPage() {
           passageId: autoLinkedPassage?.passageId || null,
           passageContent: autoLinkedPassage?.passageContent || '',
           passageFormat: autoLinkedPassage?.passageFormat || null,
+          passageHasImage: false,
+          passageImageUrls: [],
           isTable: false,
           tableData: {
             rows: 2,
@@ -1330,6 +1342,57 @@ export default function CreateQuestionsPage() {
                       />
                     )}
 
+                    {/* Passage Images */}
+                    {!questionData.passageId && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                          Passage Images
+                        </Label>
+                        <ImageUpload
+                          images={questionData.passageImageUrls}
+                          onImagesChange={(images) =>
+                            handleInputChange('passageImageUrls', images)
+                          }
+                          maxImages={5}
+                          className="min-h-[120px]"
+                        />
+                        {questionData.passageImageUrls.length > 0 && (
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="passageHasImage"
+                              checked={
+                                questionData.passageHasImage &&
+                                questionData.passageImageUrls.length > 0
+                              }
+                              onChange={(e) =>
+                                handleInputChange(
+                                  'passageHasImage',
+                                  e.target.checked
+                                )
+                              }
+                              className="rounded border-gray-300"
+                              disabled={
+                                questionData.passageImageUrls.length === 0
+                              }
+                            />
+                            <Label
+                              htmlFor="passageHasImage"
+                              className={`text-sm ${
+                                questionData.passageImageUrls.length === 0
+                                  ? 'text-slate-400 dark:text-slate-500'
+                                  : 'text-slate-700 dark:text-slate-300'
+                              }`}
+                            >
+                              This passage contains images
+                              {questionData.passageImageUrls.length === 0 &&
+                                ' (upload images first)'}
+                            </Label>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Show linked passage content */}
                     {questionData.passageId && questionData.passageContent && (
                       <div className="space-y-2">
@@ -1385,6 +1448,94 @@ export default function CreateQuestionsPage() {
                               __html: questionData.passageContent,
                             }}
                           />
+
+                          {/* Show linked passage images */}
+                          {(() => {
+                            const referencedPassage = existingPassages.find(
+                              (p) => p.id === questionData.passageId
+                            )
+                            if (
+                              referencedPassage?.hasImage &&
+                              referencedPassage?.imageUrls?.length > 0
+                            ) {
+                              return (
+                                <div className="mt-4">
+                                  <div className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                                    Passage Images:
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {referencedPassage.imageUrls.map(
+                                      (imageUrl, imageIndex) => (
+                                        <div
+                                          key={imageIndex}
+                                          className="relative"
+                                        >
+                                          <img
+                                            src={imageUrl}
+                                            alt={`Passage ${
+                                              referencedPassage.passageNumber
+                                            } Image ${imageIndex + 1}`}
+                                            className="w-full h-auto rounded border border-green-300 dark:border-green-600 max-h-48 object-contain bg-white dark:bg-green-800"
+                                            onError={(e) => {
+                                              e.target.style.display = 'none'
+                                            }}
+                                          />
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            }
+                            return null
+                          })()}
+
+                          {/* Show linked passage table */}
+                          {(() => {
+                            const referencedPassage = existingPassages.find(
+                              (p) => p.id === questionData.passageId
+                            )
+                            if (
+                              referencedPassage?.isTable &&
+                              referencedPassage?.tableData
+                            ) {
+                              return (
+                                <div className="mt-4">
+                                  <div className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                                    Passage Table:
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <table className="min-w-full text-xs border border-green-300 dark:border-green-600 bg-white dark:bg-green-800">
+                                      <tbody>
+                                        {referencedPassage.tableData.map(
+                                          (row, rowIndex) => (
+                                            <tr
+                                              key={rowIndex}
+                                              className={
+                                                rowIndex % 2 === 0
+                                                  ? 'bg-green-50 dark:bg-green-800'
+                                                  : 'bg-white dark:bg-green-700'
+                                              }
+                                            >
+                                              {row.map((cell, cellIndex) => (
+                                                <td
+                                                  key={cellIndex}
+                                                  className="px-3 py-2 border border-green-300 dark:border-green-600 text-center"
+                                                >
+                                                  {cell}
+                                                </td>
+                                              ))}
+                                            </tr>
+                                          )
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              )
+                            }
+                            return null
+                          })()}
                         </div>
                       </div>
                     )}
@@ -1885,17 +2036,36 @@ export default function CreateQuestionsPage() {
                         <input
                           type="checkbox"
                           id="isTable"
-                          checked={questionData.isTable}
+                          checked={
+                            questionData.isTable &&
+                            questionData.tableData?.data?.some((row) =>
+                              row.some((cell) => cell.trim() !== '')
+                            )
+                          }
                           onChange={(e) =>
                             handleInputChange('isTable', e.target.checked)
                           }
                           className="rounded border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50"
+                          disabled={
+                            !questionData.tableData?.data?.some((row) =>
+                              row.some((cell) => cell.trim() !== '')
+                            )
+                          }
                         />
                         <Label
                           htmlFor="isTable"
-                          className="text-sm font-medium text-slate-900 dark:text-slate-50"
+                          className={`text-sm font-medium ${
+                            !questionData.tableData?.data?.some((row) =>
+                              row.some((cell) => cell.trim() !== '')
+                            )
+                              ? 'text-slate-400 dark:text-slate-500'
+                              : 'text-slate-900 dark:text-slate-50'
+                          }`}
                         >
                           Include Table Data
+                          {!questionData.tableData?.data?.some((row) =>
+                            row.some((cell) => cell.trim() !== '')
+                          ) && ' (add table data first)'}
                         </Label>
                       </div>
                       {questionData.isTable && (

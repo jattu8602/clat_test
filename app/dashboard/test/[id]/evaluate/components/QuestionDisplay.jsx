@@ -157,6 +157,33 @@ export default function QuestionDisplay({
                         __html: passage.content,
                       }}
                     />
+
+                    {/* Passage Images */}
+                    {passage.hasImage &&
+                      passage.imageUrls &&
+                      passage.imageUrls.length > 0 && (
+                        <div className="mt-4">
+                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+                            Images:
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {passage.imageUrls.map((imageUrl, imageIndex) => (
+                              <div key={imageIndex} className="relative">
+                                <img
+                                  src={imageUrl}
+                                  alt={`Passage ${
+                                    passage.passageNumber
+                                  } Image ${imageIndex + 1}`}
+                                  className="w-full h-auto rounded border border-slate-300 dark:border-slate-600 max-h-64 object-contain bg-white dark:bg-slate-700"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none'
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 )
               })()}

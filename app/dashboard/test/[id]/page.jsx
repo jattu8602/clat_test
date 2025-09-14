@@ -848,6 +848,67 @@ export default function TestTakingPage() {
                           __html: passage.content,
                         }}
                       />
+
+                      {/* Passage Images */}
+                      {passage.hasImage &&
+                        passage.imageUrls &&
+                        passage.imageUrls.length > 0 && (
+                          <div className="mt-4">
+                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                              Images:
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {passage.imageUrls.map((imageUrl, imageIndex) => (
+                                <div key={imageIndex} className="relative">
+                                  <img
+                                    src={imageUrl}
+                                    alt={`Passage ${
+                                      passage.passageNumber
+                                    } Image ${imageIndex + 1}`}
+                                    className="w-full h-auto rounded border border-gray-300 dark:border-gray-600 max-h-64 object-contain bg-white dark:bg-gray-700"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none'
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Passage Table Data */}
+                      {passage.isTable && passage.tableData && (
+                        <div className="mt-4">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                            Table Data:
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700">
+                              <tbody>
+                                {passage.tableData.map((row, rowIndex) => (
+                                  <tr
+                                    key={rowIndex}
+                                    className={
+                                      rowIndex % 2 === 0
+                                        ? 'bg-gray-50 dark:bg-gray-800'
+                                        : 'bg-white dark:bg-gray-700'
+                                    }
+                                  >
+                                    {row.map((cell, cellIndex) => (
+                                      <td
+                                        key={cellIndex}
+                                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center"
+                                      >
+                                        {cell}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )

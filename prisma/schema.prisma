@@ -129,6 +129,14 @@ model Passage {
   contentFormat   Json?          // Rich text formatting for passage content
   section         SectionType    // Which section this passage belongs to
 
+  // Image fields
+  hasImage        Boolean        @default(false) // Whether this passage contains images
+  imageUrls       String[]       // Multiple image URLs for the passage
+
+  // Table data fields
+  isTable         Boolean        @default(false) // Whether this passage contains tabular data
+  tableData       Json?          // Table data as 2D array [["row1col1", "row1col2"], ["row2col1", "row2col2"]]
+
   questions       Question[]     // Questions that reference this passage
 
   createdAt       DateTime       @default(now())

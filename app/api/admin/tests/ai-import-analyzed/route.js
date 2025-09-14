@@ -45,6 +45,10 @@ export async function POST(request) {
             content: passageData.content,
             contentFormat: null, // We'll store as plain text for now
             section: section.name,
+            hasImage: passageData.hasImage || false,
+            imageUrls: passageData.imageUrls || [],
+            isTable: passageData.isTable || false,
+            tableData: passageData.tableData || null,
           },
         })
 
@@ -99,8 +103,8 @@ export async function POST(request) {
               questionText: questionData.questionText,
               questionTextFormat: null,
               imageUrls: [],
-              isTable: false,
-              tableData: null,
+              isTable: questionData.isTable || false,
+              tableData: questionData.tableData || null,
               questionType,
               optionType,
               options: questionData.options || [],

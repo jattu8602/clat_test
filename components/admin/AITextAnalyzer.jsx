@@ -277,7 +277,7 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
               <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
                   {analysis.summary.totalPassages}
@@ -301,6 +301,18 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                   {analysis.summary.hasAnswers ? '✓' : '✗'}
                 </div>
                 <div className="text-sm text-orange-600">Answers</div>
+              </div>
+              <div className="text-center p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                <div className="text-2xl font-bold text-indigo-600">
+                  {analysis.summary.hasTables ? '✓' : '✗'}
+                </div>
+                <div className="text-sm text-indigo-600">Tables</div>
+              </div>
+              <div className="text-center p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg">
+                <div className="text-2xl font-bold text-cyan-600">
+                  {analysis.summary.hasImages ? '✓' : '✗'}
+                </div>
+                <div className="text-sm text-cyan-600">Images</div>
               </div>
             </div>
 
@@ -338,52 +350,245 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                   {section.passages.map((passage, passageIndex) => (
                     <div
                       key={passageIndex}
-                      className="ml-4 mb-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded"
+                      className="ml-4 mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-600"
                     >
-                      <div className="flex items-center space-x-2 mb-2">
-                        <FileText className="h-4 w-4" />
-                        <span className="font-medium">
-                          Passage {passage.passageNumber}
-                        </span>
-                        <Badge variant="secondary">
-                          {passage.questions.length} questions
-                        </Badge>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <FileText className="h-4 w-4" />
+                          <span className="font-medium">
+                            Passage {passage.passageNumber}
+                          </span>
+                          <Badge variant="secondary">
+                            {passage.questions.length} questions
+                          </Badge>
+                          {passage.hasImage && (
+                            <Badge className="bg-blue-100 text-blue-800">
+                              <FileText className="h-3 w-3 mr-1" />
+                              Has Images
+                            </Badge>
+                          )}
+                          {passage.isTable && (
+                            <Badge className="bg-purple-100 text-purple-800">
+                              <Calculator className="h-3 w-3 mr-1" />
+                              Contains Table
+                            </Badge>
+                          )}
+                        </div>
+                        {passage.questions.length > 0 && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Questions:{' '}
+                            {passage.questions
+                              .map((q) => `Q${q.questionNumber}`)
+                              .join(', ')}
+                          </div>
+                        )}
                       </div>
 
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        {passage.content.substring(0, 100)}...
+                      {/* Passage Content */}
+                      <div className="mb-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                          Passage Content:
+                        </div>
+                        <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-white dark:bg-gray-700 p-3 rounded border">
+                          {passage.content}
+                        </div>
                       </div>
 
-                      <div className="space-y-1">
+                      {/* Passage Images */}
+                      {passage.hasImage &&
+                        passage.imageUrls &&
+                        passage.imageUrls.length > 0 && (
+                          <div className="mb-4">
+                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                              Images:
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {passage.imageUrls.map((imageUrl, imageIndex) => (
+                                <div key={imageIndex} className="relative">
+                                  <img
+                                    src={imageUrl}
+                                    alt={`Passage ${
+                                      passage.passageNumber
+                                    } Image ${imageIndex + 1}`}
+                                    className="w-full h-auto rounded border border-gray-300 dark:border-gray-600 max-h-64 object-contain bg-white dark:bg-gray-700"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none'
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Passage Table Data */}
+                      {passage.isTable && passage.tableData && (
+                        <div className="mb-4">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                            Table Data:
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700">
+                              <tbody>
+                                {passage.tableData.map((row, rowIndex) => (
+                                  <tr
+                                    key={rowIndex}
+                                    className={
+                                      rowIndex % 2 === 0
+                                        ? 'bg-gray-50 dark:bg-gray-800'
+                                        : 'bg-white dark:bg-gray-700'
+                                    }
+                                  >
+                                    {row.map((cell, cellIndex) => (
+                                      <td
+                                        key={cellIndex}
+                                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center"
+                                      >
+                                        {cell}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
                         {passage.questions.map((question, questionIndex) => (
                           <div
                             key={questionIndex}
-                            className="text-xs p-2 bg-white dark:bg-gray-700 rounded border"
+                            className="p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
                           >
-                            <div className="font-medium">
-                              Q{question.questionNumber}:{' '}
-                              {question.questionText.substring(0, 50)}...
+                            {/* Question Header */}
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-semibold text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  Q{question.questionNumber}
+                                </span>
+                                {question.isTable && (
+                                  <Badge className="bg-purple-100 text-purple-800">
+                                    <Calculator className="h-3 w-3 mr-1" />
+                                    Table Data
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {question.correctAnswer && (
+                                  <Badge className="bg-green-100 text-green-800">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Has Answer
+                                  </Badge>
+                                )}
+                                {question.explanation && (
+                                  <Badge className="bg-blue-100 text-blue-800">
+                                    <FileText className="h-3 w-3 mr-1" />
+                                    Has Explanation
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-2 mt-1">
-                              {question.correctAnswer && (
-                                <Badge
-                                  size="sm"
-                                  className="bg-green-100 text-green-800"
-                                >
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Has Answer
-                                </Badge>
-                              )}
-                              {question.explanation && (
-                                <Badge
-                                  size="sm"
-                                  className="bg-blue-100 text-blue-800"
-                                >
-                                  <FileText className="h-3 w-3 mr-1" />
-                                  Has Explanation
-                                </Badge>
-                              )}
+
+                            {/* Question Text */}
+                            <div className="mb-3">
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                Question:
+                              </div>
+                              <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                {question.questionText}
+                              </div>
                             </div>
+
+                            {/* Table Data Display */}
+                            {question.tableData && (
+                              <div className="mb-3">
+                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                  Table Data:
+                                </div>
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-full text-xs border border-gray-300 dark:border-gray-600">
+                                    <tbody>
+                                      {question.tableData.map(
+                                        (row, rowIndex) => (
+                                          <tr
+                                            key={rowIndex}
+                                            className={
+                                              rowIndex % 2 === 0
+                                                ? 'bg-gray-50 dark:bg-gray-800'
+                                                : 'bg-white dark:bg-gray-700'
+                                            }
+                                          >
+                                            {row.map((cell, cellIndex) => (
+                                              <td
+                                                key={cellIndex}
+                                                className="px-2 py-1 border border-gray-300 dark:border-gray-600 text-center"
+                                              >
+                                                {cell}
+                                              </td>
+                                            ))}
+                                          </tr>
+                                        )
+                                      )}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Options */}
+                            {question.options &&
+                              question.options.length > 0 && (
+                                <div className="mb-3">
+                                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    Options:
+                                  </div>
+                                  <div className="space-y-1">
+                                    {question.options.map(
+                                      (option, optionIndex) => (
+                                        <div
+                                          key={optionIndex}
+                                          className="flex items-start space-x-2 text-sm"
+                                        >
+                                          <span className="font-medium text-gray-600 dark:text-gray-400 min-w-[20px]">
+                                            {String.fromCharCode(
+                                              97 + optionIndex
+                                            )}
+                                            )
+                                          </span>
+                                          <span className="text-gray-700 dark:text-gray-300">
+                                            {option}
+                                          </span>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                            {/* Correct Answer */}
+                            {question.correctAnswer && (
+                              <div className="mb-3">
+                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                                  Correct Answer:
+                                </div>
+                                <div className="text-sm text-green-700 dark:text-green-400 font-medium">
+                                  {question.correctAnswer}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Explanation */}
+                            {question.explanation && (
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                                  Explanation:
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                                  {question.explanation}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
