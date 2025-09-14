@@ -10,7 +10,7 @@ export default function TestStatisticsSidebar({
 }) {
   return (
     <div
-      className={`transition-all duration-300 ease-in-out bg-white/70 dark:bg-slate-800/70
+      className={`hidden lg:block transition-all duration-300 ease-in-out bg-white/70 dark:bg-slate-800/70
   backdrop-blur-sm border-r border-slate-200 dark:border-slate-700
   flex-shrink-0 relative ${sidebarCollapsed ? 'w-16' : 'w-80'}`}
     >

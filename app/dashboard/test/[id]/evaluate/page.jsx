@@ -250,6 +250,8 @@ export default function TestEvaluationPage() {
         showExplanations={showExplanations}
         setShowExplanations={setShowExplanations}
         setShowAttemptHistory={setShowAttemptHistory}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
       />
 
       <div className="flex h-[calc(100vh-64px)]">
@@ -277,6 +279,8 @@ export default function TestEvaluationPage() {
           getQuestionStatusColor={getQuestionStatusColor}
           handleQuestionNavigation={handleQuestionNavigation}
           currentQuestionIndex={currentQuestionIndex}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
         />
       </div>
 

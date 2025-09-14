@@ -32,213 +32,256 @@ export async function POST(request, { params }) {
       timeSpent,
     })
 
-    // Fetch test and questions for validation
-    const test = await prisma.test.findUnique({
-      where: { id: testId },
-      include: {
-        questions: {
-          select: {
-            id: true,
-            correctAnswers: true,
-            positiveMarks: true,
-            negativeMarks: true,
+    // Use database transaction for atomicity and performance
+    const result = await prisma.$transaction(async (tx) => {
+      // Fetch test and questions for validation (optimized query)
+      const test = await tx.test.findUnique({
+        where: { id: testId },
+        select: {
+          id: true,
+          questions: {
+            select: {
+              id: true,
+              correctAnswers: true,
+              positiveMarks: true,
+              negativeMarks: true,
+            },
           },
         },
-      },
-    })
-
-    if (!test) {
-      return NextResponse.json({ error: 'Test not found' }, { status: 404 })
-    }
-
-    let testAttempt
-
-    // If attemptId provided, update existing attempt (reattempt)
-    if (attemptId) {
-      console.log('Processing reattempt with attemptId:', attemptId)
-
-      testAttempt = await prisma.testAttempt.findUnique({
-        where: { id: attemptId, userId: session.user.id },
       })
 
-      console.log(
-        'Found attempt:',
-        testAttempt
-          ? { id: testAttempt.id, completed: testAttempt.completed }
-          : 'Not found'
-      )
-
-      if (!testAttempt) {
-        console.error(
-          'Attempt not found for ID:',
-          attemptId,
-          'and userId:',
-          session.user.id
-        )
-        return NextResponse.json(
-          { error: 'Attempt not found' },
-          { status: 404 }
-        )
+      if (!test) {
+        throw new Error('Test not found')
       }
 
-      if (testAttempt.completed) {
-        console.error('Attempt already completed:', testAttempt.id)
-        return NextResponse.json(
-          { error: 'Attempt already completed' },
-          { status: 400 }
+      let testAttempt
+
+      // If attemptId provided, update existing attempt (reattempt)
+      if (attemptId) {
+        console.log('Processing reattempt with attemptId:', attemptId)
+
+        testAttempt = await tx.testAttempt.findUnique({
+          where: { id: attemptId, userId: session.user.id },
+          select: { id: true, completed: true },
+        })
+
+        console.log(
+          'Found attempt:',
+          testAttempt
+            ? { id: testAttempt.id, completed: testAttempt.completed }
+            : 'Not found'
         )
-      }
-    } else {
-      // Check if user has already completed this test (for first-time attempts)
-      const existingAttempt = await prisma.testAttempt.findFirst({
-        where: {
-          testId,
-          userId: session.user.id,
-          completed: true,
-        },
-      })
 
-      if (existingAttempt) {
-        return NextResponse.json(
-          { error: 'Test already completed. Use reattempt feature.' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Calculate score
-    let totalScore = 0
-    let totalPositiveMarks = 0
-    let totalNegativeMarks = 0
-    let correctAnswers = 0
-    let incorrectAnswers = 0
-    let unattemptedQuestions = 0
-
-    const questionAnswers = []
-
-    test.questions.forEach((question) => {
-      const userAnswer = answers[question.id]
-      const isMarkedForLater = markedForLater.includes(question.id)
-
-      if (userAnswer && userAnswer.length > 0) {
-        // Check if answer is correct
-        const isCorrect = Array.isArray(userAnswer)
-          ? userAnswer.every((ans) => question.correctAnswers.includes(ans)) &&
-            userAnswer.length === question.correctAnswers.length
-          : question.correctAnswers.includes(userAnswer)
-
-        if (isCorrect) {
-          totalScore += question.positiveMarks
-          totalPositiveMarks += question.positiveMarks
-          correctAnswers++
-        } else {
-          totalScore += question.negativeMarks
-          totalNegativeMarks += question.negativeMarks
-          incorrectAnswers++
+        if (!testAttempt) {
+          console.error(
+            'Attempt not found for ID:',
+            attemptId,
+            'and userId:',
+            session.user.id
+          )
+          throw new Error('Attempt not found')
         }
 
-        questionAnswers.push({
-          questionId: question.id,
-          selectedOption: Array.isArray(userAnswer) ? userAnswer : [userAnswer],
-          isCorrect,
-          timeTakenSec: Number(questionTimes[question.id]) || 0,
-        })
+        if (testAttempt.completed) {
+          console.error('Attempt already completed:', testAttempt.id)
+          throw new Error('Attempt already completed')
+        }
       } else {
-        unattemptedQuestions++
-        questionAnswers.push({
-          questionId: question.id,
-          selectedOption: [],
-          isCorrect: false,
-          timeTakenSec: Number(questionTimes[question.id]) || 0,
+        // Check if user has already completed this test (for first-time attempts)
+        const existingAttempt = await tx.testAttempt.findFirst({
+          where: {
+            testId,
+            userId: session.user.id,
+            completed: true,
+          },
+          select: { id: true },
         })
+
+        if (existingAttempt) {
+          throw new Error('Test already completed. Use reattempt feature.')
+        }
       }
-    })
 
-    // Calculate percentage score based on correct answers vs total questions
-    const percentageScore =
-      test.questions.length > 0
-        ? (correctAnswers / test.questions.length) * 100
-        : 0
-
-    if (attemptId) {
-      // Update existing attempt
-      testAttempt = await prisma.testAttempt.update({
-        where: { id: attemptId },
-        data: {
-          score: Math.round(percentageScore * 100) / 100,
-          totalQuestions: test.questions.length,
-          correctAnswers,
-          wrongAnswers: incorrectAnswers,
-          unattempted: unattemptedQuestions,
-          completed: true,
-          totalTimeSec: timeSpent,
-          totalAttempted: test.questions.length - unattemptedQuestions,
-          completedAt: new Date(),
-        },
+      // Create a map for faster question lookups
+      const questionMap = new Map()
+      test.questions.forEach((question) => {
+        questionMap.set(question.id, question)
       })
 
-      // Delete existing answers and create new ones
-      await prisma.answer.deleteMany({
-        where: { testAttemptId: attemptId },
-      })
-    } else {
-      // Create new test attempt
-      testAttempt = await prisma.testAttempt.create({
-        data: {
-          userId: session.user.id,
-          testId,
-          score: Math.round(percentageScore * 100) / 100,
-          totalQuestions: test.questions.length,
-          correctAnswers,
-          wrongAnswers: incorrectAnswers,
-          unattempted: unattemptedQuestions,
-          completed: true,
-          totalTimeSec: timeSpent,
-          totalAttempted: test.questions.length - unattemptedQuestions,
-          completedAt: new Date(),
-        },
-      })
-    }
+      // Calculate score and prepare answer data
+      let totalScore = 0
+      let totalPositiveMarks = 0
+      let totalNegativeMarks = 0
+      let correctAnswers = 0
+      let incorrectAnswers = 0
+      let unattemptedQuestions = 0
 
-    // Create answers for each question
-    await Promise.all(
-      questionAnswers.map((answer) =>
-        prisma.answer.create({
+      const answerData = []
+
+      test.questions.forEach((question) => {
+        const userAnswer = answers[question.id]
+        const isMarkedForLater = markedForLater.includes(question.id)
+
+        if (userAnswer && userAnswer.length > 0) {
+          // Check if answer is correct
+          const isCorrect = Array.isArray(userAnswer)
+            ? userAnswer.every((ans) =>
+                question.correctAnswers.includes(ans)
+              ) && userAnswer.length === question.correctAnswers.length
+            : question.correctAnswers.includes(userAnswer)
+
+          if (isCorrect) {
+            totalScore += question.positiveMarks
+            totalPositiveMarks += question.positiveMarks
+            correctAnswers++
+          } else {
+            totalScore += question.negativeMarks
+            totalNegativeMarks += question.negativeMarks
+            incorrectAnswers++
+          }
+
+          answerData.push({
+            questionId: question.id,
+            testAttemptId: attemptId || 'temp', // Will be updated after testAttempt creation
+            selectedOption: Array.isArray(userAnswer)
+              ? userAnswer
+              : [userAnswer],
+            isCorrect,
+            timeTakenSec: Number(questionTimes[question.id]) || 0,
+            marksObtained: isCorrect
+              ? question.positiveMarks
+              : question.negativeMarks,
+          })
+        } else {
+          unattemptedQuestions++
+          answerData.push({
+            questionId: question.id,
+            testAttemptId: attemptId || 'temp', // Will be updated after testAttempt creation
+            selectedOption: [],
+            isCorrect: false,
+            timeTakenSec: Number(questionTimes[question.id]) || 0,
+            marksObtained: 0,
+          })
+        }
+      })
+
+      // Calculate percentage score based on correct answers vs total questions
+      const percentageScore =
+        test.questions.length > 0
+          ? (correctAnswers / test.questions.length) * 100
+          : 0
+
+      const roundedScore = Math.round(percentageScore * 100) / 100
+
+      if (attemptId) {
+        // Update existing attempt
+        testAttempt = await tx.testAttempt.update({
+          where: { id: attemptId },
           data: {
-            questionId: answer.questionId,
-            testAttemptId: testAttempt.id,
-            selectedOption: answer.selectedOption,
-            isCorrect: answer.isCorrect,
-            timeTakenSec: answer.timeTakenSec,
-            marksObtained: answer.isCorrect
-              ? test.questions.find((q) => q.id === answer.questionId)
-                  ?.positiveMarks || 0
-              : test.questions.find((q) => q.id === answer.questionId)
-                  ?.negativeMarks || 0,
+            score: roundedScore,
+            totalQuestions: test.questions.length,
+            correctAnswers,
+            wrongAnswers: incorrectAnswers,
+            unattempted: unattemptedQuestions,
+            completed: true,
+            totalTimeSec: timeSpent,
+            totalAttempted: test.questions.length - unattemptedQuestions,
+            completedAt: new Date(),
           },
         })
-      )
-    )
+
+        // Delete existing answers in batch
+        await tx.answer.deleteMany({
+          where: { testAttemptId: attemptId },
+        })
+
+        // Update answer data with correct testAttemptId
+        answerData.forEach((answer) => {
+          answer.testAttemptId = attemptId
+        })
+      } else {
+        // Create new test attempt
+        testAttempt = await tx.testAttempt.create({
+          data: {
+            userId: session.user.id,
+            testId,
+            score: roundedScore,
+            totalQuestions: test.questions.length,
+            correctAnswers,
+            wrongAnswers: incorrectAnswers,
+            unattempted: unattemptedQuestions,
+            completed: true,
+            totalTimeSec: timeSpent,
+            totalAttempted: test.questions.length - unattemptedQuestions,
+            completedAt: new Date(),
+          },
+        })
+
+        // Update answer data with correct testAttemptId
+        answerData.forEach((answer) => {
+          answer.testAttemptId = testAttempt.id
+        })
+      }
+
+      // Create all answers in a single batch operation
+      await tx.answer.createMany({
+        data: answerData,
+      })
+
+      return {
+        testAttempt,
+        roundedScore,
+        totalPositiveMarks,
+        totalNegativeMarks,
+        correctAnswers,
+        incorrectAnswers,
+        unattemptedQuestions,
+        totalQuestions: test.questions.length,
+        timeSpent,
+        isReattempt: !!attemptId,
+      }
+    })
 
     const responseData = {
       success: true,
-      testAttemptId: testAttempt.id,
-      score: Math.round(percentageScore * 100) / 100,
-      percentageScore: Math.round(percentageScore * 100) / 100,
-      totalPositiveMarks,
-      totalNegativeMarks,
-      correctAnswers,
-      wrongAnswers: incorrectAnswers,
-      unattemptedQuestions,
-      totalQuestions: test.questions.length,
-      timeSpent,
-      isReattempt: !!attemptId,
+      testAttemptId: result.testAttempt.id,
+      score: result.roundedScore,
+      percentageScore: result.roundedScore,
+      totalPositiveMarks: result.totalPositiveMarks,
+      totalNegativeMarks: result.totalNegativeMarks,
+      correctAnswers: result.correctAnswers,
+      wrongAnswers: result.incorrectAnswers,
+      unattemptedQuestions: result.unattemptedQuestions,
+      totalQuestions: result.totalQuestions,
+      timeSpent: result.timeSpent,
+      isReattempt: result.isReattempt,
     }
 
     console.log('Test submission successful:', responseData)
     return NextResponse.json(responseData)
   } catch (error) {
     console.error('Error submitting test:', error)
+
+    // Handle specific error cases
+    if (error.message === 'Test not found') {
+      return NextResponse.json({ error: 'Test not found' }, { status: 404 })
+    }
+    if (error.message === 'Attempt not found') {
+      return NextResponse.json({ error: 'Attempt not found' }, { status: 404 })
+    }
+    if (error.message === 'Attempt already completed') {
+      return NextResponse.json(
+        { error: 'Attempt already completed' },
+        { status: 400 }
+      )
+    }
+    if (error.message === 'Test already completed. Use reattempt feature.') {
+      return NextResponse.json(
+        { error: 'Test already completed. Use reattempt feature.' },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

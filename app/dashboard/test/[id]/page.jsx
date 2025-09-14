@@ -718,34 +718,36 @@ export default function TestTakingPage() {
       {/* Top Navigation */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            <h1 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
               {test.title}
             </h1>
-            <Badge
-              variant={test.type === 'PAID' ? 'default' : 'secondary'}
-              className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-green-900 bg-green-200"
-            >
-              {test.type}
-            </Badge>
-            <Badge
-              variant="outline"
-              className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-yellow-900 bg-yellow-200"
-            >
-              {questions.length} Questions
-            </Badge>
+            <div className="hidden sm:flex items-center gap-2">
+              <Badge
+                variant={test.type === 'PAID' ? 'default' : 'secondary'}
+                className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-green-900 bg-green-200"
+              >
+                {test.type}
+              </Badge>
+              <Badge
+                variant="outline"
+                className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-yellow-900 bg-yellow-200"
+              >
+                {questions.length} Questions
+              </Badge>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Clock
-                className={`w-5 h-5 ${
+                className={`w-4 h-4 sm:w-5 sm:h-5 ${
                   timeRemaining <= 300
                     ? 'text-red-500 animate-pulse'
                     : 'text-red-500'
                 }`}
               />
               <span
-                className={`text-lg font-mono font-semibold ${
+                className={`text-sm sm:text-lg font-mono font-semibold ${
                   timeRemaining <= 300
                     ? 'text-red-600 animate-pulse'
                     : 'text-red-600'
@@ -754,7 +756,7 @@ export default function TestTakingPage() {
                 {formatTime(timeRemaining)}
               </span>
               {timeRemaining <= 300 && (
-                <span className="text-xs text-red-500 font-medium animate-pulse">
+                <span className="hidden sm:inline text-xs text-red-500 font-medium animate-pulse">
                   ⚠️ Time running out!
                 </span>
               )}
@@ -769,27 +771,47 @@ export default function TestTakingPage() {
               onClick={() => setShowExitModal(true)}
               className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
             >
-              <X className="w-4 h-4 mr-2" />
-              Exit Test
+              <X className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Exit Test</span>
             </Button>
           </div>
         </div>
+        {/* Mobile badges row */}
+        <div className="flex items-center gap-2 mt-2 sm:hidden">
+          <Badge
+            variant={test.type === 'PAID' ? 'default' : 'secondary'}
+            className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-green-900 bg-green-200"
+          >
+            {test.type}
+          </Badge>
+          <Badge
+            variant="outline"
+            className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-yellow-900 bg-yellow-200"
+          >
+            {questions.length} Questions
+          </Badge>
+          {timeRemaining <= 300 && (
+            <span className="text-xs text-red-500 font-medium animate-pulse">
+              ⚠️ Time running out!
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="flex h-[calc(100vh-80px)]">
+      <div className="flex h-[calc(100vh-80px)] sm:h-[calc(100vh-80px)]">
         {/* Main Content */}
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 p-3 sm:p-6 overflow-y-auto">
           {currentQuestion && (
             <div className="max-w-4xl mx-auto">
               {/* Question Header */}
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
                     Question {currentQuestion.questionNumber}
                   </h2>
                   <Badge
                     variant="outline"
-                    className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-yellow-900 bg-yellow-200"
+                    className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-yellow-900 bg-yellow-200 text-xs sm:text-sm"
                   >
                     {currentQuestion.section.replace('_', ' ')}
                   </Badge>
@@ -802,26 +824,26 @@ export default function TestTakingPage() {
                 if (!passage) return null
 
                 return (
-                  <Card className="mb-6 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                    <CardContent className="p-4">
+                  <Card className="mb-4 sm:mb-6 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-medium text-gray-900 dark:text-white">
+                        <h3 className="font-medium text-gray-900 dark:text-white text-sm sm:text-base">
                           Passage {passage.passageNumber}
                         </h3>
                         <Badge
                           variant="outline"
-                          className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-blue-900 bg-blue-200"
+                          className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-blue-900 bg-blue-200 text-xs"
                         >
                           {passage.section.replace('_', ' ')}
                         </Badge>
                       </div>
                       {passage.title && (
-                        <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                        <h4 className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                           {passage.title}
                         </h4>
                       )}
                       <div
-                        className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none"
+                        className="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none text-sm sm:text-base"
                         dangerouslySetInnerHTML={{
                           __html: passage.content,
                         }}
@@ -832,12 +854,12 @@ export default function TestTakingPage() {
               })()}
 
               {/* Question Content */}
-              <Card className="mb-6 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                <CardContent className="p-6">
+              <Card className="mb-4 sm:mb-6 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <CardContent className="p-3 sm:p-6">
                   {/* Question Text */}
-                  <div className="mb-6">
+                  <div className="mb-4 sm:mb-6">
                     <div
-                      className="text-lg text-gray-900 dark:text-white prose dark:prose-invert max-w-none"
+                      className="text-base sm:text-lg text-gray-900 dark:text-white prose dark:prose-invert max-w-none"
                       dangerouslySetInnerHTML={{
                         __html: currentQuestion.questionText,
                       }}
@@ -848,8 +870,8 @@ export default function TestTakingPage() {
                   {currentQuestion.imageUrls &&
                     Array.isArray(currentQuestion.imageUrls) &&
                     currentQuestion.imageUrls.length > 0 && (
-                      <div className="mb-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="mb-4 sm:mb-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           {currentQuestion.imageUrls.map((url, index) => (
                             <img
                               key={index}
@@ -865,11 +887,11 @@ export default function TestTakingPage() {
                   {/* Table */}
                   {currentQuestion.isTable &&
                     isValidTableData(currentQuestion.tableData) && (
-                      <div className="mb-6">
-                        <div className="mb-4 flex items-center justify-between">
+                      <div className="mb-4 sm:mb-6">
+                        <div className="mb-3 sm:mb-4 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                            <h4 className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">
                               Table Data
                             </h4>
                           </div>
@@ -900,7 +922,7 @@ export default function TestTakingPage() {
                                       (header, headerIndex) => (
                                         <th
                                           key={headerIndex}
-                                          className="border-b border-gray-200 dark:border-gray-600 p-4 text-left font-semibold text-gray-800 dark:text-gray-200 text-sm whitespace-nowrap"
+                                          className="border-b border-gray-200 dark:border-gray-600 p-2 sm:p-4 text-left font-semibold text-gray-800 dark:text-gray-200 text-xs sm:text-sm whitespace-nowrap"
                                         >
                                           {header}
                                         </th>
@@ -932,13 +954,13 @@ export default function TestTakingPage() {
                                           row.map((cell, cellIndex) => (
                                             <td
                                               key={cellIndex}
-                                              className="border-b border-gray-100 dark:border-gray-700 p-4 text-sm text-gray-700 dark:text-gray-300 font-medium"
+                                              className="border-b border-gray-100 dark:border-gray-700 p-2 sm:p-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium"
                                             >
                                               {cell}
                                             </td>
                                           ))
                                         ) : (
-                                          <td className="border-b border-gray-100 dark:border-gray-700 p-4 text-sm text-gray-700 dark:text-gray-300 font-medium">
+                                          <td className="border-b border-gray-100 dark:border-gray-700 p-2 sm:p-4 text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium">
                                             {String(row)}
                                           </td>
                                         )}
@@ -956,11 +978,11 @@ export default function TestTakingPage() {
                   {/* Options */}
                   {currentQuestion.questionType === 'OPTIONS' &&
                     Array.isArray(currentQuestion.options) && (
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         {currentQuestion.options.map((option, index) => (
                           <label
                             key={index}
-                            className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                            className={`flex items-center p-2 sm:p-3 border rounded-lg cursor-pointer transition-colors ${
                               currentQuestion.optionType === 'SINGLE'
                                 ? 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
                                 : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
@@ -985,7 +1007,7 @@ export default function TestTakingPage() {
                                 onChange={() =>
                                   handleAnswerChange(currentQuestion.id, option)
                                 }
-                                className="mr-3 text-blue-600"
+                                className="mr-2 sm:mr-3 text-blue-600"
                               />
                             ) : (
                               <input
@@ -1000,10 +1022,10 @@ export default function TestTakingPage() {
                                     true
                                   )
                                 }
-                                className="mr-3 text-blue-600"
+                                className="mr-2 sm:mr-3 text-blue-600"
                               />
                             )}
-                            <span className="text-gray-700 dark:text-gray-300">
+                            <span className="text-sm sm:text-base text-gray-700 dark:text-gray-300">
                               {option}
                             </span>
                           </label>
@@ -1028,9 +1050,9 @@ export default function TestTakingPage() {
                                     return updated
                                   })
                                 }}
-                                className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
+                                className="border-2 border-gray-200 dark:border-gray-700 dark:text-white text-xs sm:text-sm"
                               >
-                                <RotateCcw className="w-4 h-4 mr-2" />
+                                <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                                 Clear response
                               </Button>
                             </div>
@@ -1049,7 +1071,7 @@ export default function TestTakingPage() {
                           handleAnswerChange(currentQuestion.id, e.target.value)
                         }
                         placeholder="Enter your answer..."
-                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        className="w-full p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm sm:text-base"
                       />
                       {(() => {
                         const ans = answers[currentQuestion.id]
@@ -1059,7 +1081,7 @@ export default function TestTakingPage() {
                             : Boolean(ans)
                         if (!hasAnswer) return null
                         return (
-                          <div className="pt-3">
+                          <div className="pt-2 sm:pt-3">
                             <Button
                               variant="outline"
                               size="sm"
@@ -1070,9 +1092,9 @@ export default function TestTakingPage() {
                                   return updated
                                 })
                               }}
-                              className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
+                              className="border-2 border-gray-200 dark:border-gray-700 dark:text-white text-xs sm:text-sm"
                             >
-                              <RotateCcw className="w-4 h-4 mr-2" />
+                              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                               Clear response
                             </Button>
                           </div>
@@ -1087,7 +1109,7 @@ export default function TestTakingPage() {
         </div>
 
         {/* Right Sidebar - Question Navigation */}
-        <div className="w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
+        <div className="hidden lg:block w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
             Question Navigation
           </h3>
@@ -1130,20 +1152,20 @@ export default function TestTakingPage() {
 
       {/* Test Results Section */}
       {showResults && testResults && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                     Test Results
                   </h2>
                   {attemptHistory.length > 0 && (
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs">
                         Attempt #{attemptHistory.length + 1}
                       </Badge>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                      <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                         {new Date().toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'short',
@@ -1161,35 +1183,35 @@ export default function TestTakingPage() {
               </div>
 
               {/* Summary Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {testResults.percentage || testResults.percentageScore}%
                   </div>
-                  <div className="text-sm text-blue-600 dark:text-blue-400">
+                  <div className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">
                     Score
                   </div>
                 </div>
-                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                <div className="bg-green-50 dark:bg-green-900/20 p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
                     {testResults.correctAnswers || 0}
                   </div>
-                  <div className="text-sm text-green-600 dark:text-green-400">
+                  <div className="text-xs sm:text-sm text-green-600 dark:text-green-400">
                     Correct
                   </div>
                 </div>
-                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                <div className="bg-red-50 dark:bg-red-900/20 p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-lg sm:text-2xl font-bold text-red-600 dark:text-red-400">
                     {testResults.wrongAnswers ||
                       testResults.incorrectAnswers ||
                       0}
                   </div>
-                  <div className="text-sm text-red-600 dark:text-red-400">
+                  <div className="text-xs sm:text-sm text-red-600 dark:text-red-400">
                     Wrong
                   </div>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                <div className="bg-gray-50 dark:bg-gray-700 p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-lg sm:text-2xl font-bold text-gray-600 dark:text-gray-400">
                     {testResults.unattempted ||
                       questions.length -
                         (testResults.correctAnswers || 0) -
@@ -1197,17 +1219,17 @@ export default function TestTakingPage() {
                           testResults.incorrectAnswers ||
                           0)}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     Unattempted
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <Button
                   onClick={handleEvaluate}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className="bg-purple-600 hover:bg-purple-700 text-sm sm:text-base"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
                   View Detailed Results
@@ -1215,7 +1237,7 @@ export default function TestTakingPage() {
                 <Button
                   variant="outline"
                   onClick={() => router.push('/dashboard')}
-                  className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
+                  className="border-2 border-gray-200 dark:border-gray-700 dark:text-white text-sm sm:text-base"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
@@ -1223,13 +1245,13 @@ export default function TestTakingPage() {
               </div>
 
               {/* Note about detailed results */}
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <p>
+              <div className="text-center py-4 sm:py-8 text-gray-500 dark:text-gray-400">
+                <p className="text-sm sm:text-base">
                   Click "View Detailed Results" to see question-by-question
                   analysis on a separate page
                 </p>
                 {attemptHistory.length > 0 && (
-                  <p className="mt-2 text-sm">
+                  <p className="mt-2 text-xs sm:text-sm">
                     This is attempt #{attemptHistory.length + 1}. Previous
                     attempts are preserved for comparison.
                   </p>
@@ -1241,36 +1263,41 @@ export default function TestTakingPage() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-2 sm:p-4">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Button
               variant="outline"
               onClick={handlePreviousQuestion}
               disabled={currentQuestionIndex === 0}
-              className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
+              className="border-2 border-gray-200 dark:border-gray-700 dark:text-white text-xs sm:text-sm"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Previous
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Previous</span>
             </Button>
             <Button
               variant="outline"
               onClick={handleMarkForLater}
-              className={
+              className={`text-xs sm:text-sm ${
                 markedForLater.has(currentQuestion?.id)
                   ? 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200 hover:text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-700'
                   : 'border-2 border-gray-200 dark:border-gray-700 dark:text-white'
-              }
+              }`}
             >
-              <Bookmark className="w-4 h-4 mr-2" />
-              {markedForLater.has(currentQuestion?.id)
-                ? 'Marked'
-                : 'Mark for Later'}
+              <Bookmark className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">
+                {markedForLater.has(currentQuestion?.id)
+                  ? 'Marked'
+                  : 'Mark for Later'}
+              </span>
+              <span className="sm:hidden">
+                {markedForLater.has(currentQuestion?.id) ? '✓' : '☆'}
+              </span>
             </Button>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
               Time on this question:{' '}
               {(questionTimes[currentQuestion?.id] || 0) +
                 (questionStartTime
@@ -1285,20 +1312,31 @@ export default function TestTakingPage() {
                   console.log('Current attempt ID:', currentAttemptId)
                   setShowExitModal(true)
                 }}
-                className="bg-green-600 hover:bg-green-700 "
+                className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
               >
-                Submit Test
+                <span className="hidden sm:inline">Submit Test</span>
+                <span className="sm:hidden">Submit</span>
               </Button>
             ) : (
               <Button
                 onClick={handleNextQuestion}
-                className="border-2 border-gray-200 dark:border-gray-700 dark:text-white"
+                className="border-2 border-gray-200 dark:border-gray-700 dark:text-white text-xs sm:text-sm"
               >
-                Next
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <span className="hidden sm:inline">Next</span>
+                <span className="sm:hidden">→</span>
+                <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
               </Button>
             )}
           </div>
+        </div>
+        {/* Mobile question info */}
+        <div className="sm:hidden text-center text-xs text-gray-600 dark:text-gray-400 mt-1">
+          Q{currentQuestionIndex + 1} of {questions.length} • Time:{' '}
+          {(questionTimes[currentQuestion?.id] || 0) +
+            (questionStartTime
+              ? Math.floor((Date.now() - questionStartTime) / 1000)
+              : 0)}
+          s
         </div>
       </div>
     </div>
