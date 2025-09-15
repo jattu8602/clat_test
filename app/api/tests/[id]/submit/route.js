@@ -150,7 +150,7 @@ export async function POST(request, { params }) {
             questionId: question.id,
             testAttemptId: attemptId || 'temp', // Will be updated after testAttempt creation
             selectedOption: [],
-            isCorrect: false,
+            isCorrect: null, // Unattempted questions are neither correct nor incorrect
             timeTakenSec: Number(questionTimes[question.id]) || 0,
             marksObtained: 0, // Unattempted questions get 0 marks
           })

@@ -133,8 +133,18 @@ export default function TestEvaluationPage() {
   }
 
   const getQuestionStatus = (question) => {
-    if (question.isCorrect) return 'correct'
-    if (question.userAnswer) return 'incorrect'
+    if (question.isCorrect === true) {
+      return 'correct'
+    }
+    if (question.isCorrect === false) {
+      // For older data, unattempted answers might have isCorrect: false.
+      // We can distinguish them by checking if an answer was actually provided.
+      const hasAnswer = Array.isArray(question.userAnswer)
+        ? question.userAnswer.length > 0
+        : !!question.userAnswer
+      return hasAnswer ? 'incorrect' : 'unattempted'
+    }
+    // isCorrect is null or undefined for new unattempted questions.
     return 'unattempted'
   }
 

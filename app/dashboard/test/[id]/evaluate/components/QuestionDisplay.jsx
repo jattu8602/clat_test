@@ -332,9 +332,10 @@ export default function QuestionDisplay({
                   </h4>
                   <div className="bg-slate-50 dark:bg-slate-800 p-3 sm:p-4 rounded-lg border-2 border-slate-200 dark:border-slate-700">
                     <div className="flex items-center gap-2 mb-2">
-                      {currentQuestion.isCorrect ? (
+                      {getQuestionStatus(currentQuestion) === 'correct' && (
                         <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
-                      ) : (
+                      )}
+                      {getQuestionStatus(currentQuestion) === 'incorrect' && (
                         <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
                       )}
                       <span className="font-medium text-slate-900 dark:text-white text-sm sm:text-base">
