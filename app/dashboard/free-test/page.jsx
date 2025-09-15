@@ -142,7 +142,11 @@ export default function FreeTestsPage() {
             const data = await res.json()
             return {
               ...test,
-              lastScore: data.testAttempt?.score ?? test.lastScore ?? 0,
+              lastScore:
+                data.testAttempt?.percentage ??
+                data.testAttempt?.score ??
+                test.lastScore ??
+                0,
               attemptedAt: data.testAttempt?.completedAt ?? test.attemptedAt,
             }
           } catch (e) {
@@ -151,8 +155,14 @@ export default function FreeTestsPage() {
         })
       )
 
+      const attemptedMap = new Map(
+        attemptedWithScores.map((test) => [test.id, test])
+      )
+      const updatedAllTests = (allData.tests || []).map(
+        (test) => attemptedMap.get(test.id) || test
+      )
       // Calculate stats
-      const totalFreeTests = allData.tests?.length || 0
+      const totalFreeTests = updatedAllTests.length
       const attemptedFreeTests = attemptedWithScores.length
       const averageScore =
         attemptedWithScores.length > 0
@@ -176,12 +186,12 @@ export default function FreeTestsPage() {
 
       setStats(newStats)
       setNewTests(recentFreeTests)
-      setAllFreeTests(allData.tests || [])
+      setAllFreeTests(updatedAllTests)
       setAttemptedTests(attemptedWithScores)
 
       // Update cache
       freeDataCache.newTests = recentFreeTests
-      freeDataCache.allFreeTests = allData.tests || []
+      freeDataCache.allFreeTests = updatedAllTests
       freeDataCache.attemptedTests = attemptedWithScores
       freeDataCache.stats = newStats
       freeDataCache.lastFetchTime = Date.now()

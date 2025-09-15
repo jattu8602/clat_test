@@ -211,7 +211,12 @@ export default function AttemptHistoryModal({
                       </div>
                       <div className="text-center p-2 sm:p-3 rounded-lg bg-white/50 dark:bg-white/5">
                         <div className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
-                          {Math.max(...attempts.map((a) => a.score || 0))}%
+                          {Math.max(
+                            ...attempts.map(
+                              (a) => a.percentage ?? (a.score || 0)
+                            )
+                          ).toFixed(2)}
+                          %
                         </div>
                         <div className="text-xs sm:text-sm text-green-600 dark:text-green-400 font-medium">
                           Best Score
@@ -219,12 +224,13 @@ export default function AttemptHistoryModal({
                       </div>
                       <div className="text-center p-2 sm:p-3 rounded-lg bg-white/50 dark:bg-white/5">
                         <div className="text-lg sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
-                          {Math.round(
+                          {(
                             attempts.reduce(
-                              (sum, a) => sum + (a.score || 0),
+                              (sum, a) =>
+                                sum + (a.percentage ?? (a.score || 0)),
                               0
                             ) / attempts.length
-                          )}
+                          ).toFixed(2)}
                           %
                         </div>
                         <div className="text-xs sm:text-sm text-purple-600 dark:text-purple-400 font-medium">
@@ -251,10 +257,13 @@ export default function AttemptHistoryModal({
                 {/* Attempts List */}
                 <div className="space-y-2 sm:space-y-3">
                   {attempts.map((attempt, index) => {
+                    const currentScore =
+                      attempt.percentage ?? (attempt.score || 0)
                     const trend = getScoreTrend(
-                      attempt.score || 0,
+                      currentScore,
                       index < attempts.length - 1
-                        ? attempts[index + 1].score || 0
+                        ? attempts[index + 1].percentage ??
+                            (attempts[index + 1].score || 0)
                         : null
                     )
                     const isLatest = attempt.isLatest
@@ -296,10 +305,10 @@ export default function AttemptHistoryModal({
                                 <div className="text-center">
                                   <div
                                     className={`text-xl lg:text-2xl font-bold ${getScoreBadgeColor(
-                                      attempt.score || 0
+                                      currentScore
                                     )}`}
                                   >
-                                    {attempt.score || 0}%
+                                    {currentScore.toFixed(2)}%
                                   </div>
                                   <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                                     Score
@@ -319,8 +328,9 @@ export default function AttemptHistoryModal({
                                         ? '-'
                                         : '±'}
                                       {Math.abs(
-                                        (attempt.score || 0) -
-                                          (attempts[index + 1].score || 0)
+                                        currentScore -
+                                          (attempts[index + 1].percentage ??
+                                            (attempts[index + 1].score || 0))
                                       ).toFixed(1)}
                                       %
                                     </span>
@@ -404,8 +414,9 @@ export default function AttemptHistoryModal({
                                         ? '-'
                                         : '±'}
                                       {Math.abs(
-                                        (attempt.score || 0) -
-                                          (attempts[index + 1].score || 0)
+                                        currentScore -
+                                          (attempts[index + 1].percentage ??
+                                            (attempts[index + 1].score || 0))
                                       ).toFixed(1)}
                                       %
                                     </span>
@@ -415,10 +426,10 @@ export default function AttemptHistoryModal({
                               <div className="text-right">
                                 <div
                                   className={`text-xl font-bold ${getScoreBadgeColor(
-                                    attempt.score || 0
+                                    currentScore
                                   )}`}
                                 >
-                                  {attempt.score || 0}%
+                                  {currentScore.toFixed(2)}%
                                 </div>
                                 <div className="text-xs text-slate-500 dark:text-slate-400">
                                   {formatDate(

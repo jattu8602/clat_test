@@ -154,7 +154,11 @@ export default function PaidTestsPage() {
             const data = await res.json()
             return {
               ...test,
-              lastScore: data.testAttempt?.score ?? test.lastScore ?? 0,
+              lastScore:
+                data.testAttempt?.percentage ??
+                data.testAttempt?.score ??
+                test.lastScore ??
+                0,
               attemptedAt: data.testAttempt?.completedAt ?? test.attemptedAt,
             }
           } catch (e) {
@@ -163,9 +167,16 @@ export default function PaidTestsPage() {
         })
       )
 
+      const attemptedMap = new Map(
+        attemptedWithScores.map((test) => [test.id, test])
+      )
+      const updatedAllTests = (allData.tests || []).map(
+        (test) => attemptedMap.get(test.id) || test
+      )
+
       // Calculate stats
-      const totalPaidTests = allData.tests?.length || 0
-      const purchasedTests = allData.tests?.length || 0
+      const totalPaidTests = updatedAllTests.length
+      const purchasedTests = updatedAllTests.length
       const averageScore =
         attemptedWithScores.length > 0
           ? Math.round(
@@ -188,12 +199,12 @@ export default function PaidTestsPage() {
 
       setStats(newStats)
       setPremiumTests(recentPremiumTests)
-      setAllPaidTests(allData.tests || [])
+      setAllPaidTests(updatedAllTests)
       setAttemptedTests(attemptedWithScores)
 
       // Update cache
       dataCache.premiumTests = recentPremiumTests
-      dataCache.allPaidTests = allData.tests || []
+      dataCache.allPaidTests = updatedAllTests
       dataCache.attemptedTests = attemptedWithScores
       dataCache.stats = newStats
       dataCache.lastFetchTime = Date.now()

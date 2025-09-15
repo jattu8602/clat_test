@@ -44,17 +44,18 @@ export default function TestCard({
   }
 
   const getTestScore = () => {
-    if (!isAttempted) return '00/100'
+    if (!isAttempted) return '0%'
     if (lastScore !== undefined && lastScore !== null) {
-      return `${lastScore}/100`
+      return `${lastScore.toFixed(2)}%`
     }
-    return '00/100'
+    return '0%'
   }
 
   const getScorePercentage = () => {
-    const score = getTestScore()
-    const scoreValue = parseInt(score.split('/')[0])
-    return scoreValue
+    if (!isAttempted || lastScore === undefined || lastScore === null) {
+      return 0
+    }
+    return lastScore
   }
 
   const handleUpgrade = () => {

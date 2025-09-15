@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
 import { PrismaClient } from '@prisma/client'
+import { calculateScoreFromAttempt } from '@/lib/utils/scoringUtils'
 
 const prisma = new PrismaClient()
 
@@ -36,7 +37,16 @@ export async function GET(request, { params }) {
       },
     })
 
-    return NextResponse.json(attempts)
+    const attemptsWithCalculatedScore = attempts.map((attempt) => {
+      const scoreCalculation = calculateScoreFromAttempt(attempt)
+      return {
+        ...attempt,
+        score: scoreCalculation.percentage,
+        percentage: scoreCalculation.percentage,
+      }
+    })
+
+    return NextResponse.json(attemptsWithCalculatedScore)
   } catch (error) {
     console.error('Error fetching attempts:', error)
     return NextResponse.json(
