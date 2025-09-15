@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
 import { PrismaClient } from '@prisma/client'
+import { calculateScoreFromAttempt } from '@/lib/utils/scoringUtils'
 
 const prisma = new PrismaClient()
 
@@ -51,7 +52,7 @@ export async function GET(request, { params }) {
                 questionText: true,
                 questionTextFormat: true,
                 imageUrls: true,
-                  passageId: true,
+                passageId: true,
                 isTable: true,
                 tableData: true,
                 questionType: true,
@@ -94,47 +95,16 @@ export async function GET(request, { params }) {
       )
     }
 
-    // === NEW: marks-based score calculation ===
-    // total possible marks = sum of positive marks of questions in the attempt
-    const totalPossibleMarks = testAttempt.answers.reduce((sum, ans) => {
-      if (!ans.question) return sum // Defensively skip if question is missing
-      const qPositive = ans.question.positiveMarks ?? 1
-      return sum + (qPositive || 0)
-    }, 0)
-
-    // total marks obtained = sum of marksObtained (if stored) otherwise infer from correctness/negative marks
-    const totalMarksObtained = testAttempt.answers.reduce((sum, ans) => {
-      if (!ans.question) return sum // Defensively skip if question is missing
-
-      if (typeof ans.marksObtained === 'number') {
-        return sum + ans.marksObtained
-      }
-
-      // fallback if marksObtained not saved
-      if (ans.isCorrect) {
-        return sum + (ans.question.positiveMarks ?? 1)
-      } else if (ans.selectedOption && ans.selectedOption.length > 0) {
-        // wrong answer -> negative marks if configured
-        const neg = ans.question.negativeMarks ?? 0
-        return sum + (neg || 0) // Add the negative value
-      } else {
-        // unattempted -> 0
-        return sum
-      }
-    }, 0)
-
-    const percentageScore =
-      totalPossibleMarks > 0
-        ? (totalMarksObtained / totalPossibleMarks) * 100
-        : 0
-
-    const roundedScore = Math.round(percentageScore * 100) / 100
+    // Calculate score using universal CLAT formula
+    const scoreCalculation = calculateScoreFromAttempt(testAttempt)
+    const percentageScore = scoreCalculation.percentage
 
     // Transform data for frontend, include marks info
     const results = {
       testAttempt: {
         id: testAttempt.id,
-        score: roundedScore,
+        score: percentageScore,
+        percentage: percentageScore,
         totalQuestions: testAttempt.totalQuestions,
         correctAnswers: testAttempt.correctAnswers,
         wrongAnswers: testAttempt.wrongAnswers,
@@ -143,8 +113,8 @@ export async function GET(request, { params }) {
         startedAt: testAttempt.startedAt,
         completedAt: testAttempt.completedAt,
         attemptNumber: testAttempt.attemptNumber,
-        totalMarksObtained,
-        totalPossibleMarks,
+        marksObtained: scoreCalculation.marksObtained,
+        totalMarks: scoreCalculation.totalMarks,
       },
       test: testAttempt.test,
       passages: testAttempt.test.passages,

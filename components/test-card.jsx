@@ -232,7 +232,9 @@ export default function TestCard({
         {/* Desktop Layout */}
         <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1.5fr] items-center text-sm">
           {/* Name */}
-          <div className="font-medium text-gray-900 dark:text-white">{title}</div>
+          <div className="font-medium text-gray-900 dark:text-white">
+            {title}
+          </div>
 
           {/* Type */}
           <div>

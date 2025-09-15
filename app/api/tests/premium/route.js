@@ -94,7 +94,11 @@ export async function GET(request) {
         test.testAttempts.length > 0 ? test.testAttempts[0].id : null,
       lastScore:
         test.testAttempts.length > 0
-          ? Math.round(test.testAttempts[0].score * 100) / 100
+          ? Math.round(
+              (test.testAttempts[0].percentage ??
+                test.testAttempts[0].score ??
+                0) * 100
+            ) / 100
           : null,
       attemptedAt:
         test.testAttempts.length > 0 ? test.testAttempts[0].completedAt : null,

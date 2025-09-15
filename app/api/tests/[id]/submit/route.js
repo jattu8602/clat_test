@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../auth/[...nextauth]/route'
 import { PrismaClient } from '@prisma/client'
+import { calculateTestScore } from '@/lib/utils/scoringUtils'
 
 const prisma = new PrismaClient()
 
@@ -108,12 +109,9 @@ export async function POST(request, { params }) {
         questionMap.set(question.id, question)
       })
 
-      // Calculate score and prepare answer data
-      let totalScore = 0
-      let totalPositiveMarks = 0
-      let totalNegativeMarks = 0
+      // Calculate score and prepare answer data using universal scoring formula
       let correctAnswers = 0
-      let incorrectAnswers = 0
+      let wrongAnswers = 0
       let unattemptedQuestions = 0
 
       const answerData = []
@@ -131,13 +129,9 @@ export async function POST(request, { params }) {
             : question.correctAnswers.includes(userAnswer)
 
           if (isCorrect) {
-            totalScore += question.positiveMarks
-            totalPositiveMarks += question.positiveMarks
             correctAnswers++
           } else {
-            totalScore += question.negativeMarks
-            totalNegativeMarks += question.negativeMarks
-            incorrectAnswers++
+            wrongAnswers++
           }
 
           answerData.push({
@@ -148,9 +142,7 @@ export async function POST(request, { params }) {
               : [userAnswer],
             isCorrect,
             timeTakenSec: Number(questionTimes[question.id]) || 0,
-            marksObtained: isCorrect
-              ? question.positiveMarks
-              : question.negativeMarks,
+            marksObtained: isCorrect ? 1 : -0.25, // Using universal formula: +1 for correct, -0.25 for wrong
           })
         } else {
           unattemptedQuestions++
@@ -160,28 +152,31 @@ export async function POST(request, { params }) {
             selectedOption: [],
             isCorrect: false,
             timeTakenSec: Number(questionTimes[question.id]) || 0,
-            marksObtained: 0,
+            marksObtained: 0, // Unattempted questions get 0 marks
           })
         }
       })
 
-      // Calculate percentage score based on correct answers vs total questions
-      const percentageScore =
-        test.questions.length > 0
-          ? (correctAnswers / test.questions.length) * 100
-          : 0
+      // Calculate score using universal CLAT formula: (C - 0.25 * W) / T * 100
+      const scoreCalculation = calculateTestScore({
+        totalQuestions: test.questions.length,
+        correctAnswers,
+        wrongAnswers,
+        unattempted: unattemptedQuestions,
+      })
 
-      const roundedScore = Math.round(percentageScore * 100) / 100
+      const percentageScore = scoreCalculation.percentage
 
       if (attemptId) {
         // Update existing attempt
         testAttempt = await tx.testAttempt.update({
           where: { id: attemptId },
           data: {
-            score: roundedScore,
+            score: percentageScore,
+            percentage: percentageScore,
             totalQuestions: test.questions.length,
             correctAnswers,
-            wrongAnswers: incorrectAnswers,
+            wrongAnswers,
             unattempted: unattemptedQuestions,
             completed: true,
             totalTimeSec: timeSpent,
@@ -205,10 +200,11 @@ export async function POST(request, { params }) {
           data: {
             userId: session.user.id,
             testId,
-            score: roundedScore,
+            score: percentageScore,
+            percentage: percentageScore,
             totalQuestions: test.questions.length,
             correctAnswers,
-            wrongAnswers: incorrectAnswers,
+            wrongAnswers,
             unattempted: unattemptedQuestions,
             completed: true,
             totalTimeSec: timeSpent,
@@ -230,11 +226,10 @@ export async function POST(request, { params }) {
 
       return {
         testAttempt,
-        roundedScore,
-        totalPositiveMarks,
-        totalNegativeMarks,
+        percentageScore,
+        scoreCalculation,
         correctAnswers,
-        incorrectAnswers,
+        wrongAnswers,
         unattemptedQuestions,
         totalQuestions: test.questions.length,
         timeSpent,
@@ -245,12 +240,13 @@ export async function POST(request, { params }) {
     const responseData = {
       success: true,
       testAttemptId: result.testAttempt.id,
-      score: result.roundedScore,
-      percentageScore: result.roundedScore,
-      totalPositiveMarks: result.totalPositiveMarks,
-      totalNegativeMarks: result.totalNegativeMarks,
+      score: result.percentageScore,
+      percentageScore: result.percentageScore,
+      percentage: result.percentageScore,
+      marksObtained: result.scoreCalculation.marksObtained,
+      totalMarks: result.scoreCalculation.totalMarks,
       correctAnswers: result.correctAnswers,
-      wrongAnswers: result.incorrectAnswers,
+      wrongAnswers: result.wrongAnswers,
       unattemptedQuestions: result.unattemptedQuestions,
       totalQuestions: result.totalQuestions,
       timeSpent: result.timeSpent,
