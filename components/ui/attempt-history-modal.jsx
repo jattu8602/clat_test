@@ -200,7 +200,9 @@ export default function AttemptHistoryModal({
                 {/* Summary Stats */}
                 <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/40 dark:via-indigo-950/40 dark:to-purple-950/40 border border-blue-200/50 dark:border-blue-800/50 shadow-sm rounded-xl overflow-hidden">
                   <div className="p-3 sm:p-4">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    {/* ✅ Changed grid-cols-2 lg:grid-cols-4 → grid-cols-2 md:grid-cols-4 */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                      {/* Total Attempts */}
                       <div className="text-center p-2 sm:p-3 rounded-lg bg-white/50 dark:bg-white/5">
                         <div className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
                           {attempts.length}
@@ -209,6 +211,8 @@ export default function AttemptHistoryModal({
                           Total Attempts
                         </div>
                       </div>
+
+                      {/* Best Score */}
                       <div className="text-center p-2 sm:p-3 rounded-lg bg-white/50 dark:bg-white/5">
                         <div className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
                           {Math.max(
@@ -222,6 +226,8 @@ export default function AttemptHistoryModal({
                           Best Score
                         </div>
                       </div>
+
+                      {/* Average */}
                       <div className="text-center p-2 sm:p-3 rounded-lg bg-white/50 dark:bg-white/5">
                         <div className="text-lg sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
                           {(
@@ -237,7 +243,9 @@ export default function AttemptHistoryModal({
                           Average
                         </div>
                       </div>
-                      <div className="text-center p-2 sm:p-3 rounded-lg bg-white/50 dark:bg-white/5 col-span-2 lg:col-span-1">
+
+                      {/* Total Time */}
+                      <div className="text-center p-2 sm:p-3 rounded-lg bg-white/50 dark:bg-white/5">
                         <div className="text-lg sm:text-2xl font-bold text-orange-600 dark:text-orange-400">
                           {formatDuration(
                             attempts.reduce(
