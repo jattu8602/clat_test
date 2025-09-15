@@ -43,7 +43,7 @@ export async function POST(request) {
             testId,
             passageNumber: passageData.passageNumber,
             content: passageData.content,
-            contentFormat: null, // We'll store as plain text for now
+            contentFormat: passageData.contentFormat || null, // Store rich text formatting if available
             section: section.name,
             hasImage: passageData.hasImage || false,
             imageUrls: passageData.imageUrls || [],

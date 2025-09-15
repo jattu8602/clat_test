@@ -1,0 +1,207 @@
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../../auth/[...nextauth]/route'
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const GEMINI_API_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+
+// Helper function to call Gemini API with retry logic
+async function callGeminiAPI(prompt, systemPrompt = '', retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`Gemini API attempt ${attempt}/${retries}`)
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout
+
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.3,
+            topK: 1,
+            topP: 1,
+            maxOutputTokens: 4096,
+          },
+        }),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(
+          `Gemini API error: ${response.status} - ${response.statusText}`
+        )
+      }
+
+      const data = await response.json()
+      return data.candidates[0].content.parts[0].text
+    } catch (error) {
+      console.error(`Gemini API attempt ${attempt} failed:`, error.message)
+
+      if (attempt === retries) {
+        throw new Error(
+          `Gemini API failed after ${retries} attempts: ${error.message}`
+        )
+      }
+
+      // Wait before retry (exponential backoff)
+      const waitTime = Math.pow(2, attempt) * 1000
+      console.log(`Waiting ${waitTime}ms before retry...`)
+      await new Promise((resolve) => setTimeout(resolve, waitTime))
+    }
+  }
+}
+
+// Helper function to extract JSON from Gemini response
+function extractJSONFromResponse(responseText) {
+  try {
+    // First try to parse directly
+    return JSON.parse(responseText)
+  } catch (error) {
+    console.log('Direct parsing failed, trying alternatives...')
+
+    // If direct parsing fails, try to extract JSON from markdown code blocks
+    const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+    if (jsonMatch) {
+      try {
+        const cleanedJson = jsonMatch[1]
+          .trim()
+          .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+          .replace(/\n/g, '\\n') // Escape newlines
+          .replace(/\r/g, '\\r') // Escape carriage returns
+          .replace(/\t/g, '\\t') // Escape tabs
+        console.log(
+          'Extracted from code block:',
+          cleanedJson.substring(0, 200) + '...'
+        )
+        return JSON.parse(cleanedJson)
+      } catch (parseError) {
+        console.error('Failed to parse extracted JSON:', parseError)
+        console.log('Raw extracted text:', jsonMatch[1].substring(0, 500))
+      }
+    }
+
+    // Try to find the largest JSON object in the text
+    const jsonObjectMatches = responseText.match(/\{[\s\S]*?\}/g)
+    if (jsonObjectMatches) {
+      // Sort by length and try the largest one first
+      const sortedMatches = jsonObjectMatches.sort(
+        (a, b) => b.length - a.length
+      )
+
+      for (const match of sortedMatches) {
+        try {
+          console.log('Trying JSON object:', match.substring(0, 200) + '...')
+          return JSON.parse(match)
+        } catch (parseError) {
+          console.log('Failed to parse this object, trying next...')
+          continue
+        }
+      }
+    }
+
+    console.error('Raw response text:', responseText.substring(0, 1000))
+    console.log('No valid JSON found in response, returning null')
+    return null
+  }
+}
+
+export async function POST(request) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { text, section } = await request.json()
+
+    if (!text) {
+      return NextResponse.json({ error: 'Text is required' }, { status: 400 })
+    }
+
+    const sectionContext = section
+      ? `This content is from the ${section.replace('_', ' & ')} section.`
+      : ''
+
+    const enhancePrompt = `
+    You are an expert at enhancing text readability and formatting for educational content.
+    ${sectionContext}
+
+    Please enhance the following text to improve readability, structure, and visual appeal for students:
+
+    Original Text:
+    ${text}
+
+    Requirements:
+    1. Improve paragraph structure and spacing
+    2. Add appropriate emphasis (bold, italic) for key terms and concepts
+    3. Enhance readability with better line breaks and formatting
+    4. Maintain the original meaning and content
+    5. Make it more engaging and easier to read for students
+    6. Add visual hierarchy with proper headings if needed
+    7. Highlight important information appropriately
+
+    Return a JSON response with the following structure:
+    {
+      "enhancedText": "The enhanced text with improved formatting and readability",
+      "formatting": {
+        "hasBold": true,
+        "hasItalic": true,
+        "hasHeadings": false,
+        "paragraphCount": 3,
+        "keyTermsHighlighted": ["term1", "term2"],
+        "readabilityScore": "improved"
+      },
+      "summary": {
+        "changesMade": ["Added paragraph breaks", "Highlighted key terms", "Improved spacing"],
+        "originalLength": 500,
+        "enhancedLength": 520
+      }
+    }
+
+    IMPORTANT:
+    - Return ONLY the JSON object, no additional text
+    - The enhancedText should be ready for display with HTML formatting
+    - Use HTML tags for formatting (e.g., <strong>, <em>, <p>, <br>)
+    - Maintain all original information while improving presentation
+    `
+
+    const systemPrompt =
+      'You are an expert educational content formatter. Enhance text readability while preserving all original content. Use HTML formatting tags appropriately. Always return valid JSON with enhanced text and formatting metadata.'
+
+    const enhanceResponse = await callGeminiAPI(enhancePrompt, systemPrompt)
+    const enhanceResult = extractJSONFromResponse(enhanceResponse)
+
+    if (!enhanceResult) {
+      throw new Error('Failed to parse enhancement response')
+    }
+
+    return NextResponse.json({
+      success: true,
+      enhancedText: enhanceResult.enhancedText,
+      formatting: enhanceResult.formatting,
+      summary: enhanceResult.summary,
+    })
+  } catch (error) {
+    console.error('Error enhancing text:', error)
+    return NextResponse.json(
+      { error: 'Failed to enhance text', details: error.message },
+      { status: 500 }
+    )
+  }
+}

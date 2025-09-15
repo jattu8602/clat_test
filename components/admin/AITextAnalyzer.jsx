@@ -21,6 +21,14 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
   Brain,
   FileText,
   CheckCircle,
@@ -35,6 +43,14 @@ import {
   Scale,
   Brain as BrainIcon,
   Calculator,
+  Edit3,
+  Table,
+  Image as ImageIcon,
+  Wand2,
+  Save,
+  X,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -45,6 +61,14 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
   const [isImporting, setIsImporting] = useState(false)
   const [analysis, setAnalysis] = useState(null)
   const [progress, setProgress] = useState(0)
+
+  // Editing states
+  const [editingPassage, setEditingPassage] = useState(null)
+  const [isEnhancing, setIsEnhancing] = useState(false)
+  const [isEditingTable, setIsEditingTable] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [tableEditData, setTableEditData] = useState(null)
+  const [imageUploadData, setImageUploadData] = useState(null)
 
   const sectionOptions = [
     { value: 'ENGLISH', label: 'English' },
@@ -181,6 +205,184 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
   const getSectionIcon = (sectionName) => {
     const Icon = sectionIcons[sectionName] || FileText
     return <Icon className="h-4 w-4" />
+  }
+
+  // Enhanced text editing functions
+  const handleEnhanceText = async (sectionIndex, passageIndex) => {
+    if (!analysis) return
+
+    setIsEnhancing(true)
+    const passage = analysis.sections[sectionIndex].passages[passageIndex]
+
+    try {
+      const response = await fetch('/api/admin/tests/ai-enhance-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: passage.content,
+          section: analysis.sections[sectionIndex].name,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+
+        // Update the analysis with enhanced content
+        const updatedAnalysis = { ...analysis }
+        updatedAnalysis.sections[sectionIndex].passages[passageIndex].content =
+          data.enhancedText
+        updatedAnalysis.sections[sectionIndex].passages[
+          passageIndex
+        ].contentFormat = data.formatting
+        setAnalysis(updatedAnalysis)
+
+        toast.success('Text enhanced successfully!')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to enhance text')
+      }
+    } catch (error) {
+      console.error('Error enhancing text:', error)
+      toast.error('Error enhancing text. Please try again.')
+    } finally {
+      setIsEnhancing(false)
+    }
+  }
+
+  const handleEditTable = (sectionIndex, passageIndex) => {
+    const passage = analysis.sections[sectionIndex].passages[passageIndex]
+    setTableEditData({
+      sectionIndex,
+      passageIndex,
+      tableData: passage.tableData || [
+        ['', ''],
+        ['', ''],
+      ],
+      isTable: passage.isTable,
+    })
+    setIsEditingTable(true)
+  }
+
+  const handleSaveTable = () => {
+    if (!tableEditData) return
+
+    const updatedAnalysis = { ...analysis }
+    updatedAnalysis.sections[tableEditData.sectionIndex].passages[
+      tableEditData.passageIndex
+    ].tableData = tableEditData.tableData
+    updatedAnalysis.sections[tableEditData.sectionIndex].passages[
+      tableEditData.passageIndex
+    ].isTable = true
+    setAnalysis(updatedAnalysis)
+
+    setIsEditingTable(false)
+    setTableEditData(null)
+    toast.success('Table updated successfully!')
+  }
+
+  const handleAddTableRow = () => {
+    if (!tableEditData) return
+    const newRow = new Array(tableEditData.tableData[0]?.length || 2).fill('')
+    setTableEditData({
+      ...tableEditData,
+      tableData: [...tableEditData.tableData, newRow],
+    })
+  }
+
+  const handleAddTableColumn = () => {
+    if (!tableEditData) return
+    setTableEditData({
+      ...tableEditData,
+      tableData: tableEditData.tableData.map((row) => [...row, '']),
+    })
+  }
+
+  const handleRemoveTableRow = (rowIndex) => {
+    if (!tableEditData || tableEditData.tableData.length <= 1) return
+    setTableEditData({
+      ...tableEditData,
+      tableData: tableEditData.tableData.filter(
+        (_, index) => index !== rowIndex
+      ),
+    })
+  }
+
+  const handleRemoveTableColumn = (colIndex) => {
+    if (!tableEditData || tableEditData.tableData[0]?.length <= 1) return
+    setTableEditData({
+      ...tableEditData,
+      tableData: tableEditData.tableData.map((row) =>
+        row.filter((_, index) => index !== colIndex)
+      ),
+    })
+  }
+
+  const handleUpdateTableCell = (rowIndex, colIndex, value) => {
+    if (!tableEditData) return
+    const newTableData = [...tableEditData.tableData]
+    newTableData[rowIndex][colIndex] = value
+    setTableEditData({
+      ...tableEditData,
+      tableData: newTableData,
+    })
+  }
+
+  const handleUploadImage = (sectionIndex, passageIndex) => {
+    setImageUploadData({ sectionIndex, passageIndex })
+    setIsUploadingImage(true)
+  }
+
+  const handleImageUpload = async (file) => {
+    if (!imageUploadData) return
+
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const response = await fetch('/api/admin/tests/upload-passage-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+
+        // Update the analysis with new image
+        const updatedAnalysis = { ...analysis }
+        const passage =
+          updatedAnalysis.sections[imageUploadData.sectionIndex].passages[
+            imageUploadData.passageIndex
+          ]
+        passage.hasImage = true
+        passage.imageUrls = [...(passage.imageUrls || []), data.imageUrl]
+        setAnalysis(updatedAnalysis)
+
+        toast.success('Image uploaded successfully!')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to upload image')
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      toast.error('Error uploading image. Please try again.')
+    } finally {
+      setIsUploadingImage(false)
+      setImageUploadData(null)
+    }
+  }
+
+  const handleRemoveImage = (sectionIndex, passageIndex, imageIndex) => {
+    const updatedAnalysis = { ...analysis }
+    const passage =
+      updatedAnalysis.sections[sectionIndex].passages[passageIndex]
+    passage.imageUrls.splice(imageIndex, 1)
+    if (passage.imageUrls.length === 0) {
+      passage.hasImage = false
+    }
+    setAnalysis(updatedAnalysis)
+    toast.success('Image removed successfully!')
   }
 
   return (
@@ -374,14 +576,60 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                             </Badge>
                           )}
                         </div>
-                        {passage.questions.length > 0 && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            Questions:{' '}
-                            {passage.questions
-                              .map((q) => `Q${q.questionNumber}`)
-                              .join(', ')}
+                        <div className="flex items-center space-x-2">
+                          {passage.questions.length > 0 && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Questions:{' '}
+                              {passage.questions
+                                .map((q) => `Q${q.questionNumber}`)
+                                .join(', ')}
+                            </div>
+                          )}
+
+                          {/* Editing Tools */}
+                          <div className="flex items-center space-x-1 ml-4">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                handleEnhanceText(sectionIndex, passageIndex)
+                              }
+                              disabled={isEnhancing}
+                              className="h-8 px-2"
+                              title="Enhance text with AI"
+                            >
+                              {isEnhancing ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Wand2 className="h-3 w-3" />
+                              )}
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                handleEditTable(sectionIndex, passageIndex)
+                              }
+                              className="h-8 px-2"
+                              title="Edit table data"
+                            >
+                              <Table className="h-3 w-3" />
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                handleUploadImage(sectionIndex, passageIndex)
+                              }
+                              className="h-8 px-2"
+                              title="Add image"
+                            >
+                              <ImageIcon className="h-3 w-3" />
+                            </Button>
                           </div>
-                        )}
+                        </div>
                       </div>
 
                       {/* Passage Content */}
@@ -404,7 +652,10 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               {passage.imageUrls.map((imageUrl, imageIndex) => (
-                                <div key={imageIndex} className="relative">
+                                <div
+                                  key={imageIndex}
+                                  className="relative group"
+                                >
                                   <img
                                     src={imageUrl}
                                     alt={`Passage ${
@@ -415,6 +666,21 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                                       e.target.style.display = 'none'
                                     }}
                                   />
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() =>
+                                      handleRemoveImage(
+                                        sectionIndex,
+                                        passageIndex,
+                                        imageIndex
+                                      )
+                                    }
+                                    title="Remove image"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
                                 </div>
                               ))}
                             </div>
@@ -624,6 +890,169 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Table Editing Dialog */}
+      <Dialog open={isEditingTable} onOpenChange={setIsEditingTable}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Table Data</DialogTitle>
+            <DialogDescription>
+              Edit the table data for this passage. You can add/remove rows and
+              columns, and edit cell values.
+            </DialogDescription>
+          </DialogHeader>
+
+          {tableEditData && (
+            <div className="space-y-4">
+              {/* Table Controls */}
+              <div className="flex items-center space-x-2">
+                <Button
+                  size="sm"
+                  onClick={handleAddTableRow}
+                  className="flex items-center space-x-1"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Add Row</span>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleAddTableColumn}
+                  className="flex items-center space-x-1"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Add Column</span>
+                </Button>
+              </div>
+
+              {/* Table Editor */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full border border-gray-300 dark:border-gray-600">
+                  <tbody>
+                    {tableEditData.tableData.map((row, rowIndex) => (
+                      <tr key={rowIndex}>
+                        {row.map((cell, colIndex) => (
+                          <td
+                            key={colIndex}
+                            className="border border-gray-300 dark:border-gray-600 p-1"
+                          >
+                            <input
+                              type="text"
+                              value={cell}
+                              onChange={(e) =>
+                                handleUpdateTableCell(
+                                  rowIndex,
+                                  colIndex,
+                                  e.target.value
+                                )
+                              }
+                              className="w-full p-1 text-sm border-none outline-none bg-transparent"
+                            />
+                          </td>
+                        ))}
+                        <td className="border border-gray-300 dark:border-gray-600 p-1">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleRemoveTableRow(rowIndex)}
+                            disabled={tableEditData.tableData.length <= 1}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      {tableEditData.tableData[0]?.map((_, colIndex) => (
+                        <td
+                          key={colIndex}
+                          className="border border-gray-300 dark:border-gray-600 p-1"
+                        >
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleRemoveTableColumn(colIndex)}
+                            disabled={tableEditData.tableData[0]?.length <= 1}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </td>
+                      ))}
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Dialog Actions */}
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditingTable(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveTable}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Table
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Upload Dialog */}
+      <Dialog open={isUploadingImage} onOpenChange={setIsUploadingImage}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Image</DialogTitle>
+            <DialogDescription>
+              Upload an image for this passage. Supported formats: JPG, PNG,
+              GIF, WebP
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0]
+                  if (file) {
+                    handleImageUpload(file)
+                  }
+                }}
+                className="hidden"
+                id="image-upload"
+              />
+              <label
+                htmlFor="image-upload"
+                className="cursor-pointer flex flex-col items-center space-y-2"
+              >
+                <ImageIcon className="h-8 w-8 text-gray-400" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Click to select an image
+                </span>
+                <span className="text-xs text-gray-500">Max size: 5MB</span>
+              </label>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsUploadingImage(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
