@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]/route'
 import { PrismaClient } from '@prisma/client'
+import { calculateScoreFromAttempt } from '@/lib/utils/scoringUtils'
 
 const prisma = new PrismaClient()
 
@@ -27,12 +28,14 @@ export async function GET() {
         testAttempts: {
           where: {
             completed: true,
-            score: {
-              not: null,
-            },
           },
           select: {
             score: true,
+            percentage: true,
+            totalQuestions: true,
+            correctAnswers: true,
+            wrongAnswers: true,
+            unattempted: true,
             test: {
               select: {
                 title: true,
@@ -47,10 +50,11 @@ export async function GET() {
     // Calculate total scores and test counts for each user
     const leaderboardData = usersWithScores
       .map((user) => {
-        const totalScore = user.testAttempts.reduce(
-          (sum, attempt) => sum + (attempt.score || 0),
-          0
-        )
+        const totalScore = user.testAttempts.reduce((sum, attempt) => {
+          // Recalculate score to ensure consistency
+          const scoreCalculation = calculateScoreFromAttempt(attempt)
+          return sum + (scoreCalculation.percentage || 0)
+        }, 0)
         const totalTests = user.testAttempts.length
         const paidTests = user.testAttempts.filter(
           (attempt) => attempt.test.type === 'PAID'

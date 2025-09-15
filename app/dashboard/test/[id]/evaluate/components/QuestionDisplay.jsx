@@ -115,16 +115,6 @@ export default function QuestionDisplay({
           {/* Question Content */}
           <Card className="mb-4 sm:mb-6 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
             <CardContent className="p-3 sm:p-6">
-              {/* Question Text */}
-              <div className="mb-4 sm:mb-6">
-                <div
-                  className="text-base sm:text-lg text-slate-900 dark:text-white prose dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: currentQuestion.questionText,
-                  }}
-                />
-              </div>
-
               {/* Passage Text */}
               {(() => {
                 const passage = getPassageForQuestion(currentQuestion)
@@ -187,6 +177,16 @@ export default function QuestionDisplay({
                   </div>
                 )
               })()}
+
+              {/* Question Text */}
+              <div className="mb-4 sm:mb-6">
+                <div
+                  className="text-base sm:text-lg text-slate-900 dark:text-white prose dark:prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: currentQuestion.questionText,
+                  }}
+                />
+              </div>
 
               {/* Table Data */}
               {currentQuestion.isTable &&
