@@ -45,7 +45,7 @@ export default function AdminTestCard({
         <Button
           variant="ghost"
           size="sm"
-          className="text-blue-600 hover:text-blue-700 text-xs"
+          className="text-blue-600 hover:text-blue-700 text-xs dark:text-blue-500 dark:hover:text-blue-600"
           onClick={() => onAction?.('view')}
         >
           <Eye className="mr-1 h-3 w-3" />
@@ -63,15 +63,6 @@ export default function AdminTestCard({
           >
             <Play className="mr-1 h-3 w-3" />
             Continue
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-purple-600 hover:text-purple-700 text-xs"
-            onClick={() => onAction?.('continue-ai')}
-          >
-            <Bot className="mr-1 h-3 w-3" />
-            AI
           </Button>
           <Button
             variant="ghost"
@@ -106,7 +97,7 @@ export default function AdminTestCard({
           <Button
             variant="ghost"
             size="sm"
-            className="text-blue-600 hover:text-blue-700"
+            className="text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-600"
             onClick={() => onAction?.('continue')}
           >
             <Play className="mr-1 h-3 w-3" />
@@ -127,11 +118,11 @@ export default function AdminTestCard({
   }
 
   return (
-    <div className="p-4">
+    <div className="p-4 dark:bg-gray-900">
       {/* Mobile Layout */}
       <div className="md:hidden space-y-3">
         <div className="flex justify-between items-start">
-          <h3 className="font-medium text-gray-900 text-sm">{title}</h3>
+          <h3 className="font-medium text-gray-900 text-sm dark:text-white">{title}</h3>
           <Badge
             variant={getTestType() === 'PAID' ? 'default' : 'secondary'}
             className={
@@ -156,7 +147,7 @@ export default function AdminTestCard({
             {getTestStatus()}
           </Badge>
 
-          <div className="flex items-center gap-2 text-gray-600">
+          <div className="flex items-center gap-2 text-gray-600 dark:text-white">
             <span className="text-xs">{getQuestionCount()} Questions</span>
           </div>
         </div>
@@ -165,10 +156,10 @@ export default function AdminTestCard({
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-600 hover:text-gray-700 text-xs"
+            className="text-gray-600 hover:text-gray-700 text-xs dark:text-white dark:hover:text-gray-300"
             onClick={() => onAction?.('settings')}
           >
-            <Settings className="mr-1 h-3 w-3" />
+            <Settings className="mr-1 h-3 w-3 dark:text-white" />
             Settings
           </Button>
 
@@ -178,7 +169,7 @@ export default function AdminTestCard({
               onCheckedChange={() => onAction?.('toggle')}
               className="data-[state=checked]:bg-orange-500"
             />
-            <span className="text-xs text-gray-600">
+            <span className="text-xs text-gray-600 dark:text-white">
               {isActive ? 'Active' : 'Draft'}
             </span>
           </div>
@@ -203,7 +194,7 @@ export default function AdminTestCard({
       {/* Desktop Layout */}
       <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1.5fr] items-center text-sm">
         {/* Name */}
-        <div className="font-medium text-gray-900">{title}</div>
+        <div className="font-medium text-gray-900 dark:text-white">{title}</div>
 
         {/* Type */}
         <div>
@@ -211,7 +202,7 @@ export default function AdminTestCard({
             variant={getTestType() === 'PAID' ? 'default' : 'secondary'}
             className={
               getTestType() === 'PAID'
-                ? 'bg-purple-100 text-purple-700 hover:bg-purple-100'
+                ? 'bg-purple-100 text-purple-700 hover:bg-purple-100 dark:bg-purple-900 dark:text-purple-300 dark:hover:bg-purple-900'
                 : 'bg-green-100 text-green-700 hover:bg-green-100'
             }
           >
@@ -225,8 +216,8 @@ export default function AdminTestCard({
             variant={getTestStatus() === 'Active' ? 'default' : 'secondary'}
             className={
               getTestStatus() === 'Active'
-                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
-                : 'bg-amber-100 text-amber-700 hover:bg-amber-100'
+                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-300 dark:hover:bg-emerald-900'
+                : 'bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-900 dark:text-amber-300 dark:hover:bg-amber-900'
             }
           >
             {getTestStatus()}
@@ -234,7 +225,7 @@ export default function AdminTestCard({
         </div>
 
         {/* Questions */}
-        <div className="text-gray-600">
+        <div className="text-gray-600 dark:text-white">
           <span className="text-sm">{getQuestionCount()} Questions</span>
         </div>
 
@@ -243,7 +234,7 @@ export default function AdminTestCard({
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-600 hover:text-gray-700"
+            className="text-gray-600 hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
             onClick={() => onAction?.('settings')}
           >
             <Settings className="mr-1 h-3 w-3" />
@@ -256,7 +247,7 @@ export default function AdminTestCard({
               onCheckedChange={() => onAction?.('toggle')}
               className="data-[state=checked]:bg-orange-500"
             />
-            <span className="text-xs text-gray-600">
+            <span className="text-xs text-gray-600 dark:text-white">
               {isActive ? 'Active' : 'Draft'}
             </span>
           </div>

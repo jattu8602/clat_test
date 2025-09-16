@@ -204,7 +204,7 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
 
   const getSectionIcon = (sectionName) => {
     const Icon = sectionIcons[sectionName] || FileText
-    return <Icon className="h-4 w-4" />
+    return <Icon className="h-4 w-4 dark:text-white" />
   }
 
   // Enhanced text editing functions
@@ -388,32 +388,55 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
   return (
     <div className="space-y-6">
       {/* Input Section */}
-      <Card>
+      <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Brain className="h-5 w-5 text-purple-600" />
-            <span>AI Text Analyzer</span>
+            <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <span className="dark:text-white">AI Text Analyzer</span>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="dark:text-gray-300">
             Paste your test content and let AI extract passages, questions, and
             generate answers
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="section-select" className="text-sm font-medium">
+            <Label
+              htmlFor="section-select"
+              className="text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
               Section Type
             </Label>
             <Select value={selectedSection} onValueChange={setSelectedSection}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select the section type for better AI analysis" />
+              <SelectTrigger
+                className="bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600
+                 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500/50
+                 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 transition-colors"
+              >
+                <SelectValue
+                  placeholder="Select the section type for better AI analysis"
+                  className="text-gray-700 dark:text-gray-100"
+                />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
+                 shadow-lg rounded-lg overflow-hidden"
+              >
                 {sectionOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex items-center space-x-2">
-                      {getSectionIcon(option.value)}
-                      <span>{option.label}</span>
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="flex items-center space-x-2 px-3 py-2
+                     text-gray-700 dark:text-gray-100
+                     hover:bg-gray-100 dark:hover:bg-gray-700
+                     cursor-pointer transition-colors"
+                  >
+                    {/* Fixed width container for icons */}
+                    <div className="flex items-center space-x-2 pl-2">
+                      <span className="w-5 h-5 flex items-center justify-center dark:text-white">
+                        {getSectionIcon(option.value)}
+                      </span>
+                      <span className="dark:text-white">{option.label}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -422,7 +445,7 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="test-content" className="text-sm font-medium">
+            <Label htmlFor="test-content" className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Test Content
             </Label>
             <Textarea
@@ -431,14 +454,14 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
               onChange={(e) => setText(e.target.value)}
               placeholder="Paste your test content here... (passages, questions, options)"
               rows={12}
-              className="resize-none"
+              className="resize-none bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500/50 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 transition-colors"
             />
           </div>
 
           <Button
             onClick={handleAnalyze}
             disabled={isAnalyzing || !text.trim() || !selectedSection}
-            className="w-full"
+            className="w-full bg-black text-white hover:bg-gray-800 rounded-lg px-4 py-2 dark:bg-gray-50 dark:text-black dark:hover:bg-gray-200"
           >
             {isAnalyzing ? (
               <>
@@ -467,20 +490,20 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
 
       {/* Analysis Results */}
       {analysis && (
-        <Card>
-          <CardHeader>
+        <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300">
+          <CardHeader className="border-b border-gray-100 dark:border-gray-700">
             <CardTitle className="flex items-center space-x-2">
               <Eye className="h-5 w-5 text-green-600" />
-              <span>Analysis Results</span>
+              <span className="dark:text-white">Analysis Results</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-gray-300">
               Review the extracted content before importing
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Summary */}
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg ">
                 <div className="text-2xl font-bold text-blue-600">
                   {analysis.summary.totalPassages}
                 </div>
@@ -520,7 +543,7 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
 
             {/* Sections */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Sections Detected</h3>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Sections Detected</h3>
               <div className="flex flex-wrap gap-2">
                 {analysis.summary.sectionsDetected.map((section) => (
                   <Badge
@@ -535,16 +558,16 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
             </div>
 
             {/* Detailed Content */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Content Preview</h3>
+            <div className="space-y-4 ">
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Content Preview</h3>
               {analysis.sections.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="border rounded-lg p-4">
+                <div key={sectionIndex} className="border rounded-lg p-4 dark:border-gray-700 dark:bg-gray-800">
                   <div className="flex items-center space-x-2 mb-3">
                     {getSectionIcon(section.name)}
-                    <h4 className="font-semibold">
+                    <h4 className="font-semibold text-gray-700 dark:text-gray-300">
                       {section.name.replace('_', ' & ')}
                     </h4>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
                       {section.passages.length} passages
                     </Badge>
                   </div>
@@ -556,22 +579,22 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4" />
-                          <span className="font-medium">
+                          <FileText className="h-4 w-4 dark:text-white" />
+                          <span className="font-medium dark:text-white">
                             Passage {passage.passageNumber}
                           </span>
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
                             {passage.questions.length} questions
                           </Badge>
                           {passage.hasImage && (
-                            <Badge className="bg-blue-100 text-blue-800">
-                              <FileText className="h-3 w-3 mr-1" />
+                            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                              <FileText className="h-3 w-3 mr-1 dark:text-white" />
                               Has Images
                             </Badge>
                           )}
                           {passage.isTable && (
-                            <Badge className="bg-purple-100 text-purple-800">
-                              <Calculator className="h-3 w-3 mr-1" />
+                            <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                              <Calculator className="h-3 w-3 mr-1 dark:text-white" />
                               Contains Table
                             </Badge>
                           )}
@@ -595,13 +618,13 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                                 handleEnhanceText(sectionIndex, passageIndex)
                               }
                               disabled={isEnhancing}
-                              className="h-8 px-2"
+                              className="h-8 px-2 bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                               title="Enhance text with AI"
                             >
                               {isEnhancing ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
-                                <Wand2 className="h-3 w-3" />
+                                <Wand2 className="h-3 w-3 dark:text-white" />
                               )}
                             </Button>
 
@@ -611,7 +634,7 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                               onClick={() =>
                                 handleEditTable(sectionIndex, passageIndex)
                               }
-                              className="h-8 px-2"
+                              className="h-8 px-2 bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                               title="Edit table data"
                             >
                               <Table className="h-3 w-3" />
@@ -623,10 +646,10 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                               onClick={() =>
                                 handleUploadImage(sectionIndex, passageIndex)
                               }
-                              className="h-8 px-2"
+                              className="h-8 px-2 bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                               title="Add image"
                             >
-                              <ImageIcon className="h-3 w-3" />
+                              <ImageIcon className="h-3 w-3 dark:text-white" />
                             </Button>
                           </div>
                         </div>
@@ -1044,7 +1067,7 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
 
             <div className="flex justify-end">
               <Button
-                variant="outline"
+                variant="outline dark:border-gray-700 dark:text-white"
                 onClick={() => setIsUploadingImage(false)}
               >
                 Cancel

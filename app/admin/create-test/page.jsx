@@ -348,16 +348,16 @@ export default function CreateTestPage() {
 
   if (showTextAnalyzer) {
     return (
-      <div className="min-h-screen bg-gray-50 p-2 md:p-4">
+      <div className="min-h-screen bg-gray-50 p-2 md:p-4 dark:bg-gray-900">
         <div className="max-w-6xl mx-auto">
           <div className="mb-6">
-            <Button variant="outline" onClick={resetForm} className="mb-4">
+            <Button variant="outline" onClick={resetForm} className="mb-4 dark:border-gray-700 dark:text-white">
               ← Back to Tests
             </Button>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               AI Text Analyzer
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 mt-2 dark:text-white">
               Paste your test content and let AI extract passages, questions,
               and generate answers
             </p>
@@ -372,7 +372,7 @@ export default function CreateTestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-2 md:p-4">
+    <div className="min-h-screen bg-gray-50 p-2 md:p-4 dark:bg-gray-900">
       <ConfirmModal
         isOpen={showConfirmModal}
         onClose={cancelToggleStatus}
@@ -445,11 +445,11 @@ export default function CreateTestPage() {
             <div className="flex gap-2 flex-shrink-0">
               <Button
                 onClick={() => setShowCreateForm(true)}
-                className="flex items-center space-x-2 bg-black text-white hover:bg-gray-800 rounded-lg px-4 py-2"
+                className="flex items-center space-x-2 bg-black text-white hover:bg-gray-800 rounded-lg px-4 py-2 dark:bg-gray-50 dark:text-black dark:hover:bg-gray-200"
               >
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Create New Test</span>
-                <span className="sm:hidden">New</span>
+                <span className="hidden sm:inline dark:text-black">Create New Test</span>
+                <span className="sm:hidden dark:text-black">New</span>
               </Button>
             </div>
           </div>
@@ -461,14 +461,14 @@ export default function CreateTestPage() {
         </div>
 
         {/* Test Categories Navigation */}
-        <div className="mb-4 md:mb-6 flex flex-wrap gap-2 rounded-lg border border-gray-300 bg-white p-2">
+        <div className="mb-4 md:mb-6 flex flex-wrap gap-2 rounded-lg border border-gray-300 bg-white p-2 dark:bg-gray-800 dark:border-gray-700">
 
           <button
             onClick={() => setActiveCategory('DRAFT')}
             className={`rounded-lg px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm font-semibold transition-colors ${
               activeCategory === 'DRAFT'
                 ? 'bg-black text-white'
-                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white'
             }`}
           >
             DRAFTS
@@ -478,7 +478,7 @@ export default function CreateTestPage() {
             className={`rounded-lg px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm font-semibold transition-colors ${
               activeCategory === 'ACTIVE'
                 ? 'bg-black text-white'
-                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white'
             }`}
           >
             ACTIVE
@@ -488,7 +488,7 @@ export default function CreateTestPage() {
             className={`rounded-lg px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm font-semibold transition-colors ${
               activeCategory === 'FREE'
                 ? 'bg-black text-white'
-                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white'
             }`}
           >
             FREE
@@ -498,7 +498,7 @@ export default function CreateTestPage() {
             className={`rounded-lg px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm font-semibold transition-colors ${
               activeCategory === 'PAID'
                 ? 'bg-black text-white'
-                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white'
             }`}
           >
             PAID
@@ -506,8 +506,8 @@ export default function CreateTestPage() {
         </div>
 
         {/* Main Content */}
-        <div className="rounded-lg border border-gray-300 bg-white overflow-hidden">
-          <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1.5fr] border-b border-gray-300 bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-700">
+        <div className="rounded-lg border border-gray-300 bg-white overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+          <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1.5fr] border-b border-gray-300 bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
             <div>NAME</div>
             <div>TYPE</div>
             <div>STATUS</div>
