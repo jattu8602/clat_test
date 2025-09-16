@@ -798,9 +798,9 @@ export default function TestTakingPage() {
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-80px)] sm:h-[calc(100vh-80px)]">
+      <div className="flex h-[calc(100vh-160px)] sm:h-[calc(100vh-140px)]">
         {/* Main Content */}
-        <div className="flex-1 p-3 sm:p-6 overflow-y-auto">
+        <div className="flex-1 p-3 sm:p-6 overflow-y-auto pb-24 sm:pb-20">
           {currentQuestion && (
             <div className="max-w-4xl mx-auto">
               {/* Question Header */}
@@ -830,12 +830,12 @@ export default function TestTakingPage() {
                         <h3 className="font-medium text-gray-900 dark:text-white text-sm sm:text-base">
                           Passage {passage.passageNumber}
                         </h3>
-                        <Badge
+                        {/* <Badge
                           variant="outline"
                           className="text-gray-900 dark:text-white border-2 border-gray-200 dark:border-gray-700 dark:bg-blue-900 bg-blue-200 text-xs"
                         >
                           {passage.section.replace('_', ' ')}
-                        </Badge>
+                        </Badge> */}
                       </div>
                       {passage.title && (
                         <h4 className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -883,21 +883,21 @@ export default function TestTakingPage() {
                             Table Data:
                           </div>
                           <div className="overflow-x-auto">
-                            <table className="min-w-full text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700">
+                            <table className="min-w-full text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white">
                               <tbody>
                                 {passage.tableData.map((row, rowIndex) => (
                                   <tr
                                     key={rowIndex}
                                     className={
                                       rowIndex % 2 === 0
-                                        ? 'bg-gray-50 dark:bg-gray-800'
-                                        : 'bg-white dark:bg-gray-700'
+                                        ? 'bg-gray-50 dark:bg-gray-800 dark:text-white'
+                                        : 'bg-white dark:bg-gray-700 dark:text-white'
                                     }
                                   >
                                     {row.map((cell, cellIndex) => (
                                       <td
                                         key={cellIndex}
-                                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center"
+                                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center dark:text-white"
                                       >
                                         {cell}
                                       </td>
@@ -1324,7 +1324,7 @@ export default function TestTakingPage() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-2 sm:p-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4 min-h-[80px] sm:min-h-[60px]">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center gap-2 sm:gap-4">
             <Button

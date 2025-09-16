@@ -174,6 +174,40 @@ export default function QuestionDisplay({
                           </div>
                         </div>
                       )}
+
+                    {/* Passage Table Data */}
+                    {passage.isTable && passage.tableData && (
+                      <div className="mt-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                          Table Data:
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white">
+                            <tbody>
+                              {passage.tableData.map((row, rowIndex) => (
+                                <tr
+                                  key={rowIndex}
+                                  className={
+                                    rowIndex % 2 === 0
+                                      ? 'bg-gray-50 dark:bg-gray-800 dark:text-white'
+                                      : 'bg-white dark:bg-gray-700 dark:text-white'
+                                  }
+                                >
+                                  {row.map((cell, cellIndex) => (
+                                    <td
+                                      key={cellIndex}
+                                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center dark:text-white"
+                                    >
+                                      {cell}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )
               })()}
