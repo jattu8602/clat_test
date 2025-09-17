@@ -332,6 +332,9 @@ export async function POST(request) {
 
     for (const [index, chunk] of passageChunks.entries()) {
       const passageNumber = index + 1
+      console.log(
+        `Processing chunk ${passageNumber} of ${passageChunks.length}`
+      )
       const sectionContext = selectedSection
         ? `This content is from the ${selectedSection.replace(
             '_',
@@ -360,6 +363,8 @@ export async function POST(request) {
       - Use the provided explanations exactly as given, don't generate new ones
       - If answers/explanations are provided, use them instead of generating new ones
 
+      PASSAGE NUMBERING: This is chunk ${passageNumber} of the text. Set the passageNumber to ${passageNumber} for all passages in this chunk.
+
       Text to analyze:
       ${chunk}
 
@@ -370,7 +375,7 @@ export async function POST(request) {
             "name": "ENGLISH|GK_CA|LEGAL_REASONING|LOGICAL_REASONING|QUANTITATIVE_TECHNIQUES",
             "passages": [
               {
-                "passageNumber": 1,
+                "passageNumber": ${passageNumber},
                 "content": "full passage content here",
                 "hasImage": false,
                 "imageUrls": [],
@@ -485,9 +490,11 @@ export async function POST(request) {
           targetSection = { name: section.name, passages: [] }
           analysisResult.sections.push(targetSection)
         }
-        // Correct the passage number for all passages found in the chunk
+        // Add passages to the target section
         section.passages.forEach((p) => {
-          p.passageNumber = passageNumber
+          console.log(
+            `Adding passage ${p.passageNumber} to section ${section.name}`
+          )
           targetSection.passages.push(p)
         })
       })
