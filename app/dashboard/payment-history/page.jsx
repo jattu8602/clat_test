@@ -878,20 +878,20 @@ if (loading) {
                       />
 
                       {/* Popular Badge */}
-                      {index === 1 && (
+                      {/* {index === 1 && (
                         <div className="absolute top-4 right-4 z-10">
                           <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-0 shadow-lg">
                             Most Popular
                           </Badge>
                         </div>
-                      )}
+                      )} */}
 
                       <CardHeader className="pb-4">
                         <div className="flex justify-between items-start">
                           <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white">
                             {plan.name}
                           </CardTitle>
-                          {plan.discount && plan.discount > 0 && (
+                          {plan.discount > 0 && (
                             <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white border-0 shadow-md">
                               {plan.discount}% OFF
                             </Badge>
@@ -903,7 +903,7 @@ if (loading) {
                         {/* Price Section */}
                         <div className="text-center">
                           <div className="flex items-baseline justify-center gap-2">
-                            {plan.discount && plan.discount > 0 && (
+                            {plan.discount > 0 && (
                               <span className="text-2xl text-slate-400 line-through">
                                 ₹{plan.price}
                               </span>
