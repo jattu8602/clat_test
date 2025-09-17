@@ -70,6 +70,84 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
   const [tableEditData, setTableEditData] = useState(null)
   const [imageUploadData, setImageUploadData] = useState(null)
 
+  const handleEnhanceText = async (sectionIndex, passageIndex) => {
+    if (!analysis) return
+
+    setIsEnhancing(true)
+    const passage = analysis.sections[sectionIndex].passages[passageIndex]
+    const questionTexts = passage.questions.map((q) => q.questionText || '')
+    const questionExplanations = passage.questions.map(
+      (q) => q.explanation || ''
+    )
+
+    try {
+      const response = await fetch('/api/admin/tests/ai-enhance-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          passageContent: passage.content,
+          questionTexts,
+          questionExplanations,
+          section: analysis.sections[sectionIndex].name,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+
+        // Update the analysis with enhanced content
+        const updatedAnalysis = { ...analysis }
+        const passageToUpdate =
+          updatedAnalysis.sections[sectionIndex].passages[passageIndex]
+
+        passageToUpdate.content = data.enhancedPassage
+        passageToUpdate.contentFormat = data.passageFormatting
+
+        if (
+          data.enhancedQuestionTexts &&
+          Array.isArray(data.enhancedQuestionTexts)
+        ) {
+          passageToUpdate.questions.forEach((question, index) => {
+            if (data.enhancedQuestionTexts[index]) {
+              question.questionText = data.enhancedQuestionTexts[index]
+              // Note: You might want a separate formatting object for questions from the API
+            }
+          })
+        }
+
+        if (
+          data.enhancedExplanations &&
+          Array.isArray(data.enhancedExplanations)
+        ) {
+          passageToUpdate.questions.forEach((question, index) => {
+            if (data.enhancedExplanations[index]) {
+              question.explanation = data.enhancedExplanations[index]
+              question.explanationFormat = data.explanationFormatting
+                ? data.explanationFormatting[index]
+                : null
+            }
+          })
+        }
+
+        setAnalysis(updatedAnalysis)
+
+        toast.success(
+          'Passage and question explanations enhanced successfully!'
+        )
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to enhance text')
+      }
+    } catch (error) {
+      console.error('Error enhancing text:', error)
+      toast.error('Error enhancing text. Please try again.')
+    } finally {
+      setIsEnhancing(false)
+    }
+  }
+
   const sectionOptions = [
     { value: 'ENGLISH', label: 'English' },
     { value: 'GK_CA', label: 'GK & Current Affairs' },
@@ -208,49 +286,6 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
   }
 
   // Enhanced text editing functions
-  const handleEnhanceText = async (sectionIndex, passageIndex) => {
-    if (!analysis) return
-
-    setIsEnhancing(true)
-    const passage = analysis.sections[sectionIndex].passages[passageIndex]
-
-    try {
-      const response = await fetch('/api/admin/tests/ai-enhance-text', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: passage.content,
-          section: analysis.sections[sectionIndex].name,
-        }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-
-        // Update the analysis with enhanced content
-        const updatedAnalysis = { ...analysis }
-        updatedAnalysis.sections[sectionIndex].passages[passageIndex].content =
-          data.enhancedText
-        updatedAnalysis.sections[sectionIndex].passages[
-          passageIndex
-        ].contentFormat = data.formatting
-        setAnalysis(updatedAnalysis)
-
-        toast.success('Text enhanced successfully!')
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to enhance text')
-      }
-    } catch (error) {
-      console.error('Error enhancing text:', error)
-      toast.error('Error enhancing text. Please try again.')
-    } finally {
-      setIsEnhancing(false)
-    }
-  }
-
   const handleEditTable = (sectionIndex, passageIndex) => {
     const passage = analysis.sections[sectionIndex].passages[passageIndex]
     setTableEditData({
@@ -445,7 +480,10 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="test-content" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Label
+              htmlFor="test-content"
+              className="text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
               Test Content
             </Label>
             <Textarea
@@ -543,7 +581,9 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
 
             {/* Sections */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Sections Detected</h3>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                Sections Detected
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {analysis.summary.sectionsDetected.map((section) => (
                   <Badge
@@ -559,15 +599,23 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
 
             {/* Detailed Content */}
             <div className="space-y-4 ">
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Content Preview</h3>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                Content Preview
+              </h3>
               {analysis.sections.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="border rounded-lg p-4 dark:border-gray-700 dark:bg-gray-800">
+                <div
+                  key={sectionIndex}
+                  className="border rounded-lg p-4 dark:border-gray-700 dark:bg-gray-800"
+                >
                   <div className="flex items-center space-x-2 mb-3">
                     {getSectionIcon(section.name)}
                     <h4 className="font-semibold text-gray-700 dark:text-gray-300">
                       {section.name.replace('_', ' & ')}
                     </h4>
-                    <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                    <Badge
+                      variant="outline"
+                      className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                    >
                       {section.passages.length} passages
                     </Badge>
                   </div>
@@ -583,7 +631,10 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                           <span className="font-medium dark:text-white">
                             Passage {passage.passageNumber}
                           </span>
-                          <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                          <Badge
+                            variant="secondary"
+                            className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                          >
                             {passage.questions.length} questions
                           </Badge>
                           {passage.hasImage && (

@@ -128,10 +128,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { text, section } = await request.json()
+    const {
+      passageContent,
+      questionTexts,
+      questionExplanations,
+      questionText,
+      section,
+    } = await request.json()
 
-    if (!text) {
-      return NextResponse.json({ error: 'Text is required' }, { status: 400 })
+    if (!passageContent && !questionText) {
+      return NextResponse.json(
+        { error: 'Either passage or question content is required' },
+        { status: 400 }
+      )
     }
 
     const sectionContext = section
@@ -142,43 +151,52 @@ export async function POST(request) {
     You are an expert at enhancing text readability and formatting for educational content.
     ${sectionContext}
 
-    Please enhance the following text to improve readability, structure, and visual appeal for students:
+    Please enhance the following text(s) to improve readability, structure, and visual appeal for students.
 
-    Original Text:
-    ${text}
+    ${passageContent ? `Original Passage:\n${passageContent}` : ''}
+    ${
+      questionTexts && questionTexts.length > 0
+        ? `Original Questions:\n${questionTexts
+            .map((text, i) => `Question ${i + 1}:\n${text}`)
+            .join('\n\n')}`
+        : ''
+    }
+    ${questionText ? `Original Question:\n${questionText}` : ''}
+
+    ${
+      questionExplanations && questionExplanations.length > 0
+        ? `Original Question Explanations:
+    ${questionExplanations
+      .map((exp, i) => `Explanation ${i + 1}:\n${exp}`)
+      .join('\n\n')}`
+        : ''
+    }
 
     Requirements:
-    1. Improve paragraph structure and spacing
-    2. Add appropriate emphasis (bold, italic) for key terms and concepts
-    3. Enhance readability with better line breaks and formatting
-    4. Maintain the original meaning and content
-    5. Make it more engaging and easier to read for students
-    6. Add visual hierarchy with proper headings if needed
-    7. Highlight important information appropriately
+    1. Improve paragraph structure and spacing for all texts.
+    2. Add appropriate emphasis (bold, italic) for key terms and concepts.
+    3. Enhance readability with better line breaks and formatting.
+    4. For any mathematical content, ensure it is clear and well-formatted.
+    5. Maintain the original meaning and content of all texts.
+    6. Make all texts more engaging and easier to read for students.
+    7. Use HTML tags for formatting (e.g., <strong>, <em>, <p>, <br>, <ul>, <li>).
 
-    Return a JSON response with the following structure:
+    Return a JSON response with the following structure. Only include keys for the content you are enhancing (e.g., if you only receive a question, only return "enhancedQuestionText" and "questionFormatting").
     {
-      "enhancedText": "The enhanced text with improved formatting and readability",
-      "formatting": {
-        "hasBold": true,
-        "hasItalic": true,
-        "hasHeadings": false,
-        "paragraphCount": 3,
-        "keyTermsHighlighted": ["term1", "term2"],
-        "readabilityScore": "improved"
-      },
-      "summary": {
-        "changesMade": ["Added paragraph breaks", "Highlighted key terms", "Improved spacing"],
-        "originalLength": 500,
-        "enhancedLength": 520
-      }
+      "enhancedPassage": "The enhanced passage content with HTML formatting",
+      "enhancedQuestionTexts": ["Enhanced text for question 1", "Enhanced text for question 2"],
+      "enhancedExplanations": [
+        "The enhanced explanation for question 1 with HTML formatting"
+      ],
+      "passageFormatting": { "hasBold": true, "hasItalic": true, "paragraphCount": 3 },
+      "questionFormatting": { "hasBold": true, "hasItalic": false },
+      "explanationFormatting": [ { "hasBold": true, "hasItalic": false } ]
     }
 
     IMPORTANT:
-    - Return ONLY the JSON object, no additional text
-    - The enhancedText should be ready for display with HTML formatting
-    - Use HTML tags for formatting (e.g., <strong>, <em>, <p>, <br>)
-    - Maintain all original information while improving presentation
+    - Return ONLY the JSON object, no additional text.
+    - The enhanced texts should be ready for display with HTML formatting.
+    - The 'enhancedExplanations' array should have the same number of items as the number of original explanations provided.
     `
 
     const systemPrompt =
@@ -193,9 +211,12 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      enhancedText: enhanceResult.enhancedText,
-      formatting: enhanceResult.formatting,
-      summary: enhanceResult.summary,
+      enhancedPassage: enhanceResult.enhancedPassage,
+      enhancedQuestionTexts: enhanceResult.enhancedQuestionTexts,
+      enhancedExplanations: enhanceResult.enhancedExplanations,
+      passageFormatting: enhanceResult.passageFormatting,
+      questionFormatting: enhanceResult.questionFormatting,
+      explanationFormatting: enhanceResult.explanationFormatting,
     })
   } catch (error) {
     console.error('Error enhancing text:', error)

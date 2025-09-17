@@ -185,6 +185,49 @@ function convertOptionLetterToText(optionLetter, options) {
   return optionLetter
 }
 
+// Helper function to find the exact option text that matches the AI's answer
+function normalizeCorrectAnswer(aiAnswer, options) {
+  if (!aiAnswer || !options || !Array.isArray(options)) {
+    return aiAnswer
+  }
+
+  const trimmedAiAnswer = aiAnswer.trim()
+
+  // 1. Direct match (if AI returns the full correct option text)
+  const directMatch = options.find((o) => o.trim() === trimmedAiAnswer)
+  if (directMatch) {
+    return directMatch
+  }
+
+  // 2. Match text content, ignoring prefixes like (a) or a.
+  const aiAnswerWithoutPrefix = trimmedAiAnswer
+    .replace(/^\s*\([a-z]\)\s*|\s*[a-z][\.\)]\s*/i, '')
+    .trim()
+  for (const option of options) {
+    const optionWithoutPrefix = option
+      .replace(/^\s*\([a-z]\)\s*|\s*[a-z][\.\)]\s*/i, '')
+      .trim()
+    if (optionWithoutPrefix === aiAnswerWithoutPrefix) {
+      return option // Return the original option string from the list
+    }
+  }
+
+  // 3. Fallback for partial match: if an option contains the AI answer
+  const partialMatch = options.find((o) => o.includes(trimmedAiAnswer))
+  if (partialMatch) {
+    return partialMatch
+  }
+
+  // 4. Fallback for letter-only answer (e.g., "a", "(b)")
+  const letterMatch = convertOptionLetterToText(trimmedAiAnswer, options)
+  if (letterMatch !== trimmedAiAnswer) {
+    return letterMatch
+  }
+
+  // 5. If no match, return original AI answer for debugging
+  return aiAnswer
+}
+
 export async function POST(request) {
   try {
     const session = await getServerSession(authOptions)
@@ -202,114 +245,167 @@ export async function POST(request) {
     }
 
     // Step 1: Analyze the text structure
-    const sectionContext = selectedSection
-      ? `This content is from the ${selectedSection.replace(
-          '_',
-          ' & '
-        )} section.`
-      : ''
+    const passageChunks = text
+      .split(/(?=PASSAGE – [IVXLCDM\d]+)/i)
+      .map((s) => s.trim())
+      .filter(Boolean)
 
-    const analysisPrompt = `
-    Analyze the following test text and extract structured information. The text contains passages and questions.
-    ${sectionContext}
-
-    IMPORTANT: Group related content together. For example:
-    - If you see "DIRECTIONS FOR QUESTIONS (Q.7 TO Q.12): Study the table given below" followed by table data and questions 7-12, put ALL of this in ONE passage
-    - Don't create separate passages for directions and data when they belong together
-    - A passage can contain description + table data + questions that reference that data
-
-    Text to analyze:
-    ${text}
-
-    Please provide a JSON response with the following structure:
-    {
-      "sections": [
-        {
-          "name": "ENGLISH|GK_CA|LEGAL_REASONING|LOGICAL_REASONING|QUANTITATIVE_TECHNIQUES",
-          "passages": [
-            {
-              "passageNumber": 1,
-              "content": "full passage content here",
-              "hasImage": false,
-              "imageUrls": [],
-              "isTable": false,
-              "tableData": null,
-              "questions": [
-                {
-                  "questionNumber": 1,
-                  "questionText": "question text here",
-                  "options": ["option a", "option b", "option c", "option d"],
-                  "correctAnswer": "exact option text (if provided in text, otherwise null)",
-                  "explanation": "explanation if provided, otherwise null",
-                  "isTable": false,
-                  "tableData": null
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      "summary": {
-        "totalPassages": 5,
-        "totalQuestions": 24,
-        "sectionsDetected": ["ENGLISH"],
-        "hasAnswers": false,
-        "hasExplanations": false,
-        "hasTables": false
-      }
+    if (passageChunks.length === 0 && text.trim()) {
+      passageChunks.push(text)
     }
 
-    Rules:
-    1. ${
-      selectedSection
-        ? `This content is specifically from the ${selectedSection.replace(
-            '_',
-            ' & '
-          )} section. Use "${selectedSection}" as the section name.`
-        : 'Identify sections based on content (English, GK/CA, Legal Reasoning, Logical Reasoning, Quantitative Techniques)'
+    const analysisResult = {
+      sections: [],
+      summary: {
+        totalPassages: 0,
+        totalQuestions: 0,
+        sectionsDetected: [],
+        hasAnswers: false,
+        hasExplanations: false,
+        hasTables: false,
+        hasImages: false,
+      },
     }
-    2. SMART PASSAGE ORGANIZATION:
-       - Group related content together in ONE passage (directions + data + questions that reference that data)
-       - If you see "DIRECTIONS FOR QUESTIONS (Q.X TO Q.Y): Study the table given below" followed by tabular data and then questions Q.X to Q.Y, put ALL of this in ONE passage
-       - A passage can contain: description text + table data + questions that reference that data
-       - Don't create separate passages for directions and data when they belong together
-    3. Extract passages and their content
-    4. Extract questions with options
-    5. If correct answers are provided, include the EXACT OPTION TEXT (not the letter a, b, c, d)
-    6. If explanations are provided, include them
-    7. If answers/explanations are missing, set them to null
-    8. Return valid JSON only, no additional text
-    9. IMPORTANT: For correctAnswer, use the full option text, not option letters
-    10. For mathematical content: ensure all ratios, percentages, and numbers are properly quoted as strings
-    11. CRITICAL: Return ONLY the JSON object, no explanatory text before or after
-    12. IMAGE DETECTION:
-       - For PASSAGES: If a passage contains image references or mentions images:
-         * Set "hasImage": true for that passage
-         * Extract image URLs and add them to "imageUrls": ["url1", "url2"]
-         * Look for patterns like "see the image below", "refer to the figure", or image URLs
-    13. TABLE DETECTION:
-       - For PASSAGES: If a passage contains tabular data or structured information that should be displayed as a table:
-         * Set "isTable": true for that passage
-         * Extract the table data and format it as "tableData": [["row1col1", "row1col2"], ["row2col1", "row2col2"]]
-         * Look for patterns like "Study the table given below", "Based on the information in the table", or structured data with rows and columns
-         * For data tables, extract all rows and columns as arrays of strings
-         * Include ALL questions that reference this table data in the SAME passage
-       - For QUESTIONS: If a question references tabular data or contains structured data that should be displayed as a table:
-         * Set "isTable": true for that question
-         * Extract the table data and format it as "tableData": [["row1col1", "row1col2"], ["row2col1", "row2col2"]]
-         * Look for patterns like "Study the table given below", "Based on the information in the table", or structured data with rows and columns
-         * For data tables, extract all rows and columns as arrays of strings
-    14. ${
-      selectedSection === 'QUANTITATIVE_TECHNIQUES'
-        ? 'For Quantitative Techniques: Pay special attention to mathematical calculations, ratios, percentages, and numerical data. Ensure all mathematical expressions are properly formatted. Look for tabular data in questions about statistics, comparisons, or structured information.'
-        : ''
-    }
-    `
 
     const systemPrompt =
       "You are an expert at analyzing test content and extracting structured data. Always return valid JSON. For mathematical content, ensure all numbers, ratios, and percentages are properly formatted as strings in the JSON. Do not include any text outside the JSON structure. IMPORTANT: Group related content together - if directions, data, and questions are related, put them in the same passage. Don't create unnecessary separate passages."
-    const analysisResponse = await callGeminiAPI(analysisPrompt, systemPrompt)
-    const analysisResult = extractJSONFromResponse(analysisResponse)
+
+    for (const [index, chunk] of passageChunks.entries()) {
+      const passageNumber = index + 1
+      const sectionContext = selectedSection
+        ? `This content is from the ${selectedSection.replace(
+            '_',
+            ' & '
+          )} section.`
+        : ''
+
+      const analysisPrompt = `
+      Analyze the following test text and extract structured information. The text contains passages and questions.
+      ${sectionContext}
+
+      IMPORTANT: Group related content together. For example:
+      - If you see "DIRECTIONS FOR QUESTIONS (Q.7 TO Q.12): Study the table given below" followed by table data and questions 7-12, put ALL of this in ONE passage
+      - Don't create separate passages for directions and data when they belong together
+      - A passage can contain description + table data + questions that reference that data
+
+      Text to analyze:
+      ${chunk}
+
+      Please provide a JSON response with the following structure:
+      {
+        "sections": [
+          {
+            "name": "ENGLISH|GK_CA|LEGAL_REASONING|LOGICAL_REASONING|QUANTITATIVE_TECHNIQUES",
+            "passages": [
+              {
+                "passageNumber": 1,
+                "content": "full passage content here",
+                "hasImage": false,
+                "imageUrls": [],
+                "isTable": false,
+                "tableData": null,
+                "questions": [
+                  {
+                    "questionNumber": 1,
+                    "questionText": "question text here",
+                    "options": ["option a", "option b", "option c", "option d"],
+                    "correctAnswer": "exact option text (if provided, must match an option exactly, including letter)",
+                    "explanation": "explanation if provided, otherwise null",
+                    "isTable": false,
+                    "tableData": null
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+
+      Rules:
+      1. ${
+        selectedSection
+          ? `This content is specifically from the ${selectedSection.replace(
+              '_',
+              ' & '
+            )} section. Use "${selectedSection}" as the section name.`
+          : 'Identify sections based on content (English, GK/CA, Legal Reasoning, Logical Reasoning, Quantitative Techniques)'
+      }
+      2. SMART PASSAGE ORGANIZATION:
+         - Group related content together in ONE passage (directions + data + questions that reference that data)
+         - If you see "DIRECTIONS FOR QUESTIONS (Q.X TO Q.Y): Study the table given below" followed by tabular data and then questions Q.X to Q.Y, put ALL of this in ONE passage
+         - A passage can contain: description text + table data + questions that reference that data
+         - Don't create separate passages for directions and data when they belong together
+      3. Extract passages and their content
+      4. Extract questions with options
+      5. If correct answers are provided, include the EXACT OPTION TEXT, including the option letter (e.g., '(a) some text'). It must match one of the options.
+      6. If explanations are provided, include them
+      7. If answers/explanations are missing, set them to null
+      8. Return valid JSON only, no additional text
+      9. IMPORTANT: For correctAnswer, use the full option text, including the option letter. It must be an exact match to one of the options.
+      10. For mathematical content: ensure all ratios, percentages, and numbers are properly quoted as strings
+      11. CRITICAL: Return ONLY the JSON object, no explanatory text before or after
+      12. IMAGE DETECTION:
+         - For PASSAGES: If a passage contains image references or mentions images:
+           * Set "hasImage": true for that passage
+           * Extract image URLs and add them to "imageUrls": ["url1", "url2"]
+           * Look for patterns like "see the image below", "refer to the figure", or image URLs
+      13. TABLE DETECTION:
+         - For PASSAGES: If a passage contains tabular data or structured information that should be displayed as a table:
+           * Set "isTable": true for that passage
+           * Extract the table data and format it as "tableData": [["row1col1", "row1col2"], ["row2col1", "row2col2"]]
+           * Look for patterns like "Study the table given below", "Based on the information in the table", or structured data with rows and columns
+           * For data tables, extract all rows and columns as arrays of strings
+           * Include ALL questions that reference this table data in the SAME passage
+         - For QUESTIONS: If a question references tabular data or contains structured data that should be displayed as a table:
+           * Set "isTable": true for that question
+           * Extract the table data and format it as "tableData": [["row1col1", "row1col2"], ["row2col1", "row2col2"]]
+           * Look for patterns like "Study the table given below", "Based on the information in the table", or structured data with rows and columns
+           * For data tables, extract all rows and columns as arrays of strings
+      14. ${
+        selectedSection === 'QUANTITATIVE_TECHNIQUES'
+          ? 'For Quantitative Techniques: Pay special attention to mathematical calculations, ratios, percentages, and numerical data. Ensure all mathematical expressions are properly formatted. Look for tabular data in questions about statistics, comparisons, or structured information.'
+          : ''
+      }
+      `
+      const analysisResponse = await callGeminiAPI(analysisPrompt, systemPrompt)
+      const chunkResult = extractJSONFromResponse(analysisResponse)
+
+      if (!chunkResult || !chunkResult.sections) {
+        console.error(
+          'AI response did not contain a valid JSON with a "sections" property for a chunk.'
+        )
+        console.error('Parsed result for chunk:', chunkResult)
+        console.error(
+          'Raw AI response for chunk:',
+          analysisResponse.substring(0, 2000)
+        )
+        return NextResponse.json(
+          {
+            error: 'AI response was not in the expected format for a passage.',
+            details:
+              'Could not find a valid JSON structure with a "sections" property.',
+            rawResponse: analysisResponse,
+          },
+          { status: 500 }
+        )
+      }
+
+      // Merge the result from the chunk into the final result
+      chunkResult.sections.forEach((section) => {
+        let targetSection = analysisResult.sections.find(
+          (s) => s.name === section.name
+        )
+        if (!targetSection) {
+          targetSection = { name: section.name, passages: [] }
+          analysisResult.sections.push(targetSection)
+        }
+        // Correct the passage number for all passages found in the chunk
+        section.passages.forEach((p) => {
+          p.passageNumber = passageNumber
+          targetSection.passages.push(p)
+        })
+      })
+    }
 
     // Step 2: Generate answers and explanations for questions that don't have them
     const questionsNeedingAnswers = []
@@ -358,13 +454,11 @@ export async function POST(request) {
       Return a JSON array where each object has:
       {
         "questionIndex": 0,
-        "correctAnswer": "exact option text here (not the letter, but the full option text)",
+        "correctAnswer": "exact option text here, including the option letter (e.g., '(a) text...'). It must match one of the options.",
         "explanation": "brief explanation of why this is correct"
       }
 
-      IMPORTANT: For correctAnswer, provide the EXACT TEXT of the correct option, not the letter (a, b, c, d).
-      For example, if the correct option is "The author believes that technology will improve education",
-      then correctAnswer should be "The author believes that technology will improve education", not "option a".
+      IMPORTANT: For correctAnswer, provide the EXACT TEXT of the correct option, including the option letter (e.g., \"(a) some text\"). The value must exactly match one of the provided options.
       `
 
       const answerSystemPrompt =
@@ -382,7 +476,7 @@ export async function POST(request) {
           const question = questionsNeedingAnswers[questionIndex]
 
           // Convert option letter to exact text if needed
-          const correctAnswer = convertOptionLetterToText(
+          const correctAnswer = normalizeCorrectAnswer(
             answer.correctAnswer,
             question.options
           )
@@ -458,7 +552,7 @@ export async function POST(request) {
               questionsNeedingAnswers[questionCounter].correctAnswer
           } else if (question.correctAnswer) {
             // Convert existing correct answer from option letter to exact text if needed
-            question.correctAnswer = convertOptionLetterToText(
+            question.correctAnswer = normalizeCorrectAnswer(
               question.correctAnswer,
               question.options
             )
@@ -477,6 +571,16 @@ export async function POST(request) {
     })
 
     // Update summary
+    const sectionsDetected = new Set()
+    analysisResult.sections.forEach((section) => {
+      sectionsDetected.add(section.name)
+      analysisResult.summary.totalPassages += section.passages.length
+      section.passages.forEach((passage) => {
+        analysisResult.summary.totalQuestions += passage.questions.length
+      })
+    })
+    analysisResult.summary.sectionsDetected = Array.from(sectionsDetected)
+
     analysisResult.summary.hasAnswers = analysisResult.sections.every(
       (section) =>
         section.passages.every((passage) =>
