@@ -1,12 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import MotivationQuotes from '@/components/MotivationQuotes'
 import { Badge } from '@/components/ui/badge'
-import { Loader2 } from 'lucide-react'
+import { Loader2, RefreshCw } from 'lucide-react'
+import {
+  PaymentHistorySkeleton,
+  PaymentHistoryFreeUserSkeleton,
+  PaymentHistoryPaidUserSkeleton,
+} from '@/components/ui/skeleton-loaders'
 import {
   Dialog,
   DialogContent,
@@ -16,14 +21,15 @@ import {
 } from '@/components/ui/dialog'
 import toast from 'react-hot-toast'
 
-// Cache data outside component to persist across navigations
+// Enhanced cache with better performance
 const paymentHistoryCache = {
   plans: null,
   userPayments: null,
   currentPlan: null,
   userStatus: null,
   lastFetchTime: null,
-  cacheExpiry: 5 * 60 * 1000, // 5 minutes cache
+  cacheExpiry: 10 * 60 * 1000, // 10 minutes cache for better performance
+  isFetching: false, // Prevent multiple simultaneous requests
 }
 
 export default function UserPaymentHistory() {
@@ -38,6 +44,11 @@ export default function UserPaymentHistory() {
   const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(null)
   const [loading, setLoading] = useState(!paymentHistoryCache.plans)
+  const [loadingStates, setLoadingStates] = useState({
+    plans: !paymentHistoryCache.plans,
+    payments: !paymentHistoryCache.userPayments,
+    status: !paymentHistoryCache.userStatus,
+  })
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [razorpayKey, setRazorpayKey] = useState(null)
   const [razorpayLoaded, setRazorpayLoaded] = useState(false)
@@ -45,17 +56,112 @@ export default function UserPaymentHistory() {
     paymentHistoryCache.userStatus || null
   )
 
-  // Check if cache is still valid
-  const isCacheValid = () => {
+  // Memoized cache validation
+  const isCacheValid = useCallback(() => {
     if (!paymentHistoryCache.lastFetchTime) return false
     return (
       Date.now() - paymentHistoryCache.lastFetchTime <
       paymentHistoryCache.cacheExpiry
     )
-  }
+  }, [])
+
+  const checkPlanExpiry = useCallback(async () => {
+    try {
+      await fetch('/api/user/check-expiry', { method: 'POST' })
+    } catch (error) {
+      console.error('Error checking plan expiry:', error)
+    }
+  }, [])
+
+  // Optimized fetch function with better error handling and parallel requests
+  const fetchData = useCallback(async () => {
+    // Prevent multiple simultaneous requests
+    if (paymentHistoryCache.isFetching) return
+
+    try {
+      paymentHistoryCache.isFetching = true
+      setLoading(true)
+
+      // Check plan expiry first (non-blocking)
+      checkPlanExpiry().catch(console.error)
+
+      // Fetch all data in parallel for better performance
+      const [plansResponse, paymentsResponse, statusResponse] =
+        await Promise.allSettled([
+          fetch('/api/payment-plans', {
+            headers: {
+              'Cache-Control': 'max-age=600', // 10 minutes browser cache
+            },
+          }),
+          fetch('/api/user/payments', {
+            headers: {
+              'Cache-Control': 'max-age=300', // 5 minutes browser cache
+            },
+          }),
+          fetch('/api/user/status', {
+            headers: {
+              'Cache-Control': 'max-age=300', // 5 minutes browser cache
+            },
+          }),
+        ])
+
+      // Process plans data
+      if (plansResponse.status === 'fulfilled' && plansResponse.value.ok) {
+        const plansData = await plansResponse.value.json()
+        const activePlans = plansData.filter((plan) => plan.isActive)
+        setPlans(activePlans)
+        paymentHistoryCache.plans = activePlans
+        setLoadingStates((prev) => ({ ...prev, plans: false }))
+      }
+
+      // Process payments data
+      if (
+        paymentsResponse.status === 'fulfilled' &&
+        paymentsResponse.value.ok
+      ) {
+        const paymentsData = await paymentsResponse.value.json()
+        setUserPayments(paymentsData)
+        paymentHistoryCache.userPayments = paymentsData
+        setLoadingStates((prev) => ({ ...prev, payments: false }))
+      }
+
+      // Process status data
+      if (statusResponse.status === 'fulfilled' && statusResponse.value.ok) {
+        const statusData = await statusResponse.value.json()
+        setUserStatus(statusData.user)
+        paymentHistoryCache.userStatus = statusData.user
+        setLoadingStates((prev) => ({ ...prev, status: false }))
+
+        // Set current plan if user is paid
+        if (statusData.user.isCurrentlyPaid && statusData.user.currentPlan) {
+          // Find the corresponding payment for display
+          const activePayment = paymentHistoryCache.userPayments?.find(
+            (payment) =>
+              payment.status === 'SUCCESS' &&
+              payment.plan.id === statusData.user.currentPlan.id
+          )
+
+          if (activePayment) {
+            setCurrentPlan(activePayment)
+            paymentHistoryCache.currentPlan = activePayment
+          }
+        }
+      }
+
+      // Update cache timestamp
+      paymentHistoryCache.lastFetchTime = Date.now()
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      toast.error('Failed to load payment data. Please try again.')
+    } finally {
+      setLoading(false)
+      paymentHistoryCache.isFetching = false
+    }
+  }, [checkPlanExpiry])
 
   useEffect(() => {
     if (session) {
+      // Only fetch if no cached data or cache is invalid
       if (!paymentHistoryCache.plans || !isCacheValid()) {
         fetchData()
       } else {
@@ -64,7 +170,7 @@ export default function UserPaymentHistory() {
       fetchRazorpayKey()
       loadRazorpayScript()
     }
-  }, [session])
+  }, [session, fetchData, isCacheValid])
 
   // Monitor Razorpay loading state
   useEffect(() => {
@@ -361,67 +467,6 @@ export default function UserPaymentHistory() {
     }
   }
 
-  const fetchData = async () => {
-    try {
-      // Check plan expiry first
-      await checkPlanExpiry()
-
-      // Fetch available plans
-      const plansResponse = await fetch('/api/payment-plans')
-      if (plansResponse.ok) {
-        const plansData = await plansResponse.json()
-        setPlans(plansData.filter((plan) => plan.isActive))
-        paymentHistoryCache.plans = plansData.filter((plan) => plan.isActive)
-        paymentHistoryCache.lastFetchTime = Date.now()
-      }
-
-      // Fetch user's payment history
-      const paymentsResponse = await fetch('/api/user/payments')
-      if (paymentsResponse.ok) {
-        const paymentsData = await paymentsResponse.json()
-        setUserPayments(paymentsData)
-        paymentHistoryCache.userPayments = paymentsData
-        paymentHistoryCache.lastFetchTime = Date.now()
-      }
-
-      // Fetch current user status
-      const statusResponse = await fetch('/api/user/status')
-      if (statusResponse.ok) {
-        const statusData = await statusResponse.json()
-        setUserStatus(statusData.user)
-        paymentHistoryCache.userStatus = statusData.user
-        paymentHistoryCache.lastFetchTime = Date.now()
-
-        // Set current plan if user is paid
-        if (statusData.user.isCurrentlyPaid && statusData.user.currentPlan) {
-          // Find the corresponding payment for display
-          const activePayment = userPayments.find(
-            (payment) =>
-              payment.status === 'SUCCESS' &&
-              payment.plan.id === statusData.user.currentPlan.id
-          )
-
-          if (activePayment) {
-            setCurrentPlan(activePayment)
-            paymentHistoryCache.currentPlan = activePayment
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const checkPlanExpiry = async () => {
-    try {
-      await fetch('/api/user/check-expiry', { method: 'POST' })
-    } catch (error) {
-      console.error('Error checking plan expiry:', error)
-    }
-  }
-
   const handlePurchase = (plan) => {
     if (!razorpayKey) {
       toast.error('Payment system is not ready. Please try again in a moment.')
@@ -691,7 +736,8 @@ export default function UserPaymentHistory() {
     }
   }
 
-  const calculateRemainingDays = (payment) => {
+  // Memoized utility functions for better performance
+  const calculateRemainingDays = useCallback((payment) => {
     const startDate = new Date(payment.createdAt)
     const endDate = new Date(
       startDate.getTime() + payment.plan.duration * 24 * 60 * 60 * 1000
@@ -700,45 +746,58 @@ export default function UserPaymentHistory() {
     const remainingMs = endDate - now
     const remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24))
     return Math.max(0, remainingDays)
-  }
+  }, [])
 
-  const formatDuration = (plan) => {
+  const formatDuration = useCallback((plan) => {
     if (plan.durationType === 'until_date' && plan.untilDate) {
       return `Until ${new Date(plan.untilDate).toLocaleDateString()}`
     }
     return `${plan.duration} ${plan.durationType}`
+  }, [])
+
+  // Show loading skeleton if any critical data is still loading
+  const isAnyDataLoading =
+    loadingStates.plans || loadingStates.status || loading
+
+  if (isAnyDataLoading) {
+    // Show appropriate skeleton based on user status if available
+    if (userStatus?.isCurrentlyPaid) {
+      return <PaymentHistoryPaidUserSkeleton />
+    } else if (userStatus !== null) {
+      // User status is loaded and user is free
+      return <PaymentHistoryFreeUserSkeleton />
+    } else {
+      // User status is not loaded yet, show generic skeleton
+      return <PaymentHistorySkeleton />
+    }
   }
-
-if (loading) {
-  return (
-    <div className="container mx-auto p-6">
-      <div className="flex flex-col justify-center items-center h-64 space-y-4">
-        {/* Spinner */}
-        <Loader2 className="w-10 h-10 text-green-500 animate-spin" />
-
-        {/* Loading Text */}
-        <div className="text-lg font-medium text-slate-900 dark:text-white">
-          Loading...
-        </div>
-
-        {/* Motivation Quote */}
-        <MotivationQuotes />
-      </div>
-    </div>
-  )
-}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 p-4 md:p-6">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-2">
-            Payment History & Plans
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-lg">
-            Manage your subscription and view payment history
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-2">
+                Payment History & Plans
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400 text-lg">
+                Manage your subscription and view payment history
+              </p>
+            </div>
+            <Button
+              onClick={fetchData}
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              disabled={loading}
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
+              />
+            </Button>
+          </div>
         </div>
 
         {/* Payment System Status - Only show if there are issues */}
@@ -830,7 +889,7 @@ if (loading) {
             <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-6">
               Choose Your Plan
             </h2>
-            {loading ? (
+            {loadingStates.plans ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
                   <Card
@@ -1027,7 +1086,40 @@ if (loading) {
           <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-6">
             Payment History
           </h2>
-          {userPayments.length === 0 ? (
+          {loadingStates.payments ? (
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Card
+                  key={i}
+                  className="animate-pulse border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm"
+                >
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+                        <div>
+                          <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-12 mb-1"></div>
+                          <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-32"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16 mb-1"></div>
+                        <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-20"></div>
+                      </div>
+                      <div>
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-12 mb-1"></div>
+                        <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-16"></div>
+                      </div>
+                      <div>
+                        <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-10 mb-1"></div>
+                        <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : userPayments.length === 0 ? (
             <Card className="border-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-lg">
               <CardContent className="p-12 text-center">
                 <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">

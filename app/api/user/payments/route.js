@@ -5,6 +5,9 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+// Cache for user payments
+const userPaymentsCache = new Map()
+
 // GET - Fetch user's payment history
 export async function GET() {
   try {
@@ -14,15 +17,61 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const userId = session.user.id
+    const now = Date.now()
+    const cacheKey = `payments_${userId}`
+    const cacheExpiry = 5 * 60 * 1000 // 5 minutes
+
+    // Check cache
+    const cached = userPaymentsCache.get(cacheKey)
+    if (cached && now - cached.timestamp < cacheExpiry) {
+      return NextResponse.json(cached.data, {
+        headers: {
+          'Cache-Control': 'private, max-age=300', // 5 minutes browser cache
+          ETag: `"${cached.timestamp}"`,
+        },
+      })
+    }
+
     const payments = await prisma.payment.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       include: {
-        plan: true,
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            duration: true,
+            durationType: true,
+            untilDate: true,
+            description: true,
+            discount: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json(payments)
+    // Update cache
+    userPaymentsCache.set(cacheKey, {
+      data: payments,
+      timestamp: now,
+    })
+
+    // Clean up old cache entries
+    if (userPaymentsCache.size > 100) {
+      const entries = Array.from(userPaymentsCache.entries())
+      entries
+        .filter(([_, value]) => now - value.timestamp > cacheExpiry)
+        .forEach(([key]) => userPaymentsCache.delete(key))
+    }
+
+    return NextResponse.json(payments, {
+      headers: {
+        'Cache-Control': 'private, max-age=300', // 5 minutes browser cache
+        ETag: `"${now}"`,
+      },
+    })
   } catch (error) {
     console.error('Error fetching user payments:', error)
     return NextResponse.json(

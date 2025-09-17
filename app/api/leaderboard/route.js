@@ -6,6 +6,13 @@ import { calculateScoreFromAttempt } from '@/lib/utils/scoringUtils'
 
 const prisma = new PrismaClient()
 
+// Cache for leaderboard data
+let leaderboardCache = {
+  data: null,
+  timestamp: null,
+  expiry: 5 * 60 * 1000, // 5 minutes
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +21,34 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get all users with their test attempts and scores
+    // Check if cache is valid
+    const now = Date.now()
+    if (
+      leaderboardCache.data &&
+      leaderboardCache.timestamp &&
+      now - leaderboardCache.timestamp < leaderboardCache.expiry
+    ) {
+      // Return cached data with current user info
+      const currentUserRank = leaderboardCache.data.rankedLeaderboard.find(
+        (user) => user.id === session.user.id
+      )
+
+      return NextResponse.json(
+        {
+          leaderboard: leaderboardCache.data.top10Users,
+          currentUser: currentUserRank,
+          totalUsers: leaderboardCache.data.rankedLeaderboard.length,
+        },
+        {
+          headers: {
+            'Cache-Control': 'public, max-age=300', // 5 minutes browser cache
+            ETag: `"${leaderboardCache.timestamp}"`,
+          },
+        }
+      )
+    }
+
+    // Get all users with their test attempts and scores (optimized query)
     const usersWithScores = await prisma.user.findMany({
       where: {
         isBlocked: false, // Exclude blocked users
@@ -28,6 +62,7 @@ export async function GET() {
         testAttempts: {
           where: {
             completed: true,
+            isLatest: true, // Only get latest attempts for better performance
           },
           select: {
             score: true,
@@ -38,7 +73,6 @@ export async function GET() {
             unattempted: true,
             test: {
               select: {
-                title: true,
                 type: true,
               },
             },
@@ -82,19 +116,34 @@ export async function GET() {
       rank: index + 1,
     }))
 
+    // Get top 10 users
+    const top10Users = rankedLeaderboard.slice(0, 10)
+
+    // Update cache
+    leaderboardCache.data = {
+      rankedLeaderboard,
+      top10Users,
+    }
+    leaderboardCache.timestamp = now
+
     // Get current user's rank
     const currentUserRank = rankedLeaderboard.find(
       (user) => user.id === session.user.id
     )
 
-    // Get top 10 users
-    const top10Users = rankedLeaderboard.slice(0, 10)
-
-    return NextResponse.json({
-      leaderboard: top10Users,
-      currentUser: currentUserRank,
-      totalUsers: rankedLeaderboard.length,
-    })
+    return NextResponse.json(
+      {
+        leaderboard: top10Users,
+        currentUser: currentUserRank,
+        totalUsers: rankedLeaderboard.length,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=300', // 5 minutes browser cache
+          ETag: `"${now}"`,
+        },
+      }
+    )
   } catch (error) {
     console.error('Error fetching leaderboard:', error)
     return NextResponse.json(

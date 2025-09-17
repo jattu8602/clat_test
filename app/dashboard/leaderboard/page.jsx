@@ -1,70 +1,86 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, Medal, Award, Crown, Star, Users, Target } from 'lucide-react'
+import {
+  Trophy,
+  Medal,
+  Award,
+  Crown,
+  Star,
+  Users,
+  Target,
+  RefreshCw,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { LeaderboardSkeleton } from '@/components/ui/skeleton-loaders'
+import { LoadingProgress } from '@/components/ui/LoadingProgress'
+import { useProgressiveLoading } from '@/hooks/useProgressiveLoading'
 
-// Cache data outside component to persist across navigations
+// Enhanced cache with better performance
 const leaderboardCache = {
   leaderboardData: null,
   currentUser: null,
   lastFetchTime: null,
-  cacheExpiry: 5 * 60 * 1000, // 5 minutes cache
+  cacheExpiry: 10 * 60 * 1000, // 10 minutes cache for better performance
+  isFetching: false, // Prevent multiple simultaneous requests
 }
 
 export default function Leaderboard() {
   const { data: session } = useSession()
-  const [leaderboardData, setLeaderboardData] = useState(
-    leaderboardCache.leaderboardData || null
-  )
-  const [currentUser, setCurrentUser] = useState(
-    leaderboardCache.currentUser || null
-  )
-  const [loading, setLoading] = useState(!leaderboardCache.leaderboardData)
-  const [error, setError] = useState(null)
 
-  // Check if cache is still valid
-  const isCacheValid = () => {
-    if (!leaderboardCache.lastFetchTime) return false
-    return (
-      Date.now() - leaderboardCache.lastFetchTime < leaderboardCache.cacheExpiry
-    )
-  }
+  // Progressive loading hook
+  const fetchLeaderboardData = useCallback(async (signal) => {
+    const response = await fetch('/api/leaderboard', {
+      signal,
+      headers: {
+        'Cache-Control': 'max-age=600',
+      },
+    })
 
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/leaderboard')
-        if (!response.ok) {
-          throw new Error('Failed to fetch leaderboard data')
-        }
-        const data = await response.json()
-        setLeaderboardData(data.leaderboard)
-        setCurrentUser(data.currentUser)
-
-        // Update cache
-        leaderboardCache.leaderboardData = data.leaderboard
-        leaderboardCache.currentUser = data.currentUser
-        leaderboardCache.lastFetchTime = Date.now()
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
+    if (!response.ok) {
+      throw new Error(`Failed to fetch leaderboard data: ${response.status}`)
     }
 
-    if (!leaderboardCache.leaderboardData || !isCacheValid()) {
-      fetchLeaderboard()
-    } else {
-      setLoading(false)
-    }
+    return await response.json()
   }, [])
 
-  const getRankIcon = (rank) => {
+  const {
+    data: leaderboardResponse,
+    loading,
+    error,
+    isRefreshing,
+    progress,
+    refetch,
+  } = useProgressiveLoading(fetchLeaderboardData, {
+    initialData: leaderboardCache.leaderboardData
+      ? {
+          leaderboard: leaderboardCache.leaderboardData,
+          currentUser: leaderboardCache.currentUser,
+        }
+      : null,
+    cacheKey: 'leaderboard',
+    cacheExpiry: 10 * 60 * 1000, // 10 minutes
+    enableBackgroundRefresh: true,
+  })
+
+  const leaderboardData = leaderboardResponse?.leaderboard || null
+  const currentUser = leaderboardResponse?.currentUser || null
+
+  // Update cache when data changes
+  useEffect(() => {
+    if (leaderboardResponse) {
+      leaderboardCache.leaderboardData = leaderboardResponse.leaderboard
+      leaderboardCache.currentUser = leaderboardResponse.currentUser
+      leaderboardCache.lastFetchTime = Date.now()
+    }
+  }, [leaderboardResponse])
+
+  // Memoized utility functions for better performance
+  const getRankIcon = useCallback((rank) => {
     switch (rank) {
       case 1:
         return <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500" />
@@ -75,9 +91,9 @@ export default function Leaderboard() {
       default:
         return <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-slate-400" />
     }
-  }
+  }, [])
 
-  const getRankBadgeColor = (rank) => {
+  const getRankBadgeColor = useCallback((rank) => {
     switch (rank) {
       case 1:
         return 'bg-yellow-500 text-white'
@@ -88,26 +104,40 @@ export default function Leaderboard() {
       default:
         return 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
     }
-  }
+  }, [])
 
-  const getUserInitials = (name) => {
+  const getUserInitials = useCallback((name) => {
     return name
       .split(' ')
       .map((n) => n[0])
       .join('')
       .toUpperCase()
       .slice(0, 2)
+  }, [])
+
+  // Memoized data processing for better performance
+  const processedData = useMemo(() => {
+    if (!leaderboardData) return { top3Users: [], otherUsers: [] }
+
+    const top3Users = leaderboardData.slice(0, 3)
+    const otherUsers = leaderboardData.slice(3, 10)
+
+    return { top3Users, otherUsers }
+  }, [leaderboardData])
+
+  if (loading && !leaderboardData) {
+    return <LeaderboardSkeleton />
   }
 
-  if (loading) {
+  // Show progress bar for refreshing
+  if (isRefreshing && progress > 0) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center p-4">
-        <div className="text-center space-y-4 max-w-sm w-full">
-          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-4 border-primary border-t-transparent mx-auto"></div>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
-            Loading leaderboard...
-          </p>
-        </div>
+        <LoadingProgress
+          progress={progress}
+          message="Updating leaderboard..."
+          className="max-w-md"
+        />
       </div>
     )
   }
@@ -122,23 +152,41 @@ export default function Leaderboard() {
               Something went wrong
             </h3>
             <p className="text-sm sm:text-base text-red-500">Error: {error}</p>
+            <Button onClick={refetch} className="mt-4" variant="outline">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
           </div>
         </div>
       </div>
     )
   }
 
-  const top3Users = leaderboardData?.slice(0, 3) || []
-  const otherUsers = leaderboardData?.slice(3, 10) || []
+  const { top3Users, otherUsers } = processedData
 
   return (
     <div className="min-h-screen w-full dark:bg-slate-900">
       <div className="container mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8 max-w-7xl">
         {/* Header */}
         <div className="text-center space-y-3 sm:space-y-4">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-100">
-            🏆 Leaderboard
-          </h1>
+          <div className="flex items-center justify-center gap-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-100">
+              🏆 Leaderboard
+            </h1>
+            <Button
+              onClick={refetch}
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              disabled={loading || isRefreshing}
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${
+                  loading || isRefreshing ? 'animate-spin' : ''
+                }`}
+              />
+            </Button>
+          </div>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-md mx-auto">
             Top performers in CLAT preparation
           </p>
