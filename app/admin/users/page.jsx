@@ -25,6 +25,10 @@ import {
   Shield,
   Ban,
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Users,
 } from 'lucide-react'
 
 export default function UsersPage() {
@@ -32,16 +36,36 @@ export default function UsersPage() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [updatingUser, setUpdatingUser] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedRole, setSelectedRole] = useState('ALL')
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalUsers: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+  })
 
   useEffect(() => {
     fetchUsers()
-  }, [])
+  }, [currentPage, selectedRole])
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users')
+      setLoading(true)
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '10',
+      })
+
+      if (selectedRole !== 'ALL') {
+        params.append('role', selectedRole)
+      }
+
+      const response = await fetch(`/api/admin/users?${params}`)
       const data = await response.json()
       setUsers(data.users || [])
+      setPagination(data.pagination || pagination)
     } catch (error) {
       console.error('Error fetching users:', error)
     } finally {
@@ -171,6 +195,61 @@ export default function UsersPage() {
           </div>
         </div>
 
+        {/* Filter Section */}
+        <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Filter by Role:
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  {
+                    value: 'ALL',
+                    label: 'All Users',
+                    icon: Users,
+                    count: pagination.totalUsers,
+                  },
+                  { value: 'FREE', label: 'Free', icon: User, count: null },
+                  { value: 'PAID', label: 'Paid', icon: Shield, count: null },
+                  { value: 'ADMIN', label: 'Admin', icon: Crown, count: null },
+                ].map((filter) => {
+                  const Icon = filter.icon
+                  return (
+                    <Button
+                      key={filter.value}
+                      variant={
+                        selectedRole === filter.value ? 'default' : 'outline'
+                      }
+                      size="sm"
+                      onClick={() => {
+                        setSelectedRole(filter.value)
+                        setCurrentPage(1)
+                      }}
+                      className={`flex items-center gap-2 ${
+                        selectedRole === filter.value
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {filter.label}
+                      {filter.count !== null && (
+                        <Badge variant="secondary" className="ml-1 text-xs">
+                          {filter.count}
+                        </Badge>
+                      )}
+                    </Button>
+                  )
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <CardHeader className="pb-3 sm:pb-4">
             <div className="flex items-center justify-between">
@@ -180,7 +259,10 @@ export default function UsersPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <CardTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white truncate">
-                    All Users ({users.length})
+                    {selectedRole === 'ALL'
+                      ? 'All Users'
+                      : `${selectedRole} Users`}{' '}
+                    ({pagination.totalUsers})
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
                     View and manage user accounts, roles, and permissions
@@ -314,6 +396,77 @@ export default function UsersPage() {
                 </div>
               ))}
             </div>
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="text-sm text-gray-600 dark:text-gray-300">
+                  Showing {(currentPage - 1) * 10 + 1} to{' '}
+                  {Math.min(currentPage * 10, pagination.totalUsers)} of{' '}
+                  {pagination.totalUsers} users
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={!pagination.hasPrevPage || loading}
+                    className="flex items-center gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from(
+                      { length: Math.min(5, pagination.totalPages) },
+                      (_, i) => {
+                        let pageNum
+                        if (pagination.totalPages <= 5) {
+                          pageNum = i + 1
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1
+                        } else if (currentPage >= pagination.totalPages - 2) {
+                          pageNum = pagination.totalPages - 4 + i
+                        } else {
+                          pageNum = currentPage - 2 + i
+                        }
+
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={
+                              currentPage === pageNum ? 'default' : 'outline'
+                            }
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                            disabled={loading}
+                            className={`w-8 h-8 p-0 ${
+                              currentPage === pageNum
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            {pageNum}
+                          </Button>
+                        )
+                      }
+                    )}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={!pagination.hasNextPage || loading}
+                    className="flex items-center gap-1"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
