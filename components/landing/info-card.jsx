@@ -75,33 +75,34 @@ const Card = ({ title, copy, index }) => {
 // SIMPLE REWARDS SECTION COMPONENT - No animations, mobile-friendly
 // ============================================================================
 const SimpleRewardsSection = () => {
-  const rewards = [
-    {
-      title: "₹1 Lakh+ Prize Pool",
-      copy: "Compete for massive cash prizes and recognition. Win big and make your mark in the hackathon world.",
-      index: 1,
-    },
-    {
-      title: "Exclusive Swags",
-      copy: "Get your hands on exclusive merchandise and collectibles that you won't find anywhere else.",
-      index: 2,
-    },
-    {
-      title: "National Recognition",
-      copy: "Get featured on national platforms and media. Build your reputation and showcase your skills.",
-      index: 3,
-    },
-    {
-      title: "Mentorship & Network",
-      copy: "Connect with industry experts and peers. Build valuable relationships that last beyond the hackathon.",
-      index: 4,
-    },
-    {
-      title: "Stay & Meals",
-      copy: "Enjoy comfortable accommodation and delicious food throughout your hackathon journey.",
-      index: 5,
-    },
-  ];
+ const rewards = [
+   {
+     title: '📘 Learning Modules',
+     copy: 'Access structured free learning modules covering essential topics to get you started.',
+     index: 1,
+   },
+   {
+     title: '📝 Smooth Test Experience',
+     copy: 'Take free tests with a clean and distraction-free UI designed for focus.',
+     index: 2,
+   },
+   {
+     title: '⭐ Advanced Profile',
+     copy: 'Unlock detailed progress analytics, badges, and personalized recommendations.',
+     index: 3,
+   },
+   {
+     title: '🔔 Smart Notifications',
+     copy: 'Stay on track with reminders, new test alerts, and performance updates.',
+     index: 4,
+   },
+   {
+     title: '🏆 Leaderboard',
+     copy: 'Compete with peers, climb the ranks, and showcase your preparation journey.',
+     index: 5,
+   },
+ ]
+
 
   return (
     <div className="bg-[#141414] text-[#fcf2e8] py-4 px-4">
