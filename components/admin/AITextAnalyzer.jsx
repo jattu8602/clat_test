@@ -70,13 +70,70 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
   const [tableEditData, setTableEditData] = useState(null)
   const [imageUploadData, setImageUploadData] = useState(null)
 
+  // Helper function to validate and clean explanations
+  const validateAndCleanExplanations = (questions) => {
+    return questions.map((question, index) => {
+      if (!question.explanation) return question
+
+      let explanation = question.explanation.trim()
+
+      // Check if explanation contains content from next questions
+      const nextQuestionPattern = /Q\d+|Question\s+\d+/i
+      const nextQuestionMatch = explanation.match(nextQuestionPattern)
+
+      if (nextQuestionMatch) {
+        // Find the position of the next question reference
+        const nextQuestionIndex = explanation.indexOf(nextQuestionMatch[0])
+        // Truncate explanation at the next question boundary
+        explanation = explanation.substring(0, nextQuestionIndex).trim()
+      }
+
+      // Remove any trailing dashes or separators that might indicate bleeding
+      explanation = explanation.replace(/[-—–]\s*$/, '').trim()
+
+      return {
+        ...question,
+        explanation: explanation || null,
+      }
+    })
+  }
+
+  // Helper function to check if answers were properly extracted
+  const checkAnswerExtraction = (analysis) => {
+    if (!analysis)
+      return { hasAnswers: 0, totalQuestions: 0, extractionRate: 0 }
+
+    let hasAnswers = 0
+    let totalQuestions = 0
+
+    analysis.sections.forEach((section) => {
+      section.passages.forEach((passage) => {
+        passage.questions.forEach((question) => {
+          totalQuestions++
+          if (question.correctAnswer && question.correctAnswer.trim()) {
+            hasAnswers++
+          }
+        })
+      })
+    })
+
+    const extractionRate =
+      totalQuestions > 0 ? Math.round((hasAnswers / totalQuestions) * 100) : 0
+
+    return { hasAnswers, totalQuestions, extractionRate }
+  }
+
   const handleEnhanceText = async (sectionIndex, passageIndex) => {
     if (!analysis) return
 
     setIsEnhancing(true)
     const passage = analysis.sections[sectionIndex].passages[passageIndex]
-    const questionTexts = passage.questions.map((q) => q.questionText || '')
-    const questionExplanations = passage.questions.map(
+
+    // Validate and clean explanations before enhancement
+    const cleanedQuestions = validateAndCleanExplanations(passage.questions)
+
+    const questionTexts = cleanedQuestions.map((q) => q.questionText || '')
+    const questionExplanations = cleanedQuestions.map(
       (q) => q.explanation || ''
     )
 
@@ -219,7 +276,20 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
 
       if (response.ok) {
         const data = await response.json()
-        setAnalysis(data.analysis)
+
+        // Clean explanations in the analysis result
+        const cleanedAnalysis = {
+          ...data.analysis,
+          sections: data.analysis.sections.map((section) => ({
+            ...section,
+            passages: section.passages.map((passage) => ({
+              ...passage,
+              questions: validateAndCleanExplanations(passage.questions),
+            })),
+          })),
+        }
+
+        setAnalysis(cleanedAnalysis)
         toast.success('Text analyzed successfully!')
       } else {
         const error = await response.json()
@@ -431,7 +501,20 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
           </CardTitle>
           <CardDescription className="dark:text-gray-300">
             Paste your test content and let AI extract passages, questions, and
-            generate answers
+            generate answers. <strong>Tip:</strong> If you have answers and
+            explanations, include them in this format:
+            <br />
+            <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+              answers - and explanations -<br />
+              questions:
+              <br />
+              q1:
+              <br />
+              &nbsp;&nbsp;question_number: 1<br />
+              &nbsp;&nbsp;answer: (b) Your answer here
+              <br />
+              &nbsp;&nbsp;explanation: Your explanation here
+            </code>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -561,7 +644,10 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
               </div>
               <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                 <div className="text-2xl font-bold text-orange-600">
-                  {analysis.summary.hasAnswers ? '✓' : '✗'}
+                  {(() => {
+                    const answerStats = checkAnswerExtraction(analysis)
+                    return `${answerStats.extractionRate}%`
+                  })()}
                 </div>
                 <div className="text-sm text-orange-600">Answers</div>
               </div>
@@ -821,6 +907,13 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                                     Has Answer
                                   </Badge>
                                 )}
+                                {question.correctAnswer &&
+                                  question.explanation && (
+                                    <Badge className="bg-blue-100 text-blue-800">
+                                      <FileText className="h-3 w-3 mr-1" />
+                                      Provided
+                                    </Badge>
+                                  )}
                                 {question.explanation && (
                                   <Badge className="bg-blue-100 text-blue-800">
                                     <FileText className="h-3 w-3 mr-1" />
@@ -921,10 +1014,17 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
                             {/* Explanation */}
                             {question.explanation && (
                               <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-                                  Explanation:
+                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1 flex items-center space-x-2">
+                                  <span>Explanation:</span>
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-green-50 text-green-700 border-green-200 text-xs"
+                                  >
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Isolated
+                                  </Badge>
                                 </div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                                <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800">
                                   {question.explanation}
                                 </div>
                               </div>

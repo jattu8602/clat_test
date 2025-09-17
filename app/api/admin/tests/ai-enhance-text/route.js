@@ -180,6 +180,7 @@ export async function POST(request) {
     5. Maintain the original meaning and content of all texts.
     6. Make all texts more engaging and easier to read for students.
     7. Use HTML tags for formatting (e.g., <strong>, <em>, <p>, <br>, <ul>, <li>).
+    8. CRITICAL: Keep each explanation isolated to its specific question only.
 
     Return a JSON response with the following structure. Only include keys for the content you are enhancing (e.g., if you only receive a question, only return "enhancedQuestionText" and "questionFormatting").
     {
@@ -197,6 +198,7 @@ export async function POST(request) {
     - Return ONLY the JSON object, no additional text.
     - The enhanced texts should be ready for display with HTML formatting.
     - The 'enhancedExplanations' array should have the same number of items as the number of original explanations provided.
+    - Each explanation must remain isolated to its specific question - do not mix content between explanations.
     `
 
     const systemPrompt =

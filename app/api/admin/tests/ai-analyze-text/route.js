@@ -254,6 +254,66 @@ export async function POST(request) {
       passageChunks.push(text)
     }
 
+    // Extract answers section separately if it exists
+    const answersSectionMatch = text.match(
+      /(answers\s*-\s*and\s*explanations\s*-[\s\S]*)/i
+    )
+    let providedAnswers = {}
+
+    if (answersSectionMatch) {
+      console.log('Found answers section, extracting...')
+      const answersText = answersSectionMatch[1]
+      // Parse the answers section to extract question answers
+      // Try multiple patterns to handle different formats
+      let questionMatches = answersText.match(
+        /q(\d+):[\s\S]*?question_number:\s*(\d+)[\s\S]*?answer:\s*([^\n]+)[\s\S]*?explanation:\s*([^\n]+)/gi
+      )
+
+      // If no matches with the first pattern, try a simpler pattern
+      if (!questionMatches) {
+        questionMatches = answersText.match(
+          /q(\d+):[\s\S]*?answer:\s*([^\n]+)[\s\S]*?explanation:\s*([^\n]+)/gi
+        )
+      }
+
+      if (questionMatches) {
+        console.log(
+          `Found ${questionMatches.length} question matches in answers section`
+        )
+        questionMatches.forEach((match) => {
+          // Try the full pattern first
+          let qMatch = match.match(
+            /q(\d+):[\s\S]*?question_number:\s*(\d+)[\s\S]*?answer:\s*([^\n]+)[\s\S]*?explanation:\s*([^\n]+)/i
+          )
+
+          if (qMatch) {
+            const questionNum = parseInt(qMatch[2])
+            const answer = qMatch[3].trim()
+            const explanation = qMatch[4].trim()
+            providedAnswers[questionNum] = { answer, explanation }
+            console.log(`Extracted answer for Q${questionNum}: ${answer}`)
+          } else {
+            // Try the simpler pattern
+            qMatch = match.match(
+              /q(\d+):[\s\S]*?answer:\s*([^\n]+)[\s\S]*?explanation:\s*([^\n]+)/i
+            )
+            if (qMatch) {
+              const questionNum = parseInt(qMatch[1])
+              const answer = qMatch[2].trim()
+              const explanation = qMatch[3].trim()
+              providedAnswers[questionNum] = { answer, explanation }
+              console.log(`Extracted answer for Q${questionNum}: ${answer}`)
+            }
+          }
+        })
+      } else {
+        console.log('No question matches found in answers section')
+        console.log('Answers text preview:', answersText.substring(0, 500))
+      }
+    } else {
+      console.log('No answers section found in text')
+    }
+
     const analysisResult = {
       sections: [],
       summary: {
@@ -268,7 +328,7 @@ export async function POST(request) {
     }
 
     const systemPrompt =
-      "You are an expert at analyzing test content and extracting structured data. Always return valid JSON. For mathematical content, ensure all numbers, ratios, and percentages are properly formatted as strings in the JSON. Do not include any text outside the JSON structure. IMPORTANT: Group related content together - if directions, data, and questions are related, put them in the same passage. Don't create unnecessary separate passages."
+      "You are an expert at analyzing test content and extracting structured data. Always return valid JSON. For mathematical content, ensure all numbers, ratios, and percentages are properly formatted as strings in the JSON. Do not include any text outside the JSON structure. IMPORTANT: Group related content together - if directions, data, and questions are related, put them in the same passage. Don't create unnecessary separate passages. CRITICAL: If the text contains provided answers and explanations (like 'answers - and explanations -' or 'questions:' sections), extract and use them exactly as provided. Do not generate new answers if they are already given in the text."
 
     for (const [index, chunk] of passageChunks.entries()) {
       const passageNumber = index + 1
@@ -280,13 +340,25 @@ export async function POST(request) {
         : ''
 
       const analysisPrompt = `
-      Analyze the following test text and extract structured information. The text contains passages and questions.
+      Analyze the following test text and extract structured information. The text contains passages, questions, and may include provided answers and explanations.
       ${sectionContext}
 
       IMPORTANT: Group related content together. For example:
       - If you see "DIRECTIONS FOR QUESTIONS (Q.7 TO Q.12): Study the table given below" followed by table data and questions 7-12, put ALL of this in ONE passage
       - Don't create separate passages for directions and data when they belong together
       - A passage can contain description + table data + questions that reference that data
+
+      CRITICAL: Look for provided answers and explanations in the text:
+      - If you see sections like "answers - and explanations -" or "questions:" followed by structured answer data, EXTRACT THESE
+      - Look for patterns like "q1:", "q2:", etc. with provided answers and explanations
+      - Example format to look for:
+        q1:
+          question_number: 1
+          answer: (b) Remove illegal foreigners by force
+          explanation: The Passport (Entry into India) Act, 1920 empowers authorities to remove illegal foreigners, ensuring control over unlawful migration.
+      - Match the provided answers to the corresponding questions by question number
+      - Use the provided explanations exactly as given, don't generate new ones
+      - If answers/explanations are provided, use them instead of generating new ones
 
       Text to analyze:
       ${chunk}
@@ -337,9 +409,23 @@ export async function POST(request) {
          - Don't create separate passages for directions and data when they belong together
       3. Extract passages and their content
       4. Extract questions with options
-      5. If correct answers are provided, include the EXACT OPTION TEXT, including the option letter (e.g., '(a) some text'). It must match one of the options.
-      6. If explanations are provided, include them
-      7. If answers/explanations are missing, set them to null
+      5. ANSWER EXTRACTION - CRITICAL:
+         - FIRST: Look for provided answers in the text (sections like "answers - and explanations -" or "questions:")
+         - If provided answers exist, use them EXACTLY as given
+         - Match answers to questions by question number (q1, q2, etc.)
+         - If correct answers are provided, include the EXACT OPTION TEXT, including the option letter (e.g., '(a) some text'). It must match one of the options.
+         - If no provided answers exist, then generate answers based on passage content
+      6. EXPLANATION EXTRACTION - CRITICAL:
+         - FIRST: Look for provided explanations in the text
+         - If provided explanations exist, use them EXACTLY as given
+         - Each explanation must belong ONLY to its specific question
+         - Look for clear boundaries between questions (Q1, Q2, Q3, etc.)
+         - If you see text that looks like an explanation, it belongs to the PREVIOUS question only
+         - Do NOT include explanation text that appears after a new question number
+         - If explanation text continues beyond the next question, STOP at the question boundary
+         - Each question should have its own isolated explanation field
+         - If no provided explanations exist, then generate explanations based on passage content
+      7. If answers/explanations are missing and not provided in the text, set them to null
       8. Return valid JSON only, no additional text
       9. IMPORTANT: For correctAnswer, use the full option text, including the option letter. It must be an exact match to one of the options.
       10. For mathematical content: ensure all ratios, percentages, and numbers are properly quoted as strings
@@ -511,10 +597,17 @@ export async function POST(request) {
         "questionIndex": 0,
         "explanation": "detailed explanation of why the correct answer is right and why others are wrong"
       }
+
+      IMPORTANT EXPLANATION RULES:
+      - Each explanation must be specific to ONLY that question
+      - Do not reference other questions in your explanation
+      - Keep explanations focused and concise
+      - Each explanation should be self-contained
+      - Do not include content that belongs to other questions
       `
 
       const explanationSystemPrompt =
-        'You are an expert educator. Provide clear, detailed explanations for test questions.'
+        'You are an expert educator. Provide clear, detailed explanations for test questions. Each explanation must be isolated to its specific question only.'
       const explanationResponse = await callGeminiAPI(
         explanationPrompt,
         explanationSystemPrompt
@@ -544,7 +637,15 @@ export async function POST(request) {
     analysisResult.sections.forEach((section) => {
       section.passages.forEach((passage) => {
         passage.questions.forEach((question) => {
-          if (
+          // First, apply provided answers if they exist
+          if (providedAnswers[question.questionNumber]) {
+            const providedAnswer = providedAnswers[question.questionNumber]
+            question.correctAnswer = providedAnswer.answer
+            question.explanation = providedAnswer.explanation
+            console.log(
+              `Applied provided answer for Q${question.questionNumber}: ${providedAnswer.answer}`
+            )
+          } else if (
             !question.correctAnswer &&
             questionsNeedingAnswers[questionCounter]
           ) {
