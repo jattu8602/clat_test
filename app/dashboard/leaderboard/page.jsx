@@ -69,6 +69,9 @@ export default function Leaderboard() {
 
   const leaderboardData = leaderboardResponse?.leaderboard || null
   const currentUser = leaderboardResponse?.currentUser || null
+  const weekInfo = leaderboardResponse?.weekInfo || null
+  const timeRemaining = leaderboardResponse?.timeRemaining || null
+  const isWeekly = leaderboardResponse?.isWeekly || false
 
   // Update cache when data changes
   useEffect(() => {
@@ -171,7 +174,7 @@ export default function Leaderboard() {
         <div className="text-center space-y-3 sm:space-y-4">
           <div className="flex items-center justify-center gap-4">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-100">
-              🏆 Leaderboard
+              🏆 Weekly Leaderboard
             </h1>
             <Button
               onClick={refetch}
@@ -187,8 +190,35 @@ export default function Leaderboard() {
               />
             </Button>
           </div>
+
+          {/* Weekly Information */}
+          {isWeekly && weekInfo && (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 max-w-2xl mx-auto border border-blue-200 dark:border-blue-800">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div className="text-center sm:text-left">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    📅 Week of {weekInfo.range}
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Resets every Monday at 12:00 AM
+                  </p>
+                </div>
+                <div className="text-center sm:text-right">
+                  <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
+                    ⏰ {timeRemaining} left
+                  </p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                    {weekInfo.daysRemaining} days remaining
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-            Top performers in CLAT preparation
+            {isWeekly
+              ? 'Weekly top performers in CLAT preparation'
+              : 'Top performers in CLAT preparation'}
           </p>
         </div>
 
@@ -315,7 +345,9 @@ export default function Leaderboard() {
                 <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
                   <Target className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900 dark:text-slate-100" />
                   <span className="text-slate-900 dark:text-slate-100">
-                    Other Top Performers
+                    {isWeekly
+                      ? 'Other Weekly Top Performers'
+                      : 'Other Top Performers'}
                   </span>
                 </CardTitle>
               </CardHeader>
@@ -391,7 +423,7 @@ export default function Leaderboard() {
                 <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
                   <Star className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900 dark:text-slate-100" />
                   <span className="text-slate-900 dark:text-slate-100">
-                    Your Ranking
+                    {isWeekly ? 'Your Weekly Ranking' : 'Your Ranking'}
                   </span>
                 </CardTitle>
               </CardHeader>

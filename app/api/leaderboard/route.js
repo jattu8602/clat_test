@@ -3,6 +3,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]/route'
 import { PrismaClient } from '@prisma/client'
 import { calculateScoreFromAttempt } from '@/lib/utils/scoringUtils'
+import {
+  getWeekStart,
+  getWeekEnd,
+  getWeekInfo,
+  getTimeRemainingFormatted,
+} from '@/lib/utils/weekUtils'
 
 const prisma = new PrismaClient()
 
@@ -48,7 +54,15 @@ export async function GET() {
       )
     }
 
-    // Get all users with their test attempts and scores (optimized query)
+    // Get current week boundaries
+    const weekStart = getWeekStart()
+    const weekEnd = getWeekEnd()
+
+    console.log(
+      `Weekly leaderboard: ${weekStart.toISOString()} to ${weekEnd.toISOString()}`
+    )
+
+    // Get all users with their test attempts and scores from current week only
     const usersWithScores = await prisma.user.findMany({
       where: {
         isBlocked: false, // Exclude blocked users
@@ -63,6 +77,10 @@ export async function GET() {
           where: {
             completed: true,
             isLatest: true, // Only get latest attempts for better performance
+            completedAt: {
+              gte: weekStart, // Only tests completed this week
+              lte: weekEnd,
+            },
           },
           select: {
             score: true,
@@ -71,9 +89,11 @@ export async function GET() {
             correctAnswers: true,
             wrongAnswers: true,
             unattempted: true,
+            completedAt: true,
             test: {
               select: {
                 type: true,
+                title: true,
               },
             },
           },
@@ -131,11 +151,23 @@ export async function GET() {
       (user) => user.id === session.user.id
     )
 
+    // Get weekly information
+    const weekInfo = getWeekInfo()
+    const timeRemaining = getTimeRemainingFormatted()
+
     return NextResponse.json(
       {
         leaderboard: top10Users,
         currentUser: currentUserRank,
         totalUsers: rankedLeaderboard.length,
+        weekInfo: {
+          start: weekInfo.startFormatted,
+          end: weekInfo.endFormatted,
+          range: weekInfo.weekRange,
+          daysRemaining: weekInfo.daysRemaining,
+        },
+        timeRemaining,
+        isWeekly: true,
       },
       {
         headers: {
