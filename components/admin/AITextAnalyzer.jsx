@@ -967,7 +967,7 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
 
       {/* Table Editing Dialog */}
       <Dialog open={isEditingTable} onOpenChange={setIsEditingTable}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-800">
           <DialogHeader>
             <DialogTitle>Edit Table Data</DialogTitle>
             <DialogDescription>
@@ -1081,7 +1081,7 @@ export default function AITextAnalyzer({ testId, onImportComplete }) {
 
       {/* Image Upload Dialog */}
       <Dialog open={isUploadingImage} onOpenChange={setIsUploadingImage}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-gray-800">
           <DialogHeader>
             <DialogTitle>Upload Image</DialogTitle>
             <DialogDescription>
