@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import {
@@ -20,9 +21,32 @@ import {
   TrendingUp,
   Activity,
 } from 'lucide-react'
+import Loader from '@/components/ui/Loader'
+
+const StatCardSkeleton = () => (
+  <div className="space-y-2">
+    <div className="h-7 bg-gray-200 rounded-md dark:bg-gray-700 w-3/4 animate-pulse"></div>
+    <div className="h-4 bg-gray-200 rounded-md dark:bg-gray-700 w-1/2 animate-pulse"></div>
+  </div>
+)
 
 export default function Admin() {
   const { data: session } = useSession()
+  const [stats, setStats] = useState(null)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/admin/stats')
+        const data = await response.json()
+        setStats(data)
+      } catch (error) {
+        console.error('Failed to fetch stats:', error)
+      }
+    }
+
+    fetchStats()
+  }, [])
 
   const adminSections = [
     {
@@ -59,38 +83,50 @@ export default function Admin() {
     },
   ]
 
-  const stats = [
+  const statsDisplayData = [
     {
       title: 'Total Users',
-      value: '1,234',
-      change: '+12%',
       icon: Users,
       color: 'text-blue-600 dark:text-blue-400',
       bgColor: 'bg-blue-50 dark:bg-blue-900',
+      getData: (stats) => ({
+        value: stats.totalUsers.value.toLocaleString(),
+        change: `${parseFloat(stats.totalUsers.change).toFixed(1)}%`,
+        isPositive: parseFloat(stats.totalUsers.change) >= 0,
+      }),
     },
     {
       title: 'Active Tests',
-      value: '24',
-      change: '+3',
       icon: FileText,
       color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 dark:bg-green-900',
+      getData: (stats) => ({
+        value: stats.activeTests.value.toLocaleString(),
+        change: stats.activeTests.change,
+        isPositive: stats.activeTests.change >= 0,
+      }),
     },
     {
       title: 'Total Revenue',
-      value: '₹45,678',
-      change: '+8%',
       icon: TrendingUp,
       color: 'text-purple-600 dark:text-purple-400',
       bgColor: 'bg-purple-50 dark:bg-purple-900',
+      getData: (stats) => ({
+        value: `₹${stats.totalRevenue.value.toLocaleString()}`,
+        change: `${parseFloat(stats.totalRevenue.change).toFixed(1)}%`,
+        isPositive: parseFloat(stats.totalRevenue.change) >= 0,
+      }),
     },
     {
       title: 'Active Sessions',
-      value: '89',
-      change: '+5%',
       icon: Activity,
       color: 'text-orange-600 dark:text-orange-400',
       bgColor: 'bg-orange-50 dark:bg-orange-900',
+      getData: (stats) => ({
+        value: stats.activeSessions.value.toLocaleString(),
+        change: `${parseFloat(stats.activeSessions.change).toFixed(1)}%`,
+        isPositive: parseFloat(stats.activeSessions.change) >= 0,
+      }),
     },
   ]
 
@@ -106,8 +142,9 @@ export default function Admin() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
+        {statsDisplayData.map((stat, index) => {
           const Icon = stat.icon
+          const data = stats ? stat.getData(stats) : null
           return (
             <Card
               key={index}
@@ -122,13 +159,26 @@ export default function Admin() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs mt-1">
-                  <span className="text-green-600 dark:text-green-400">
-                    {stat.change}
-                  </span>{' '}
-                  from last month
-                </p>
+                {data ? (
+                  <>
+                    <div className="text-2xl font-bold">{data.value}</div>
+                    <p className="text-xs mt-1">
+                      <span
+                        className={
+                          data.isPositive
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }
+                      >
+                        {data.isPositive ? '+' : ''}
+                        {data.change}
+                      </span>{' '}
+                      from last week
+                    </p>
+                  </>
+                ) : (
+                  <StatCardSkeleton />
+                )}
               </CardContent>
             </Card>
           )
