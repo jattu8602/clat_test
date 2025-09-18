@@ -10,6 +10,8 @@ import {
   getTimeRemainingFormatted,
 } from '@/lib/utils/weekUtils'
 
+export const dynamic = 'force-dynamic' // Force dynamic rendering, disable caching
+
 const prisma = new PrismaClient()
 
 // Cache for leaderboard data
@@ -25,76 +27,6 @@ export async function GET() {
 
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if cache is valid
-    const now = Date.now()
-    if (
-      leaderboardCache.data &&
-      leaderboardCache.timestamp &&
-      now - leaderboardCache.timestamp < leaderboardCache.expiry
-    ) {
-      // Return cached data with current user info
-      // Ensure we compare IDs as strings to avoid type mismatch
-      const currentUserRank = leaderboardCache.data.rankedLeaderboard.find(
-        (user) => String(user.id) === String(session.user.id)
-      )
-
-      // If current user is not in cached leaderboard, get their basic info
-      let currentUserData = currentUserRank
-      if (!currentUserData) {
-        const userFromDb = await prisma.user.findUnique({
-          where: { id: session.user.id },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            role: true,
-          },
-        })
-
-        if (userFromDb) {
-          currentUserData = {
-            id: userFromDb.id,
-            name: userFromDb.name || 'Anonymous',
-            email: userFromDb.email,
-            image: userFromDb.image,
-            role: userFromDb.role,
-            totalScore: 0,
-            totalTests: 0,
-            paidTests: 0,
-            freeTests: 0,
-            rank: leaderboardCache.data.rankedLeaderboard.length + 1, // Rank after all users with tests
-          }
-        }
-      }
-
-      // Get weekly information for cached response
-      const weekInfo = getWeekInfo()
-      const timeRemaining = getTimeRemainingFormatted()
-
-      return NextResponse.json(
-        {
-          leaderboard: leaderboardCache.data.top10Users,
-          currentUser: currentUserData,
-          totalUsers: leaderboardCache.data.rankedLeaderboard.length,
-          weekInfo: {
-            start: weekInfo.startFormatted,
-            end: weekInfo.endFormatted,
-            range: weekInfo.weekRange,
-            daysRemaining: weekInfo.daysRemaining,
-          },
-          timeRemaining,
-          isWeekly: true,
-        },
-        {
-          headers: {
-            'Cache-Control': 'private, max-age=300, must-revalidate', // 5 minutes browser cache
-            ETag: `"${leaderboardCache.timestamp}"`,
-          },
-        }
-      )
     }
 
     // Get current week boundaries
@@ -182,13 +114,6 @@ export async function GET() {
     // Get top 10 users
     const top10Users = rankedLeaderboard.slice(0, 10)
 
-    // Update cache
-    leaderboardCache.data = {
-      rankedLeaderboard,
-      top10Users,
-    }
-    leaderboardCache.timestamp = now
-
     // Get current user's rank - ensure we compare IDs as strings
     console.log(
       'Looking for user ID:',
@@ -251,8 +176,7 @@ export async function GET() {
       },
       {
         headers: {
-          'Cache-Control': 'private, max-age=300, must-revalidate', // 5 minutes browser cache
-          ETag: `"${now}"`,
+          'Cache-Control': 'private, max-age=0, no-cache, no-store', // No caching
         },
       }
     )
