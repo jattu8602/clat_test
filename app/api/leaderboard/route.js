@@ -35,15 +35,58 @@ export async function GET() {
       now - leaderboardCache.timestamp < leaderboardCache.expiry
     ) {
       // Return cached data with current user info
+      // Ensure we compare IDs as strings to avoid type mismatch
       const currentUserRank = leaderboardCache.data.rankedLeaderboard.find(
-        (user) => user.id === session.user.id
+        (user) => String(user.id) === String(session.user.id)
       )
+
+      // If current user is not in cached leaderboard, get their basic info
+      let currentUserData = currentUserRank
+      if (!currentUserData) {
+        const userFromDb = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            role: true,
+          },
+        })
+
+        if (userFromDb) {
+          currentUserData = {
+            id: userFromDb.id,
+            name: userFromDb.name || 'Anonymous',
+            email: userFromDb.email,
+            image: userFromDb.image,
+            role: userFromDb.role,
+            totalScore: 0,
+            totalTests: 0,
+            paidTests: 0,
+            freeTests: 0,
+            rank: leaderboardCache.data.rankedLeaderboard.length + 1, // Rank after all users with tests
+          }
+        }
+      }
+
+      // Get weekly information for cached response
+      const weekInfo = getWeekInfo()
+      const timeRemaining = getTimeRemainingFormatted()
 
       return NextResponse.json(
         {
           leaderboard: leaderboardCache.data.top10Users,
-          currentUser: currentUserRank,
+          currentUser: currentUserData,
           totalUsers: leaderboardCache.data.rankedLeaderboard.length,
+          weekInfo: {
+            start: weekInfo.startFormatted,
+            end: weekInfo.endFormatted,
+            range: weekInfo.weekRange,
+            daysRemaining: weekInfo.daysRemaining,
+          },
+          timeRemaining,
+          isWeekly: true,
         },
         {
           headers: {
@@ -146,10 +189,47 @@ export async function GET() {
     }
     leaderboardCache.timestamp = now
 
-    // Get current user's rank
-    const currentUserRank = rankedLeaderboard.find(
-      (user) => user.id === session.user.id
+    // Get current user's rank - ensure we compare IDs as strings
+    console.log(
+      'Looking for user ID:',
+      session.user.id,
+      'Type:',
+      typeof session.user.id
     )
+    const currentUserRank = rankedLeaderboard.find(
+      (user) => String(user.id) === String(session.user.id)
+    )
+    console.log('Found current user in leaderboard:', !!currentUserRank)
+
+    // If current user is not in leaderboard (no tests this week), get their basic info
+    let currentUserData = currentUserRank
+    if (!currentUserData) {
+      const userFromDb = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          role: true,
+        },
+      })
+
+      if (userFromDb) {
+        currentUserData = {
+          id: userFromDb.id,
+          name: userFromDb.name || 'Anonymous',
+          email: userFromDb.email,
+          image: userFromDb.image,
+          role: userFromDb.role,
+          totalScore: 0,
+          totalTests: 0,
+          paidTests: 0,
+          freeTests: 0,
+          rank: rankedLeaderboard.length + 1, // Rank after all users with tests
+        }
+      }
+    }
 
     // Get weekly information
     const weekInfo = getWeekInfo()
@@ -158,7 +238,7 @@ export async function GET() {
     return NextResponse.json(
       {
         leaderboard: top10Users,
-        currentUser: currentUserRank,
+        currentUser: currentUserData,
         totalUsers: rankedLeaderboard.length,
         weekInfo: {
           start: weekInfo.startFormatted,
