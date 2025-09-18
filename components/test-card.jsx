@@ -173,7 +173,7 @@ export default function TestCard({
         {/* Mobile Layout */}
         <div className="md:hidden space-y-3">
           <div className="flex justify-between items-start">
-            <h3 className="font-medium text-gray-900 text-sm">{title}</h3>
+            <h3 className="font-medium text-gray-900 text-sm dark:text-white">{title}</h3>
             <Badge
               variant={getTestType() === 'PRO' ? 'default' : 'secondary'}
               className={
@@ -209,7 +209,7 @@ export default function TestCard({
                   }}
                 />
               </div>
-              <span className="text-xs">{getTestScore()}</span>
+              <span className="text-xs dark:text-gray-300">{getTestScore()}</span>
             </div>
           </div>
 
