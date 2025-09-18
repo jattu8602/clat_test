@@ -23,7 +23,6 @@ import { useProgressiveLoading } from '@/hooks/useProgressiveLoading'
 // Enhanced cache with better performance
 const leaderboardCache = {
   leaderboardData: null,
-  currentUser: null,
   lastFetchTime: null,
   cacheExpiry: 10 * 60 * 1000, // 10 minutes cache for better performance
   isFetching: false, // Prevent multiple simultaneous requests
@@ -59,7 +58,6 @@ export default function Leaderboard() {
     initialData: leaderboardCache.leaderboardData
       ? {
           leaderboard: leaderboardCache.leaderboardData,
-          currentUser: leaderboardCache.currentUser,
         }
       : null,
     cacheKey: 'leaderboard',
@@ -75,9 +73,8 @@ export default function Leaderboard() {
 
   // Update cache when data changes
   useEffect(() => {
-    if (leaderboardResponse) {
+    if (leaderboardResponse?.leaderboard) {
       leaderboardCache.leaderboardData = leaderboardResponse.leaderboard
-      leaderboardCache.currentUser = leaderboardResponse.currentUser
       leaderboardCache.lastFetchTime = Date.now()
     }
   }, [leaderboardResponse])
