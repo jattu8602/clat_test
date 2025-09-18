@@ -32,6 +32,7 @@ import {
   Sparkles,
   BarChart3,
   BookOpen,
+  MessageSquare,
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -91,6 +92,12 @@ export default function Sidebar({
         },
         { name: 'Create Test', href: '/admin/create-test', icon: Plus },
         { name: 'Payments', href: '/admin/payment-history', icon: CreditCard },
+        {
+          name: 'Reviews',
+          href: '/admin/reviews',
+          icon: MessageSquare,
+          badge: stats?.reviews?.totalReviews || '0',
+        },
         {
           name: 'Notifications',
           href: '/admin/notifications',
@@ -173,7 +180,12 @@ export default function Sidebar({
               <div className="relative">
                 <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center shadow-lg dark:bg-orange-800">
                   <span className="text-primary-foreground font-bold text-lg dark:text-white">
-                    <Image src="/outlawed.png" alt="OUTLAWED" width={32} height={32} />
+                    <Image
+                      src="/outlawed.png"
+                      alt="OUTLAWED"
+                      width={32}
+                      height={32}
+                    />
                   </span>
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background dark:border-darkBg shadow-sm">

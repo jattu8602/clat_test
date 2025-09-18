@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSession, update } from 'next-auth/react'
 import {
   Card,
@@ -23,6 +23,9 @@ import ImageUpload from '@/components/ui/image-upload'
 import { User, Mail, Calendar, Edit, Camera, Save, X } from 'lucide-react'
 import { useProfileImage } from '@/lib/hooks/useProfileImage'
 import { useProfileName } from '@/lib/hooks/useProfileName'
+import ReviewForm from '@/components/ui/review-form'
+import ReviewHistory from '@/components/ui/review-history'
+import { toast } from 'sonner'
 
 export default function ProfilePage() {
   const { data: session } = useSession()
@@ -31,6 +34,54 @@ export default function ProfilePage() {
   const fileInputRef = useRef(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [newName, setNewName] = useState('')
+  const [reviews, setReviews] = useState([])
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+
+  // Fetch user reviews
+  useEffect(() => {
+    if (session) {
+      fetchReviews()
+    }
+  }, [session])
+
+  const fetchReviews = async () => {
+    try {
+      const response = await fetch('/api/user/reviews')
+      if (response.ok) {
+        const data = await response.json()
+        setReviews(data.reviews || [])
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error)
+    }
+  }
+
+  const handleReviewSubmit = async (reviewData) => {
+    setIsSubmittingReview(true)
+    try {
+      const response = await fetch('/api/user/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reviewData),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast.success('Your review has been submitted successfully!')
+        fetchReviews() // Refresh reviews
+      } else {
+        toast.error(result.error || 'Failed to submit review')
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      toast.error('Failed to submit review')
+    } finally {
+      setIsSubmittingReview(false)
+    }
+  }
 
   const handleProfileImageUpload = async (imageUrl) => {
     if (!imageUrl) return
@@ -275,6 +326,22 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Submit Review */}
+        <div>
+          <ReviewForm
+            onSubmit={handleReviewSubmit}
+            isSubmitting={isSubmittingReview}
+          />
+        </div>
+
+        {/* Review History */}
+        <div>
+          <ReviewHistory reviews={reviews} />
+        </div>
       </div>
     </div>
   )

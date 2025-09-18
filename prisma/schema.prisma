@@ -94,6 +94,7 @@ model User {
   notifications Notification[]
   payments Payment[]
   broadcastNotificationsRead BroadcastNotificationRead[]
+  reviews Review[]
 }
 
 model VerificationToken {
@@ -142,7 +143,7 @@ model Passage {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
-  @@unique([testId, passageNumber])
+  // @@unique([testId, passageNumber]) // Temporarily commented out due to existing duplicate data
 }
 
 model Question {
@@ -202,7 +203,7 @@ model TestAttempt {
   isLatest     Boolean     @default(true) // Only the latest attempt is marked as latest
   previousAttemptId String? @db.ObjectId  // Link to previous attempt for comparison
 
-  @@unique([userId, testId, attemptNumber])
+  // @@unique([userId, testId, attemptNumber]) // Temporarily commented out due to existing duplicate data
   @@index([userId, testId, isLatest])
 }
 
@@ -277,4 +278,18 @@ model BroadcastNotificationRead {
   notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, notificationId])
+}
+
+model Review {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  rating      Int      // 1-5 stars (required)
+  description String?  // Optional description
+  isRead      Boolean  @default(false) // Admin has read this review
+  adminReply  String?  // Admin's reply to the review
+  repliedAt   DateTime? // When admin replied
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

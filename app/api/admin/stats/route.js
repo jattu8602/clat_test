@@ -86,7 +86,42 @@ export async function GET(request) {
         ? 100
         : 0
 
+    // 5. Reviews Statistics
+    const totalReviews = await prisma.review.count()
+    const unreadReviews = await prisma.review.count({
+      where: { isRead: false },
+    })
+    const reviewsWithReplies = await prisma.review.count({
+      where: { adminReply: { not: null } },
+    })
+
+    // 6. Notifications Statistics
+    const unreadNotifications = await prisma.notification.count({
+      where: { isRead: false },
+    })
+
     return NextResponse.json({
+      stats: {
+        user: {
+          totalUsers,
+        },
+        tests: {
+          free: await prisma.test.count({
+            where: { type: 'FREE', isActive: true },
+          }),
+          paid: await prisma.test.count({
+            where: { type: 'PAID', isActive: true },
+          }),
+        },
+        reviews: {
+          totalReviews,
+          unreadReviews,
+          reviewsWithReplies,
+        },
+        notifications: {
+          unreadNotifications,
+        },
+      },
       totalUsers: {
         value: totalUsers,
         change: userChange.toFixed(2),

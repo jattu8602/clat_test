@@ -73,6 +73,34 @@ export async function GET(request) {
       }
     }
 
+    // Get review counts
+    let reviewStats = {}
+
+    if (session.user.role === 'ADMIN') {
+      // Admin gets all review counts
+      const [totalReviews, unreadReviews, reviewsWithReplies] =
+        await Promise.all([
+          prisma.review.count(),
+          prisma.review.count({ where: { isRead: false } }),
+          prisma.review.count({ where: { adminReply: { not: null } } }),
+        ])
+
+      reviewStats = {
+        totalReviews,
+        unreadReviews,
+        reviewsWithReplies,
+      }
+    } else {
+      // Regular users get their own review count
+      const userReviews = await prisma.review.count({
+        where: { userId: session.user.id },
+      })
+
+      reviewStats = {
+        totalReviews: userReviews,
+      }
+    }
+
     // Get notification counts
     let notificationStats = {}
 
@@ -144,6 +172,7 @@ export async function GET(request) {
           total: totalTests,
         },
         user: userStats,
+        reviews: reviewStats,
         notifications: notificationStats,
       },
     })
