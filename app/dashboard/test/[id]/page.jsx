@@ -71,6 +71,111 @@ export default function TestTakingPage() {
     return passages.find((passage) => passage.id === question.passageId)
   }
 
+  const recordTimeForCurrentQuestion = useCallback(() => {
+    try {
+      if (!isTestStarted || !currentQuestion || !questionStartTime) return
+      const elapsedMs = Date.now() - questionStartTime
+      const elapsedSec = Math.max(0, Math.floor(elapsedMs / 1000))
+      if (elapsedSec <= 0) return
+      setQuestionTimes((prev) => ({
+        ...prev,
+        [currentQuestion.id]: (prev[currentQuestion.id] || 0) + elapsedSec,
+      }))
+      setQuestionStartTime(Date.now())
+    } catch (e) {
+      // no-op
+    }
+  }, [isTestStarted, currentQuestion, questionStartTime])
+
+  const submitTest = useCallback(async () => {
+    try {
+      // Ensure we capture the final state before submitting
+      const currentElapsed = questionStartTime
+        ? Math.max(0, Math.floor((Date.now() - questionStartTime) / 1000))
+        : 0
+
+      // Create final question times including current question
+      const finalQuestionTimes = {
+        ...questionTimes,
+        ...(currentQuestion?.id
+          ? {
+              [currentQuestion.id]:
+                (questionTimes[currentQuestion.id] || 0) + currentElapsed,
+            }
+          : {}),
+      }
+
+      // Ensure we have all the current answers and marked questions
+      const finalAnswers = { ...answers }
+      const finalMarkedForLater = new Set(markedForLater)
+
+      // If there's a current question with an answer, ensure it's included
+      if (currentQuestion?.id && finalAnswers[currentQuestion.id]) {
+        // Answer is already captured
+      }
+
+      const submitPayload = {
+        answers: finalAnswers,
+        markedForLater: Array.from(finalMarkedForLater),
+        timeSpent: test.durationInMinutes * 60 - timeRemaining,
+        questionTimes: finalQuestionTimes,
+      }
+
+      // If this is a reattempt, include the attempt ID
+      if (currentAttemptId) {
+        submitPayload.attemptId = currentAttemptId
+      }
+
+      console.log('Submitting test with payload:', submitPayload)
+      console.log('Current attempt ID:', currentAttemptId)
+      console.log('Is reattempt:', !!currentAttemptId)
+      console.log('Answers count:', Object.keys(submitPayload.answers).length)
+      console.log(
+        'Marked for later count:',
+        submitPayload.markedForLater.length
+      )
+      console.log('Time spent:', submitPayload.timeSpent)
+
+      const response = await fetch(`/api/tests/${testId}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitPayload),
+      })
+
+      if (response.ok) {
+        const resultData = await response.json()
+        console.log('Test submission successful:', resultData)
+        setTestResults(resultData)
+        setShowResults(true)
+        setIsTestCompleted(true)
+
+        const message = resultData.isReattempt
+          ? 'Test reattempt submitted successfully!'
+          : 'Test submitted successfully!'
+        toast.success(message)
+      } else {
+        const errorData = await response.text()
+        console.error('Test submission failed:', response.status, errorData)
+        toast.error(`Failed to submit test: ${response.status}`)
+      }
+    } catch (error) {
+      console.error('Error submitting test:', error)
+      toast.error('Error submitting test')
+    }
+  }, [
+    answers,
+    currentAttemptId,
+    currentQuestion,
+    markedForLater,
+    questionStartTime,
+    questionTimes,
+    test,
+    testId,
+    timeRemaining,
+  ])
+
   // Timer effect
   useEffect(() => {
     if (!isTestStarted || isTestCompleted) return
@@ -88,10 +193,7 @@ export default function TestTakingPage() {
         }
 
         if (prev <= 1) {
-          // Auto submit when time runs out
-          // Clear the timer immediately to prevent multiple calls
           clearInterval(timer)
-          handleAutoSubmit()
           return 0
         }
         return prev - 1
@@ -100,6 +202,52 @@ export default function TestTakingPage() {
 
     return () => clearInterval(timer)
   }, [isTestStarted, isTestCompleted])
+
+  const handleAutoSubmit = useCallback(async () => {
+    // Prevent multiple auto-submissions
+    if (isAutoSubmitting || isTestCompleted) return
+
+    try {
+      setIsAutoSubmitting(true)
+
+      // Record time for current question before auto-submitting
+      recordTimeForCurrentQuestion()
+
+      // Set test as completed to prevent further interactions
+      setIsTestCompleted(true)
+
+      // Show a toast notification
+      toast.error('Time is up! Test will be submitted automatically.')
+
+      // Wait a moment for state updates, then submit
+      setTimeout(async () => {
+        await submitTest()
+      }, 100)
+    } catch (error) {
+      console.error('Error in auto submit:', error)
+      // Fallback: try to submit anyway
+      try {
+        await submitTest()
+      } catch (fallbackError) {
+        console.error('Fallback submit also failed:', fallbackError)
+        toast.error('Failed to auto-submit test. Please contact support.')
+      }
+    } finally {
+      setIsAutoSubmitting(false)
+    }
+  }, [
+    isAutoSubmitting,
+    isTestCompleted,
+    recordTimeForCurrentQuestion,
+    submitTest,
+  ])
+
+  // Effect to handle auto-submission when timer runs out
+  useEffect(() => {
+    if (timeRemaining === 0 && isTestStarted && !isTestCompleted) {
+      handleAutoSubmit()
+    }
+  }, [timeRemaining, isTestStarted, isTestCompleted, handleAutoSubmit])
 
   // Question timer effect
   useEffect(() => {
@@ -117,22 +265,6 @@ export default function TestTakingPage() {
       return updated
     })
   }, [isTestStarted, currentQuestion])
-
-  const recordTimeForCurrentQuestion = useCallback(() => {
-    try {
-      if (!isTestStarted || !currentQuestion || !questionStartTime) return
-      const elapsedMs = Date.now() - questionStartTime
-      const elapsedSec = Math.max(0, Math.floor(elapsedMs / 1000))
-      if (elapsedSec <= 0) return
-      setQuestionTimes((prev) => ({
-        ...prev,
-        [currentQuestion.id]: (prev[currentQuestion.id] || 0) + elapsedSec,
-      }))
-      setQuestionStartTime(Date.now())
-    } catch (e) {
-      // no-op
-    }
-  }, [isTestStarted, currentQuestion, questionStartTime])
 
   // Fetch test data and attempt history
   useEffect(() => {
@@ -317,123 +449,10 @@ export default function TestTakingPage() {
     setCurrentQuestionIndex(index)
   }
 
-  const handleAutoSubmit = async () => {
-    // Prevent multiple auto-submissions
-    if (isAutoSubmitting || isTestCompleted) return
-
-    try {
-      setIsAutoSubmitting(true)
-
-      // Record time for current question before auto-submitting
-      recordTimeForCurrentQuestion()
-
-      // Set test as completed to prevent further interactions
-      setIsTestCompleted(true)
-
-      // Show a toast notification
-      toast.error('Time is up! Test will be submitted automatically.')
-
-      // Wait a moment for state updates, then submit
-      setTimeout(async () => {
-        await submitTest()
-      }, 100)
-    } catch (error) {
-      console.error('Error in auto submit:', error)
-      // Fallback: try to submit anyway
-      try {
-        await submitTest()
-      } catch (fallbackError) {
-        console.error('Fallback submit also failed:', fallbackError)
-        toast.error('Failed to auto-submit test. Please contact support.')
-      }
-    } finally {
-      setIsAutoSubmitting(false)
-    }
-  }
-
   const handleSubmitTest = async () => {
     setShowExitModal(false)
     recordTimeForCurrentQuestion()
     await submitTest()
-  }
-
-  const submitTest = async () => {
-    try {
-      // Ensure we capture the final state before submitting
-      const currentElapsed = questionStartTime
-        ? Math.max(0, Math.floor((Date.now() - questionStartTime) / 1000))
-        : 0
-
-      // Create final question times including current question
-      const finalQuestionTimes = {
-        ...questionTimes,
-        ...(currentQuestion?.id
-          ? {
-              [currentQuestion.id]:
-                (questionTimes[currentQuestion.id] || 0) + currentElapsed,
-            }
-          : {}),
-      }
-
-      // Ensure we have all the current answers and marked questions
-      const finalAnswers = { ...answers }
-      const finalMarkedForLater = new Set(markedForLater)
-
-      // If there's a current question with an answer, ensure it's included
-      if (currentQuestion?.id && finalAnswers[currentQuestion.id]) {
-        // Answer is already captured
-      }
-
-      const submitPayload = {
-        answers: finalAnswers,
-        markedForLater: Array.from(finalMarkedForLater),
-        timeSpent: test.durationInMinutes * 60 - timeRemaining,
-        questionTimes: finalQuestionTimes,
-      }
-
-      // If this is a reattempt, include the attempt ID
-      if (currentAttemptId) {
-        submitPayload.attemptId = currentAttemptId
-      }
-
-      console.log('Submitting test with payload:', submitPayload)
-      console.log('Current attempt ID:', currentAttemptId)
-      console.log('Is reattempt:', !!currentAttemptId)
-      console.log('Answers count:', Object.keys(submitPayload.answers).length)
-      console.log(
-        'Marked for later count:',
-        submitPayload.markedForLater.length
-      )
-      console.log('Time spent:', submitPayload.timeSpent)
-
-      const response = await fetch(`/api/tests/${testId}/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submitPayload),
-      })
-
-      if (response.ok) {
-        const resultData = await response.json()
-        console.log('Test submission successful:', resultData)
-        setTestResults(resultData)
-        setShowResults(true)
-        setIsTestCompleted(true)
-
-        const message = resultData.isReattempt
-          ? 'Test reattempt submitted successfully!'
-          : 'Test submitted successfully!'
-        toast.success(message)
-      } else {
-        const errorData = await response.text()
-        console.error('Test submission failed:', response.status, errorData)
-        toast.error(`Failed to submit test: ${response.status}`)
-      }
-    } catch (error) {
-      console.error('Error submitting test:', error)
-      toast.error('Error submitting test')
-    }
   }
 
   const handleEvaluate = async () => {
@@ -680,21 +699,6 @@ export default function TestTakingPage() {
           </CardContent>
         </Card>
       </div>
-    )
-  }
-
-  // Exit confirmation modal
-  if (showExitModal) {
-    return (
-      <ConfirmModal
-        isOpen={showExitModal}
-        onClose={() => setShowExitModal(false)}
-        onConfirm={handleSubmitTest}
-        title="Exit Test?"
-        message="Are you sure you want to exit? This will submit your test automatically."
-        confirmText="Submit & Exit"
-        cancelText="Continue Test"
-      />
     )
   }
 
@@ -1274,11 +1278,14 @@ export default function TestTakingPage() {
                 <div className="bg-gray-50 dark:bg-gray-700 p-3 sm:p-4 rounded-lg text-center">
                   <div className="text-lg sm:text-2xl font-bold text-gray-600 dark:text-gray-400">
                     {testResults.unattempted ||
-                      questions.length -
-                        (testResults.correctAnswers || 0) -
-                        (testResults.wrongAnswers ||
-                          testResults.incorrectAnswers ||
-                          0)}
+                      Math.max(
+                        0,
+                        questions.length -
+                          (testResults.correctAnswers || 0) -
+                          (testResults.wrongAnswers ||
+                            testResults.incorrectAnswers ||
+                            0)
+                      )}
                   </div>
                   <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     Unattempted
