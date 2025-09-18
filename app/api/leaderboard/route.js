@@ -90,7 +90,7 @@ export async function GET() {
         },
         {
           headers: {
-            'Cache-Control': 'public, max-age=300', // 5 minutes browser cache
+            'Cache-Control': 'private, max-age=300, must-revalidate', // 5 minutes browser cache
             ETag: `"${leaderboardCache.timestamp}"`,
           },
         }
@@ -251,7 +251,7 @@ export async function GET() {
       },
       {
         headers: {
-          'Cache-Control': 'public, max-age=300', // 5 minutes browser cache
+          'Cache-Control': 'private, max-age=300, must-revalidate', // 5 minutes browser cache
           ETag: `"${now}"`,
         },
       }
