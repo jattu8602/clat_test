@@ -1,12 +1,9 @@
-import { getInitialFreeTests } from '@/lib/data/tests'
 import FreeTestClientPage from './free-test-client-page'
 
 /**
  * Server component for the free tests page.
- * Loading is now handled automatically by the `loading.jsx` file in this directory.
+ * It now renders the client page directly, which handles its own data fetching.
  */
-export default async function FreeTestsPage() {
-  const { tests, hasMore } = await getInitialFreeTests()
-
-  return <FreeTestClientPage initialTests={tests} initialHasMore={hasMore} />
+export default function FreeTestsPage() {
+  return <FreeTestClientPage />
 }

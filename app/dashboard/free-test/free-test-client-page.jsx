@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import TestCard from '@/components/test-card'
 import { useSession } from 'next-auth/react'
 import { toast } from 'react-hot-toast'
-import { fetchMoreTests } from '@/lib/actions'
+import { fetchInitialFreeTests, fetchMoreTests } from '@/lib/actions'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Gift } from 'lucide-react'
+import { getCachedData, setCachedData } from '@/lib/utils/cache'
 
 const TestCardSkeleton = () => (
   <div className="p-4">
@@ -26,15 +27,16 @@ const TestCardSkeleton = () => (
   </div>
 )
 
-export default function FreeTestClientPage({ initialTests, initialHasMore }) {
+export default function FreeTestClientPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [tests, setTests] = useState(initialTests)
-  const [filteredTests, setFilteredTests] = useState(initialTests)
+  const [tests, setTests] = useState([])
+  const [filteredTests, setFilteredTests] = useState([])
   const [activeSubject, setActiveSubject] = useState('ALL')
   const [page, setPage] = useState(2)
-  const [hasMore, setHasMore] = useState(initialHasMore)
+  const [hasMore, setHasMore] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
 
   const loaderRef = useRef(null)
   const userType = session?.user?.role || 'FREE'
@@ -47,6 +49,26 @@ export default function FreeTestClientPage({ initialTests, initialHasMore }) {
     { key: 'LOGICAL_REASONING', label: 'LOGICAL' },
     { key: 'QUANTITATIVE_TECHNIQUES', label: 'MATHS' },
   ]
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      const cachedData = getCachedData('free_tests_data')
+      if (cachedData) {
+        setTests(cachedData.tests)
+        setHasMore(cachedData.hasMore)
+        setIsInitialLoading(false)
+      } else {
+        setIsInitialLoading(true)
+      }
+
+      const { tests, hasMore } = await fetchInitialFreeTests()
+      setTests(tests)
+      setHasMore(hasMore)
+      setCachedData('free_tests_data', { tests, hasMore })
+      setIsInitialLoading(false)
+    }
+    loadInitialData()
+  }, [])
 
   useEffect(() => {
     if (activeSubject === 'ALL') {
@@ -176,7 +198,14 @@ export default function FreeTestClientPage({ initialTests, initialHasMore }) {
             <div>TAKE ACTION</div>
           </div>
           <div className="divide-y divide-slate-200 dark:divide-slate-700">
-            {filteredTests.length === 0 && !isLoadingMore ? (
+            {isInitialLoading ? (
+              <>
+                <TestCardSkeleton />
+                <TestCardSkeleton />
+                <TestCardSkeleton />
+                <TestCardSkeleton />
+              </>
+            ) : filteredTests.length === 0 && !isLoadingMore ? (
               <div className="p-8 text-center text-slate-500 dark:text-slate-400">
                 No free tests available for the selected subject.
               </div>

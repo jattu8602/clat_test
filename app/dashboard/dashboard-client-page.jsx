@@ -12,8 +12,9 @@ import {
 } from 'lucide-react'
 import TestCard from '@/components/test-card'
 import { toast } from 'react-hot-toast'
-import { fetchMoreTests } from '@/lib/actions'
+import { fetchInitialDashboardData, fetchMoreTests } from '@/lib/actions'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getCachedData, setCachedData } from '@/lib/utils/cache'
 
 /**
  * A simple skeleton loader for showing while more tests are being loaded.
@@ -38,24 +39,48 @@ const TestCardSkeleton = () => (
  * This is the client-side component for the main dashboard.
  * It handles all user interactions, such as filtering and navigation.
  */
-export default function DashboardClientPage({
-  initialTests,
-  initialStats,
-  initialHasMore,
-}) {
+export default function DashboardClientPage() {
   const { data: session } = useSession()
   const router = useRouter()
 
-  const [stats, setStats] = useState(initialStats)
-  const [allTests, setAllTests] = useState(initialTests)
-  const [filteredTests, setFilteredTests] = useState(initialTests)
+  const [stats, setStats] = useState({
+    totalTests: 0,
+    completedTests: 0,
+    averageScore: 0,
+    rank: 0,
+  })
+  const [allTests, setAllTests] = useState([])
+  const [filteredTests, setFilteredTests] = useState([])
   const [page, setPage] = useState(2) // Start from the second page
-  const [hasMore, setHasMore] = useState(initialHasMore)
+  const [hasMore, setHasMore] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
 
   const loaderRef = useRef(null)
 
   const [activeSubject, setActiveSubject] = useState('ALL')
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      const cachedData = getCachedData('dashboard_data')
+      if (cachedData) {
+        setAllTests(cachedData.tests)
+        setStats(cachedData.stats)
+        setHasMore(cachedData.hasMore)
+        setIsInitialLoading(false)
+      } else {
+        setIsInitialLoading(true)
+      }
+
+      const { tests, stats, hasMore } = await fetchInitialDashboardData()
+      setAllTests(tests)
+      setStats(stats)
+      setHasMore(hasMore)
+      setCachedData('dashboard_data', { tests, stats, hasMore })
+      setIsInitialLoading(false)
+    }
+    loadInitialData()
+  }, [])
 
   const userType = session?.user?.role || 'FREE'
   const loadMoreTests = useCallback(async () => {
@@ -194,7 +219,14 @@ export default function DashboardClientPage({
           </div>
 
           <div className="divide-y divide-slate-200 dark:divide-slate-700">
-            {filteredTests.length === 0 && !isLoadingMore ? (
+            {isInitialLoading ? (
+              <>
+                <TestCardSkeleton />
+                <TestCardSkeleton />
+                <TestCardSkeleton />
+                <TestCardSkeleton />
+              </>
+            ) : filteredTests.length === 0 && !isLoadingMore ? (
               <div className="p-8 text-center text-slate-500 dark:text-slate-400">
                 {activeSubject !== 'ALL'
                   ? `No tests found for ${
