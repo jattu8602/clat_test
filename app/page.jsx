@@ -1,6 +1,7 @@
 'use client'
-
-import FAQSection from '@/components/landing/faq'
+import Head from 'next/head'
+import AboutSection from '@/components/landing/about'
+import FAQ from '@/components/landing/faq'
 import InfoCard from '@/components/landing/info-card'
 import SponsorsSection from '@/components/landing/sponsors'
 import ResponsiveHero from '@/components/landing/responsive-hero'
@@ -106,7 +107,7 @@ export default function Home() {
         <Navbar />
         <ResponsiveHero />
         <InfoCard />
-        <FAQSection />
+        <FAQ />
         <Footer />
       </div>
     </ReactLenis>
