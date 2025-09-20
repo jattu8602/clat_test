@@ -91,6 +91,12 @@ export default function Sidebar({
           badge: stats?.user?.totalUsers || '0',
         },
         { name: 'Create Test', href: '/admin/create-test', icon: Plus },
+        {
+          name: 'Test Series',
+          href: '/admin/test-series',
+          icon: FileText,
+          badge: stats?.tests?.series || '0',
+        },
         { name: 'Payments', href: '/admin/payment-history', icon: CreditCard },
         {
           name: 'Reviews',
@@ -124,6 +130,12 @@ export default function Sidebar({
           href: '/dashboard/paid-test',
           icon: Crown,
           badge: stats?.tests?.paid || '0',
+        },
+        {
+          name: 'Test Series',
+          href: '/dashboard/test-series',
+          icon: FileText,
+          badge: stats?.tests?.series || '0',
         },
         {
           name: 'Leaderboard',

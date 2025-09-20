@@ -14,8 +14,8 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get counts for different types of tests
-    const [freeTests, paidTests, totalTests] = await Promise.all([
+    // Get counts for different types of tests and test series
+    const [freeTests, paidTests, totalTests, testSeries] = await Promise.all([
       prisma.test.count({
         where: { type: 'FREE', isActive: true },
       }),
@@ -24,6 +24,9 @@ export async function GET(request) {
       }),
       prisma.test.count({
         where: { isActive: true },
+      }),
+      prisma.testSeries.count({
+        where: { isPublished: true },
       }),
     ])
 
@@ -170,6 +173,7 @@ export async function GET(request) {
           free: freeTests,
           paid: paidTests,
           total: totalTests,
+          series: testSeries,
         },
         user: userStats,
         reviews: reviewStats,

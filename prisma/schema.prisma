@@ -49,6 +49,11 @@ enum NotificationType {
   PLAN_EXPIRY
 }
 
+enum TestSeriesType {
+  DAILY
+  PLAYLIST
+}
+
 model Account {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId
   userId            String  @db.ObjectId
@@ -96,6 +101,7 @@ model User {
   broadcastNotificationsRead BroadcastNotificationRead[]
   reviews Review[]
   notificationLikes NotificationLike[]
+  testSeries UsersOnTestSeries[]
 }
 
 model VerificationToken {
@@ -117,6 +123,7 @@ model Test {
   passages         Passage[]  // Test can have multiple passages
   questions        Question[]
   testAttempts     TestAttempt[]
+  series           TestsOnTestSeries[]
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 }
@@ -295,6 +302,41 @@ model NotificationLike {
   notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, notificationId])
+}
+
+model TestSeries {
+  id          String              @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  type        TestSeriesType      @default(DAILY)
+  isPublished Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  tests       TestsOnTestSeries[]
+  users       UsersOnTestSeries[]
+}
+
+model TestsOnTestSeries {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  test         Test       @relation(fields: [testId], references: [id], onDelete: Cascade)
+  testId       String     @db.ObjectId
+  testSeries   TestSeries @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  testSeriesId String     @db.ObjectId
+  addedAt      DateTime   @default(now())
+
+  @@unique([testId, testSeriesId])
+}
+
+model UsersOnTestSeries {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String     @db.ObjectId
+  testSeries   TestSeries @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  testSeriesId String     @db.ObjectId
+  completedAt  DateTime?
+  progress     Float      @default(0)
+
+  @@unique([userId, testSeriesId])
 }
 
 model Review {
