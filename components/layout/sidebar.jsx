@@ -190,7 +190,7 @@ export default function Sidebar({
           <div className="flex items-center justify-between h-16 px-6 border-b bg-muted/30 dark:bg-darkBg">
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center shadow-lg dark:bg-orange-800">
+                <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center shadow-lg dark:bg-slate-400">
                   <span className="text-primary-foreground font-bold text-lg dark:text-white">
                     <Image
                       src="/outlawed.png"
