@@ -210,8 +210,8 @@ export default function TestTakingPage() {
     try {
       setIsAutoSubmitting(true)
 
-      // Record time for current question before auto-submitting
-      recordTimeForCurrentQuestion()
+      // Time for the current question is correctly calculated inside submitTest
+      // recordTimeForCurrentQuestion()
 
       // Set test as completed to prevent further interactions
       setIsTestCompleted(true)
@@ -451,7 +451,8 @@ export default function TestTakingPage() {
 
   const handleSubmitTest = async () => {
     setShowExitModal(false)
-    recordTimeForCurrentQuestion()
+    // The submitTest function already handles recording the final question time
+    // recordTimeForCurrentQuestion()
     await submitTest()
   }
 
