@@ -416,9 +416,9 @@ export default function InfoCard() {
               ============================================================================ */}
           <div className="max-w-4xl z-5 mb-4 sm:mb-6 md:mb-8">
             <p className="text-[#ccc] text-sm sm:text-base md:text-lg lg:text-xl font-medium leading-relaxed rounded-lg sm:rounded-xl md:rounded-2xl lg:rounded-3xl border border-dashed border-[rgb(60,60,60)] p-4 sm:p-6 md:p-8 lg:p-10 mt-10">
-              Two rounds of intense competition designed to test your skills,
-              creativity, and determination. From concept to creation, prove you
-              have what it takes to be a Hackwave champion.
+              Free and paid mock tests designed to test your skills, accuracy,
+              and speed. With detailed analytics, prove you have what it takes
+              to crack CLAT with confidence.
             </p>
           </div>
 
@@ -449,9 +449,9 @@ export default function InfoCard() {
       <div className="md:hidden px-4 py-12">
         <h1 className="text-center text-4xl font-black mb-6">How It Works</h1>
         <p className="text-[#ccc] text-base font-medium leading-relaxed mb-8">
-          Two rounds of intense competition designed to test your skills,
-          creativity, and determination. From concept to creation, prove you
-          have what it takes to be a Hackwave champion.
+          Free and paid mock tests designed to test your skills, accuracy, and
+          speed. With detailed analytics, prove you have what it takes to crack
+          CLAT with confidence.
         </p>
 
         <div className="flex flex-col gap-6">

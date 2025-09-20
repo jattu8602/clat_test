@@ -25,6 +25,7 @@ import { useProfileImage } from '@/lib/hooks/useProfileImage'
 import { useProfileName } from '@/lib/hooks/useProfileName'
 import ReviewForm from '@/components/ui/review-form'
 import ReviewHistory from '@/components/ui/review-history'
+import EnhancedAnalytics from '@/components/analytics/EnhancedAnalytics'
 import { toast } from 'sonner'
 
 export default function ProfilePage() {
@@ -179,7 +180,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-black dark:bg-slate-900 dark:text-white transition-colors duration-300 p-6 space-y-6">
+    <div className="min-h-screen bg-white text-black dark:bg-slate-900 dark:text-white transition-colors duration-300 p-2 md:p-6 space-y-6 ">
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Profile</h1>
@@ -326,6 +327,12 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Analytics Section */}
+      <div className="space-y-6">
+
+        <EnhancedAnalytics />
       </div>
 
       {/* Reviews Section */}
