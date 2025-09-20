@@ -243,9 +243,12 @@ export default function AdminTestSeriesClientPage() {
   }
 
   return (
-    <div className="mt-8">
+    <div className="">
       <div className="flex justify-end mb-4">
-        <Button onClick={() => openModal()}>
+        <Button
+          onClick={() => openModal()}
+          className="dark:bg-slate-800 dark:text-white hover:bg-slate-800 hover:text-white dark:border-slate-700 border-slate-200 dark:hover:bg-slate-700 dark:hover:text-white bg-slate-700 text-white"
+        >
           <Plus className="mr-2 h-4 w-4" /> Create Test Series
         </Button>
       </div>
@@ -255,7 +258,10 @@ export default function AdminTestSeriesClientPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {testSeries.map((series) => (
-            <Card key={series.id}>
+            <Card
+              key={series.id}
+              className="dark:bg-slate-800 dark:text-white bg-slate-100 "
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   {series.title}
@@ -266,20 +272,29 @@ export default function AdminTestSeriesClientPage() {
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => openModal(series)}>
+                  <DropdownMenuContent
+                    align="end"
+                    className="dark:bg-slate-800 dark:text-white bg-white"
+                  >
+                    <DropdownMenuItem
+                      onClick={() => openModal(series)}
+                      className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
                       <Edit className="mr-2 h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                       onClick={() => openManageTestsModal(series)}
+                      className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                     >
                       <List className="mr-2 h-4 w-4" />
                       Manage Tests
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                       onClick={() => openConfirmModal(series)}
-                      className="text-red-500"
+                      className="cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete
@@ -309,7 +324,7 @@ export default function AdminTestSeriesClientPage() {
 
       {/* Create/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
+        <DialogContent className="dark:bg-slate-800 dark:text-white bg-white" >
           <DialogHeader>
             <DialogTitle>
               {selectedSeries ? 'Edit Test Series' : 'Create Test Series'}
@@ -357,10 +372,10 @@ export default function AdminTestSeriesClientPage() {
                     setFormData({ ...formData, type: value })
                   }
                 >
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger className="col-span-3 dark:bg-slate-800 dark:text-white bg-white cursor-pointer">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-slate-800 dark:text-white bg-white cursor-pointer">
                     <SelectItem value="DAILY">Daily</SelectItem>
                     <SelectItem value="PLAYLIST">Playlist</SelectItem>
                   </SelectContent>
@@ -400,7 +415,7 @@ export default function AdminTestSeriesClientPage() {
         open={isManageTestsModalOpen}
         onOpenChange={setIsManageTestsModalOpen}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl dark:bg-slate-800 dark:text-white bg-white">
           <DialogHeader>
             <DialogTitle>Manage Tests in {selectedSeries?.title}</DialogTitle>
             <DialogDescription>
