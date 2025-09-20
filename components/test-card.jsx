@@ -10,6 +10,7 @@ export default function TestCard({
   title,
   description,
   isPaid,
+  type, // Add type prop for test type (FREE/PAID)
   thumbnailUrl = '/test.jpeg',
   highlights = [],
   durationMinutes,
@@ -34,7 +35,12 @@ export default function TestCard({
   const [showAttemptHistory, setShowAttemptHistory] = useState(false)
 
   const getTestType = () => {
-    if (locked || isPaid) return 'PRO'
+    // If user is admin or has paid access, show the actual test type
+    if (userType === 'ADMIN' || userType === 'PAID') {
+      return type === 'PAID' ? 'PAID' : 'FREE'
+    }
+    // For free users, show access level
+    if (locked || type === 'PAID') return 'PRO'
     return 'FREE'
   }
 
@@ -173,12 +179,20 @@ export default function TestCard({
         {/* Mobile Layout */}
         <div className="md:hidden space-y-3">
           <div className="flex justify-between items-start">
-            <h3 className="font-medium text-gray-900 text-sm dark:text-white">{title}</h3>
+            <h3 className="font-medium text-gray-900 text-sm dark:text-white">
+              {title}
+            </h3>
             <Badge
-              variant={getTestType() === 'PRO' ? 'default' : 'secondary'}
+              variant={
+                getTestType() === 'PRO' || getTestType() === 'PAID'
+                  ? 'default'
+                  : 'secondary'
+              }
               className={
                 getTestType() === 'PRO'
                   ? 'bg-purple-100 text-purple-700 hover:bg-purple-100'
+                  : getTestType() === 'PAID'
+                  ? 'bg-orange-100 text-orange-700 hover:bg-orange-100'
                   : 'bg-green-100 text-green-700 hover:bg-green-100'
               }
             >
@@ -209,7 +223,9 @@ export default function TestCard({
                   }}
                 />
               </div>
-              <span className="text-xs dark:text-gray-300">{getTestScore()}</span>
+              <span className="text-xs dark:text-gray-300">
+                {getTestScore()}
+              </span>
             </div>
           </div>
 
@@ -240,10 +256,16 @@ export default function TestCard({
           {/* Type */}
           <div>
             <Badge
-              variant={getTestType() === 'PRO' ? 'default' : 'secondary'}
+              variant={
+                getTestType() === 'PRO' || getTestType() === 'PAID'
+                  ? 'default'
+                  : 'secondary'
+              }
               className={
                 getTestType() === 'PRO'
                   ? 'bg-purple-100 text-purple-700 hover:bg-purple-100'
+                  : getTestType() === 'PAID'
+                  ? 'bg-orange-100 text-orange-700 hover:bg-orange-100'
                   : 'bg-green-100 text-green-700 hover:bg-green-100'
               }
             >

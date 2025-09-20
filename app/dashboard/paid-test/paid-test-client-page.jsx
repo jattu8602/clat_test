@@ -37,8 +37,10 @@ export default function PaidTestClientPage() {
   const [hasMore, setHasMore] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [hasReachedEnd, setHasReachedEnd] = useState(false)
 
   const loaderRef = useRef(null)
+  const isLoadingRef = useRef(false)
   const userType = session?.user?.role || 'FREE'
 
   const subjects = [
@@ -84,29 +86,54 @@ export default function PaidTestClientPage() {
   }, [activeSubject, tests])
 
   const loadMoreTests = useCallback(async () => {
-    if (isLoadingMore || !hasMore) return
+    if (isLoadingMore || !hasMore || isLoadingRef.current) return
+
+    isLoadingRef.current = true
     setIsLoadingMore(true)
 
-    const newTests = await fetchMoreTests(page, 'paid')
+    try {
+      const newTests = await fetchMoreTests(page, 'paid')
 
-    if (newTests.length > 0) {
-      setTests((prev) => [...prev, ...newTests])
-      setPage((prev) => prev + 1)
-    } else {
+      if (newTests.length > 0) {
+        setTests((prev) => {
+          // Filter out any tests that are already in the list to prevent duplicates
+          const existingIds = new Set(prev.map((test) => test.id))
+          const uniqueNewTests = newTests.filter(
+            (test) => !existingIds.has(test.id)
+          )
+          return [...prev, ...uniqueNewTests]
+        })
+        setPage((prev) => prev + 1)
+      } else {
+        setHasMore(false)
+        setHasReachedEnd(true)
+      }
+    } catch (error) {
+      console.error('Error loading more tests:', error)
       setHasMore(false)
+      setHasReachedEnd(true)
+    } finally {
+      setIsLoadingMore(false)
+      isLoadingRef.current = false
     }
-
-    setIsLoadingMore(false)
   }, [page, isLoadingMore, hasMore])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (
+          entries[0].isIntersecting &&
+          !isLoadingMore &&
+          hasMore &&
+          !isLoadingRef.current
+        ) {
           loadMoreTests()
         }
       },
-      { threshold: 1.0 }
+      {
+        threshold: 0.1,
+        rootMargin: '50px',
+      }
     )
 
     if (loaderRef.current) {
@@ -118,7 +145,7 @@ export default function PaidTestClientPage() {
         observer.unobserve(loaderRef.current)
       }
     }
-  }, [loaderRef, loadMoreTests])
+  }, [isLoadingMore, hasMore, loadMoreTests])
 
   const handleTestAction = (test, action, specificAttempt = null) => {
     if (action === 'upgrade') {
@@ -227,15 +254,18 @@ export default function PaidTestClientPage() {
               ))
             )}
             {isLoadingMore && (
-              <>
-                <TestCardSkeleton />
-                <TestCardSkeleton />
-              </>
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
             )}
-            {!isLoadingMore && hasMore && <div ref={loaderRef} />}
-            {!hasMore && filteredTests.length > 0 && (
-              <div className="p-4 text-center text-slate-500 dark:text-slate-400">
-                You've reached the end of the list.
+            {!isLoadingMore && hasMore && !hasReachedEnd && (
+              <div ref={loaderRef} className="h-1 w-full" />
+            )}
+            {hasReachedEnd && filteredTests.length > 0 && (
+              <div className="flex justify-center py-8">
+                <div className="text-slate-500 dark:text-slate-400 text-sm">
+                  ✨ You've reached the end of the list
+                </div>
               </div>
             )}
           </div>
