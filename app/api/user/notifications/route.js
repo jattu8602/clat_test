@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// GET - Get user notifications
+// GET - Get user notifications with pagination
 export async function GET(request) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,31 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get all notifications for this user, including:
+    // Get pagination parameters from URL
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page')) || 1
+    const limit = parseInt(searchParams.get('limit')) || 10
+    const skip = (page - 1) * limit
+
+    // Get total count for pagination
+    const totalCount = await prisma.notification.count({
+      where: {
+        OR: [
+          // User-specific notifications
+          { userId: session.user.id },
+          // Broadcast notifications
+          { isBroadcast: true },
+          // Test activation notifications for this user
+          { type: 'TEST_ACTIVATION', userId: session.user.id },
+          // Payment notifications for this user
+          { type: 'PAYMENT_SUCCESS', userId: session.user.id },
+          // Plan expiry notifications for this user
+          { type: 'PLAN_EXPIRY', userId: session.user.id },
+        ],
+      },
+    })
+
+    // Get paginated notifications for this user, including:
     // 1. User-specific notifications
     // 2. Broadcast notifications
     // 3. Test activation notifications
@@ -36,6 +60,8 @@ export async function GET(request) {
         ],
       },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
     })
 
     // Get which broadcast notifications this user has read
@@ -53,15 +79,42 @@ export async function GET(request) {
       (r) => r.notificationId
     )
 
+    // Get which notifications this user has liked
+    const notificationIds = notifications.map((n) => n.id)
+    const likedNotifications = await prisma.notificationLike.findMany({
+      where: {
+        userId: session.user.id,
+        notificationId: {
+          in: notificationIds,
+        },
+      },
+      select: {
+        notificationId: true,
+      },
+    })
+    const likedNotificationIds = new Set(
+      likedNotifications.map((l) => l.notificationId)
+    )
+
     // Add read status to notifications
     const notificationsWithReadStatus = notifications.map((notification) => ({
       ...notification,
       isRead: notification.isBroadcast
         ? readBroadcastIds.includes(notification.id)
         : notification.isRead,
+      isLiked: likedNotificationIds.has(notification.id),
     }))
 
-    return NextResponse.json({ notifications: notificationsWithReadStatus })
+    // Calculate if there are more notifications
+    const hasMore = skip + limit < totalCount
+
+    return NextResponse.json({
+      notifications: notificationsWithReadStatus,
+      hasMore,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+    })
   } catch (error) {
     console.error('Error fetching notifications:', error)
     return NextResponse.json(
@@ -190,6 +243,132 @@ export async function POST(request) {
     })
   } catch (error) {
     console.error('Error marking notification as read:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH - Like/Unlike notification
+export async function PATCH(request) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { notificationId, action } = body // action: 'like' or 'unlike'
+
+    if (!notificationId || !action) {
+      return NextResponse.json(
+        { error: 'Notification ID and action are required' },
+        { status: 400 }
+      )
+    }
+
+    if (!['like', 'unlike'].includes(action)) {
+      return NextResponse.json(
+        { error: 'Action must be either "like" or "unlike"' },
+        { status: 400 }
+      )
+    }
+
+    // Check if notification exists
+    const notification = await prisma.notification.findUnique({
+      where: { id: notificationId },
+    })
+
+    if (!notification) {
+      return NextResponse.json(
+        { error: 'Notification not found' },
+        { status: 404 }
+      )
+    }
+
+    if (action === 'like') {
+      // Check if user has already liked this notification
+      const existingLike = await prisma.notificationLike.findUnique({
+        where: {
+          userId_notificationId: {
+            userId: session.user.id,
+            notificationId: notificationId,
+          },
+        },
+      })
+
+      if (existingLike) {
+        return NextResponse.json({
+          message: 'Notification already liked',
+          isLiked: true,
+          likeCount: notification.likeCount,
+        })
+      }
+
+      // Create like and increment count
+      await prisma.$transaction([
+        prisma.notificationLike.create({
+          data: {
+            userId: session.user.id,
+            notificationId: notificationId,
+          },
+        }),
+        prisma.notification.update({
+          where: { id: notificationId },
+          data: { likeCount: { increment: 1 } },
+        }),
+      ])
+
+      return NextResponse.json({
+        message: 'Notification liked',
+        isLiked: true,
+        likeCount: notification.likeCount + 1,
+      })
+    } else {
+      // Unlike
+      const existingLike = await prisma.notificationLike.findUnique({
+        where: {
+          userId_notificationId: {
+            userId: session.user.id,
+            notificationId: notificationId,
+          },
+        },
+      })
+
+      if (!existingLike) {
+        return NextResponse.json({
+          message: 'Notification not liked',
+          isLiked: false,
+          likeCount: notification.likeCount,
+        })
+      }
+
+      // Remove like and decrement count
+      await prisma.$transaction([
+        prisma.notificationLike.delete({
+          where: {
+            userId_notificationId: {
+              userId: session.user.id,
+              notificationId: notificationId,
+            },
+          },
+        }),
+        prisma.notification.update({
+          where: { id: notificationId },
+          data: { likeCount: { decrement: 1 } },
+        }),
+      ])
+
+      return NextResponse.json({
+        message: 'Notification unliked',
+        isLiked: false,
+        likeCount: Math.max(0, notification.likeCount - 1),
+      })
+    }
+  } catch (error) {
+    console.error('Error liking/unliking notification:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

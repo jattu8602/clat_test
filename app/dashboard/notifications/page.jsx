@@ -18,6 +18,7 @@ import {
   Play,
   Trophy,
   RefreshCcw,
+  Heart,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -35,6 +36,9 @@ export default function UserNotificationsPage() {
     notificationsCache.notifications || []
   )
   const [loading, setLoading] = useState(!notificationsCache.notifications)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
 
   // Check if cache is still valid
   const isCacheValid = () => {
@@ -48,46 +52,59 @@ export default function UserNotificationsPage() {
   useEffect(() => {
     if (session) {
       if (!notificationsCache.notifications || !isCacheValid()) {
-        fetchNotifications()
+        fetchNotifications(1, true)
       } else {
         setLoading(false)
       }
     }
   }, [session])
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (page = 1, isInitial = false) => {
     try {
-      setLoading(true)
-      const response = await fetch('/api/user/notifications')
+      if (isInitial) {
+        setLoading(true)
+      } else {
+        setLoadingMore(true)
+      }
+
+      const response = await fetch(
+        `/api/user/notifications?page=${page}&limit=10`
+      )
       if (response.ok) {
         const data = await response.json()
         const newNotifications = data.notifications || []
+        const hasMoreNotifications = data.hasMore || false
 
-        // Check if there are new notifications
-        const currentIds = new Set(notifications.map((n) => n.id))
-        const newNotificationIds = newNotifications.filter(
-          (n) => !currentIds.has(n.id)
-        )
+        if (isInitial) {
+          // Initial load - replace all notifications
+          setNotifications(newNotifications)
+          notificationsCache.notifications = newNotifications
+        } else {
+          // Load more - append to existing notifications
+          setNotifications((prev) => [...prev, ...newNotifications])
+          notificationsCache.notifications = [
+            ...notifications,
+            ...newNotifications,
+          ]
+        }
 
-        // If there are new notifications, increment the header count
+        setHasMore(hasMoreNotifications)
+        setCurrentPage(page)
+        notificationsCache.lastFetchTime = Date.now()
+
+        // Check if there are new notifications (only for initial load)
         if (
-          newNotificationIds.length > 0 &&
+          isInitial &&
+          newNotifications.length > 0 &&
           window.incrementHeaderNotificationCount
         ) {
-          // Only increment for unread notifications
-          const newUnreadCount = newNotificationIds.filter(
+          const newUnreadCount = newNotifications.filter(
             (n) => !n.isRead
           ).length
           for (let i = 0; i < newUnreadCount; i++) {
             window.incrementHeaderNotificationCount()
           }
         }
-
-        setNotifications(newNotifications)
-
-        // Update cache
-        notificationsCache.notifications = newNotifications
-        notificationsCache.lastFetchTime = Date.now()
 
         // Refresh header notifications to ensure count is accurate
         if (window.refreshHeaderNotifications) {
@@ -99,6 +116,62 @@ export default function UserNotificationsPage() {
       toast.error('Failed to fetch notifications')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
+    }
+  }
+
+  const loadMoreNotifications = () => {
+    if (!loadingMore && hasMore) {
+      fetchNotifications(currentPage + 1, false)
+    }
+  }
+
+  const toggleLike = async (notificationId, isCurrentlyLiked) => {
+    try {
+      const action = isCurrentlyLiked ? 'unlike' : 'like'
+      const response = await fetch('/api/user/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notificationId, action }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+
+        // Update local state
+        setNotifications((prev) =>
+          prev.map((notification) =>
+            notification.id === notificationId
+              ? {
+                  ...notification,
+                  isLiked: data.isLiked,
+                  likeCount: data.likeCount,
+                }
+              : notification
+          )
+        )
+
+        // Update cache
+        notificationsCache.notifications = notifications.map((notification) =>
+          notification.id === notificationId
+            ? {
+                ...notification,
+                isLiked: data.isLiked,
+                likeCount: data.likeCount,
+              }
+            : notification
+        )
+
+        toast.success(data.message)
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to update like status')
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error)
+      toast.error('Failed to update like status')
     }
   }
 
@@ -277,20 +350,23 @@ export default function UserNotificationsPage() {
         return (
           <Button
             onClick={() => handleNotificationClick(notification)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+            size="sm"
+            className="flex items-center gap-1 sm:gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
           >
             {isFreeTest ? (
               <>
-                <Play className="w-4 h-4" />
-                Take Free Test
+                <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Take Free Test</span>
+                <span className="sm:hidden">Free Test</span>
               </>
             ) : (
               <>
-                <Trophy className="w-4 h-4" />
-                Take Paid Test
+                <Trophy className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Take Paid Test</span>
+                <span className="sm:hidden">Paid Test</span>
               </>
             )}
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
           </Button>
         )
 
@@ -299,10 +375,13 @@ export default function UserNotificationsPage() {
           return (
             <Button
               onClick={() => handleNotificationClick(notification)}
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+              size="sm"
+              className="flex items-center gap-1 sm:gap-2 bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              {notification.buttonText}
-              <ArrowRight className="w-4 h-4" />
+              <span className="truncate max-w-20 sm:max-w-none">
+                {notification.buttonText}
+              </span>
+              <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           )
         }
@@ -312,10 +391,12 @@ export default function UserNotificationsPage() {
         return (
           <Button
             onClick={() => handleNotificationClick(notification)}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+            size="sm"
+            className="flex items-center gap-1 sm:gap-2 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
           >
-            View Payment
-            <ArrowRight className="w-4 h-4" />
+            <span className="hidden sm:inline">View Payment</span>
+            <span className="sm:hidden">Payment</span>
+            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
           </Button>
         )
 
@@ -323,10 +404,12 @@ export default function UserNotificationsPage() {
         return (
           <Button
             onClick={() => handleNotificationClick(notification)}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+            size="sm"
+            className="flex items-center gap-1 sm:gap-2 bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
           >
-            Renew Plan
-            <ArrowRight className="w-4 h-4" />
+            <span className="hidden sm:inline">Renew Plan</span>
+            <span className="sm:hidden">Renew</span>
+            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
           </Button>
         )
 
@@ -349,35 +432,38 @@ export default function UserNotificationsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 text-slate-900 dark:text-white">Notifications</h1>
-        <p className="text-gray-600 dark:text-gray-300">
+    <div className="container mx-auto p-3 sm:p-6">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-slate-900 dark:text-white">
+          Notifications
+        </h1>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
           Stay updated with the latest news and test activations
         </p>
       </div>
 
       {notifications.length > 0 && (
-        <div className="mb-6 flex justify-between items-center">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             {notifications.filter((n) => !n.isRead).length} unread notification
             {notifications.filter((n) => !n.isRead).length !== 1 ? 's' : ''}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
-              onClick={fetchNotifications}
+              onClick={() => fetchNotifications(1, true)}
               variant="outline"
               size="sm"
-              className="text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-900/20"
+              className="text-xs sm:text-sm text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-900/20 px-2 sm:px-3 py-1 sm:py-2"
             >
-              <RefreshCcw className="w-4 h-4 mr-2" />
+              <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Refresh
             </Button>
             {notifications.some((n) => !n.isRead) && (
               <Button
                 onClick={markAllAsRead}
                 variant="outline"
-                className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/20"
+                size="sm"
+                className="text-xs sm:text-sm text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/20 px-2 sm:px-3 py-1 sm:py-2"
               >
                 Mark All as Read
               </Button>
@@ -387,17 +473,19 @@ export default function UserNotificationsPage() {
       )}
 
       {notifications.length === 0 ? (
-        <Card className="text-center py-12">
+        <Card className="text-center py-8 sm:py-12">
           <CardContent>
-            <div className="text-6xl mb-4">🔔</div>
-            <h3 className="text-xl font-semibold mb-2">No notifications yet</h3>
-            <p className="text-gray-600 dark:text-gray-400">
+            <div className="text-4xl sm:text-6xl mb-4">🔔</div>
+            <h3 className="text-lg sm:text-xl font-semibold mb-2">
+              No notifications yet
+            </h3>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               You're all caught up! Check back later for new updates.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {notifications.map((notification) => (
             <Card
               key={notification.id}
@@ -407,8 +495,8 @@ export default function UserNotificationsPage() {
                   : 'border-l-4 border-l-gray-200 dark:border-l-gray-700'
               }`}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start gap-3 sm:gap-4">
                   {/* Icon */}
                   <div className="flex-shrink-0 mt-1">
                     {getNotificationIcon(notification.type)}
@@ -416,25 +504,30 @@ export default function UserNotificationsPage() {
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-lg text-gray-900 dark:text-white">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                          <h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-white">
                             {notification.title}
                           </h3>
-                          <Badge variant="secondary" className="text-xs text-slate-900 dark:text-white">
-                            {getNotificationTypeLabel(notification.type)}
-                          </Badge>
-                          {notification.isBroadcast && (
+                          <div className="flex flex-wrap gap-2">
                             <Badge
-                              variant="outline"
-                              className="text-xs border-purple-200 text-purple-700 dark:border-purple-700 dark:text-purple-300"
+                              variant="secondary"
+                              className="text-xs text-slate-900 dark:text-white"
                             >
-                              Broadcast
+                              {getNotificationTypeLabel(notification.type)}
                             </Badge>
-                          )}
+                            {notification.isBroadcast && (
+                              <Badge
+                                variant="outline"
+                                className="text-xs border-purple-200 text-purple-700 dark:border-purple-700 dark:text-purple-300"
+                              >
+                                Broadcast
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-300 mb-3">
+                        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-3">
                           {notification.message}
                         </p>
                       </div>
@@ -445,37 +538,68 @@ export default function UserNotificationsPage() {
                           <img
                             src={notification.thumbnailUrl}
                             alt="Notification thumbnail"
-                            className="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
+                            className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
                           />
                         </div>
                       )}
                     </div>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                         <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
+                          <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                           {new Date(
                             notification.createdAt
                           ).toLocaleDateString()}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
+                          <Users className="w-3 h-3 sm:w-4 sm:h-4" />
                           {notification.isBroadcast ? 'All Users' : 'You'}
                         </span>
                       </div>
 
                       {/* Action Button */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                         {getActionButton(notification)}
+
+                        {/* Like Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            toggleLike(notification.id, notification.isLiked)
+                          }
+                          className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 ${
+                            notification.isLiked
+                              ? 'text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20'
+                              : 'text-gray-600 border-gray-200 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-900/20'
+                          }`}
+                        >
+                          <Heart
+                            className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 ${
+                              notification.isLiked ? 'fill-current' : ''
+                            }`}
+                          />
+                          <span className="hidden sm:inline">
+                            {notification.isLiked ? 'Liked' : 'Like'}
+                          </span>
+                          <span className="sm:hidden">
+                            {notification.isLiked ? '❤️' : '🤍'}
+                          </span>
+                          {notification.likeCount > 0 && (
+                            <span className="ml-1 text-xs">
+                              ({notification.likeCount})
+                            </span>
+                          )}
+                        </Button>
 
                         {!notification.isRead && (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => markAsRead(notification.id)}
-                            className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/20"
+                            className="text-xs sm:text-sm text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/20 px-2 sm:px-3 py-1 sm:py-2"
                           >
                             Mark as Read
                           </Button>
@@ -487,6 +611,31 @@ export default function UserNotificationsPage() {
               </CardContent>
             </Card>
           ))}
+
+          {/* Load More Button */}
+          {hasMore && (
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={loadMoreNotifications}
+                disabled={loadingMore}
+                variant="outline"
+                size="sm"
+                className="text-xs sm:text-sm text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/20 px-4 sm:px-6 py-2 sm:py-3"
+              >
+                {loadingMore ? (
+                  <>
+                    <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    Load More Notifications
+                    <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

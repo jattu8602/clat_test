@@ -95,6 +95,7 @@ model User {
   payments Payment[]
   broadcastNotificationsRead BroadcastNotificationRead[]
   reviews Review[]
+  notificationLikes NotificationLike[]
 }
 
 model VerificationToken {
@@ -265,6 +266,10 @@ model Notification {
 
   // Track which users have read this broadcast notification
   readByUsers BroadcastNotificationRead[]
+
+  // Fields for Like feature
+  likeCount   Int                @default(0)
+  likes       NotificationLike[]
 }
 
 // New model to track which users have read which broadcast notifications
@@ -276,6 +281,18 @@ model BroadcastNotificationRead {
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationId])
+}
+
+// Model to track likes on notifications
+model NotificationLike {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String       @db.ObjectId
+  notificationId String       @db.ObjectId
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, notificationId])
 }
