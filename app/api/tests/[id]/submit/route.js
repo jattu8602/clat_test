@@ -33,28 +33,28 @@ export async function POST(request, { params }) {
       timeSpent,
     })
 
-    // Use database transaction for atomicity and performance
-    const result = await prisma.$transaction(async (tx) => {
-      // Fetch test and questions for validation (optimized query)
-      const test = await tx.test.findUnique({
-        where: { id: testId },
-        select: {
-          id: true,
-          questions: {
-            select: {
-              id: true,
-              correctAnswers: true,
-              positiveMarks: true,
-              negativeMarks: true,
-            },
+    // Fetch test and questions for validation outside the transaction
+    const test = await prisma.test.findUnique({
+      where: { id: testId },
+      select: {
+        id: true,
+        questions: {
+          select: {
+            id: true,
+            correctAnswers: true,
+            positiveMarks: true,
+            negativeMarks: true,
           },
         },
-      })
+      },
+    })
 
-      if (!test) {
-        throw new Error('Test not found')
-      }
+    if (!test) {
+      return NextResponse.json({ error: 'Test not found' }, { status: 404 })
+    }
 
+    // Use database transaction for atomicity and performance on WRITE operations
+    const result = await prisma.$transaction(async (tx) => {
       let testAttempt
 
       // If attemptId provided, update existing attempt (reattempt)
@@ -88,7 +88,7 @@ export async function POST(request, { params }) {
           throw new Error('Attempt already completed')
         }
       } else {
-        // Check if user has already completed this test (for first-time attempts)
+        // First-time attempt validation
         const existingAttempt = await tx.testAttempt.findFirst({
           where: {
             testId,
